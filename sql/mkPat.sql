@@ -1,0 +1,1 @@
+insert into patients(name,chart_num, id, sex, birth, identity, tel1, tel2, mom_id, parity, address, can_used, pass, allergy, hate, mark, regist, part_self, deposit, all_self) values('tommy', 111111,'f111111111','男','2001-10-31','stu','0933257156','0933257156','f111111111',10,'新北勢新莊區中正路100號',100,'糖尿病','糖果','藥物','特別肥胖', 150, 150, 150, 150);
