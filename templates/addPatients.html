@@ -15,6 +15,9 @@
         <form action = '/viewPa' method = 'post'>
             未帶健保卡：<input type = 'checkbox' name = 'card' id = 'card'/>
             <br/>
+            打疫苗：<input type = 'checkbox' name = 'vac' id = 'vac'/>
+            <input type = 'text' name = 'vId' id = 'vId' style = 'visibility:hidden'/>
+            <br/>
             姓名：<input type = 'text' name = 'name' id = 'name'/>
             <br/>
             身份證號：<input type = 'text' name = 'id' id = 'id'/>
@@ -114,7 +117,7 @@
             }
         }    
         axios.get('/data').then(function(response) {
-            alertLog(response);
+            //alertLog(response);
             for (let i = 0;i < response.data.length;i++) {
                 all_index.push(response.data[i].pId);
                 all_name.push(response.data[i].name);
@@ -200,6 +203,15 @@
             }
             setTimeout(test, 1000);
         }
+
+        document.querySelector('#vac').addEventListener('change', function() {
+            if (this.checked) {
+                getId('vId').style.visibility = 'visible';
+            } 
+            else {
+                getId('vId').style.visibility = 'hidden';
+            }
+        });
     </script>
 </html>
 

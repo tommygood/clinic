@@ -1,0 +1,42 @@
+<html>
+    <head>
+        <title>
+            新增單筆藥品
+        </title>
+        <h1>
+            新增單筆藥品
+        </h1>
+    </head>
+    <body>
+        <form onsubmit = "return false;" method = 'post' id = 'addMed'>
+            藥碼：<input type = 'text' name = 'code' id = 'code'/>
+            使用期限：<input type = 'text' name = 'expire' id = 'expire'/>
+            負責人員：<input type = 'text' name = 'aId' id = 'aId'/>
+            數量：<input type = 'text' name = 'quantity' id = 'quantity'/>
+            <input type = 'submit' id = 'sub'/>
+		</form>
+    </body>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+        function getId(id) {
+            return document.getElementById(id);
+        }
+
+        getId('addMed').addEventListener('submit', async(e) => {
+			e.preventDefault();
+			const data = {
+				code : getId('code').value,
+				expire : getId('expire').value,
+				aId : getId('aId').value,
+				quantity : getId('quantity').value,
+			};
+			const checked_data = await axios.post('/addMed/check', data);
+			if (checked_data.data.error != null) { // 輸入為錯誤
+				alert(checked_data.data.error);
+				return;
+			}
+			alert('新增成功');
+			window.location.href = '/viewPa';
+		});
+    </script>
+</html>

@@ -1,0 +1,44 @@
+<html>
+    <head>
+        <title>
+            單筆藥品庫存紀錄
+        </title>
+        <h1>
+            單筆藥品庫存紀錄
+        </h1>
+    </head>
+    <body>
+        <table id = 'tab' border = '2' align = center>
+            <tr>
+                <td>編號</td>
+                <td>藥碼</td>
+                <td>中文名稱</td>
+                <td>進貨日期</td>
+                <td>過期日期</td>
+				<td>負責人</td>
+				<td>數量</td>
+            </tr>
+        </table>
+    </body>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+        (async() => {
+            const {data : med_inventory_each} = await axios.get('/med_inventory_each');
+            const {data : medicines} = await axios.get('/medicines');
+            for (let i = 0;i < med_inventory_each.length;i++) {
+				for (let k = 0;k < medicines.length;k++) {
+					if (med_inventory_each[i].code == medicines[k].code) {
+						tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + med_inventory_each[i].no + 
+						"<td>" + med_inventory_each[i].code + "</td>" +
+						"<td>" + medicines[k].medi_mand + "</td>" +
+						"<td>" + med_inventory_each[i].purchase_date + "</td>" +
+						"<td>" + med_inventory_each[i].expire + "</td>" +
+						"<td>" + med_inventory_each[i].aId + "</td>" +
+						"<td>" + med_inventory_each[i].quantity + "</td></tr>"
+						break;
+					}
+				}
+			}
+        })();
+    </script>
+</html>

@@ -1,0 +1,55 @@
+<html>
+    <head>
+        <title>
+            疫苗注射紀錄
+        </title>
+        <h1>
+            疫苗注射紀錄
+        </h1>
+    </head>
+    <body>
+        <table id = 'tab' border = '2' align = center>
+            <tr>
+                <td>編號</td>
+                <td>報</td>
+                <td>注射日期</td>
+                <td>姓名</td>
+                <td>生日</td>
+				<td>疫苗中報碼</td>
+				<td>疫苗別</td>
+                <td>疫苗批號</td>
+                <td>廠商</td>
+            </tr>
+        </table>
+    </body>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+        (async() => {
+            const {data : vac_re} = await axios.get('/vac_re');
+            const {data : pat} = await axios.get('/data');
+            const {data : vac} = await axios.get('/vac');
+			console.log(vac_re);
+            for (let i = 0;i < vac_re.length;i++) {
+                for (let j = 0;j < pat.length;j++) {
+                    if (vac_re[i].pId == pat[j].pId) { // 找到病患
+                        for (let k = 0;k < vac.length;k++) { // 找疫苗
+                            if (vac_re[i].vId == vac[k].vId) { // 找到疫苗
+								tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + vac_re[i].vrId + 
+								"<td>" + vac_re[i].apply + "</td>" +
+								"<td>" + vac_re[i].time + "</td>" +
+								"<td>" + pat[j].name + "</td>" +
+								"<td>" + pat[j].birth + "</td>" +
+								"<td>" + vac[k].a_code + "</td>" +
+								"<td>" + vac[k].vId + "</td>" +
+								"<td>" + vac[k].buy_num + "</td>" +
+								"<td>" + vac[k].factory + "</td></tr>";
+								break;
+							}
+						}
+						break;
+					}
+				}
+			}
+        })();
+    </script>
+</html>

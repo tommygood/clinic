@@ -1,0 +1,145 @@
+<html>
+    <head>
+        <title>
+            醫生看診
+        </title>
+        <h1>
+            醫生看診
+        </h1>
+    </head>
+    <body>
+        <table id = 'tab' border = '2' align = center>
+            <tr>
+                <td>姓名</td>
+                <td>生日</td>
+                <td>性別</td>
+                <td>年齡</td>
+                <td>押卡</td>
+				<td>病史</td>
+				<td>過敏</td>
+				<td>不喜</td>
+				<td>備註</td>
+            </tr>
+        </table>
+		<span id = 'symptoms'>
+		病碼：<input id = 'diagnose_code' name = 'diagnose_code'></input>
+		&nbsp;&nbsp;&nbsp;&nbsp;診斷：<span id = 'diagnose' name = 'diagnose'></span>
+		</span>
+		<form id = 'records_form' action = '/ckPatients' method = 'post'>
+			<input type = 'hidden' id = 'r_num' name = 'r_num'/>
+			<input type = 'hidden' id = 'rId' name = 'rId'/>
+			<input type = 'hidden' id = 'nrId' name = 'nrId'/>
+			<input type = 'hidden' id = 'diagnose_code_pass' name = 'diagnose_code_pass'/>
+			<br/>
+			主訴：<textarea id = 'main_sue' name = 'main_sue' cols = '80' rows = '5'></textarea>
+			<br/>
+			理學：<textarea id = 'science' name = 'science' cols = '80' rows = '5'></textarea>
+			<input type = 'submit'></input>
+		</form>
+    </body>
+	<style>
+		#symptoms {
+			position : absolute;	
+			margin : 20px 120px;
+		}
+
+		#records_form {
+			position : absolute;	
+			margin : 40px 120px;	
+		}
+	</style>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+        (async() => {
+			const {data : rec} = await axios.get('/records');
+			const {data : no_rec} = await axios.get('/no_records');
+			const {data : pa_num} = await axios.get('/ckPatients/rNum');
+			const {data : info} = await axios.get('/data');
+			const {data : dId} = await axios.get('/docMain/dId');
+			const {data : done_records} = await axios.get('/done_records'); // done records
+            for (let i = 0;i < no_rec.length;i++) 
+                rec.push(no_rec[i])
+            rec.sort(function(a,b){
+                return a.r_num - b.r_num;
+            });
+			const this_doc = []; // only this doctor's records
+			var done = false; // whether the record is done
+			for (let i = 0;i < rec.length;i++) { // push records in array, which only have this doctor
+				done = false;
+				for (let j = 0;j < done_records.length;j++) {
+					if (rec[i].r_num == done_records[j].r_num) { // this records had done
+						done = true;
+					}
+				}
+				if (rec[i].dId == dId.dId && !done) { // same doctor and not done yet
+					this_doc.push(rec[i]);
+				}
+			}
+			console.log(rec);
+			console.log(this_doc);
+            rec.sort(function(a,b){
+                return a.r_num - b.r_num;
+            });
+			for (let j = 0;j < info.length;j++) { // find the patient
+				if (this_doc[pa_num.pa_num].pId == info[j].pId) { // same pId
+					document.getElementById('r_num').value = this_doc[pa_num.pa_num].r_num;
+					document.getElementById('rId').value = this_doc[pa_num.pa_num].rId;
+					document.getElementById('nrId').value = this_doc[pa_num.pa_num].nrId;
+                    tab.innerHTML += "<tr" + j + "/><td/>"+ info[j].name  + 
+					"<td>" + info[j].birth + "</td>" +
+					"<td>" + info[j].sex + "</td>" +
+					"<td>" + info[j].birth + "</td>" +
+					"<td>" + info[j].birth + "</td>" +
+					"<td>" + info[j].pass + "</td>" +
+					"<td>" + info[j].allergy + "</td>" +
+					"<td>" + info[j].hate + "</td>" +
+					"<td>" + info[j].mark + "</td></tr>"
+					break;
+				}
+			}
+        })();
+
+		function getId(id) {
+			return document.getElementById(id);
+		}
+
+        getId("diagnose_code").addEventListener('change', outSymptoms); // 當搜尋內容有改變
+
+		var symptoms = null; // 所有症狀，先設 null
+        async function outSymptoms() { // 印出症狀
+			if (symptoms == null) { // 第一次讀取症狀
+				const {data : symptoms_data} = await axios.get('/symptoms');
+				symptoms = symptoms_data // 放入檔案
+				for (let i = 0;i < symptoms.length;i++) { // 找出對應症狀
+					if (symptoms[i].index == getId('diagnose_code').value) {
+						getId('diagnose').innerHTML = symptoms[i].eng_name;
+					}
+				}
+			}
+			else {
+				for (let i = 0;i < symptoms.length;i++) {
+					if (symptoms[i].index == getId('diagnose_code').value) {
+						getId('diagnose').innerHTML = symptoms[i].eng_name;
+					}
+				}
+			}
+        }
+
+        getId('records_form').addEventListener('submit', async(e) => { // 送出表單
+			e.preventDefault(); //
+			getId('diagnose_code_pass').value = getId('diagnose_code').value; // 放入 value
+			const data = {r_num : getId('r_num').value, rId : getId('rId').value, nrId : getId('nrId').value, diagnose_code_pass : getId('diagnose_code_pass').value, main_sue : getId('main_sue').value, science : getId('science').value}
+			const ck_diagnose = await axios.post('/ckPatients', data);
+			if (ck_diagnose.data.suc) { // 沒有回傳錯誤
+				alert("看診成功");
+				window.location.href = "/docMain";
+			}
+			else { // 印出錯誤
+				console.log(ck_diagnose.data.suc);
+				var error_mes = "text :[" + ck_diagnose.data.error.text + "]。 sql : [" + ck_diagnose.data.error.sql + "]";
+				alert(error_mes);
+			};
+		});
+
+    </script>
+</html>
