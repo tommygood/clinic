@@ -1,6 +1,5 @@
 create table records(
-`rId` INT PRIMARY KEY AUTO_INCREMENT,
-`r_num` int(11),
+`no` INT PRIMARY KEY AUTO_INCREMENT,
 `num` int(11),
 `start` datetime default current_timestamp,
 `end` datetime,
@@ -11,5 +10,6 @@ create table records(
 `all_self` int(6),
 `deposit` int(4),
 `dId` int(11),
-`in` int(1)
+`in` int(1),
+`real_start` datetime
 )

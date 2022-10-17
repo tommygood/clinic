@@ -88,9 +88,18 @@ router.post('/check', async function(req, res) {
 	const {account, pass} = req.body;
 	if (account.length == 0 || pass.length == 0) {
 		return res.json({error:'請勿輸入空值'});
-		//res.end();
 	};
     let conn = await pool.getConnection();
+	try {
+		console.log(config.login_times);
+		var fail_counts = await conn.query('select count(*) from login_log where `ip` = ? and `aId` is null and `times` >= current_timestamp - interval 5 minute', req.ip); // 五分鐘內相同 ip 的登入失敗次數
+		if (fail_counts[0]['count(*)'] >= 3) { // 在五分鐘內登入失敗超過三次
+			return res.json({error : '在五分鐘內登入失敗超過三次，請稍候再試'});
+		}
+	}
+	catch(e) {
+		console.log(e);
+	}
 		try {
             var login_suc = false;
             let user = await conn.query('select aId, pass, title from accounts');
@@ -98,11 +107,12 @@ router.post('/check', async function(req, res) {
             //var pass = req.body.pass.trim();
             for (let i = 0;i < user.length;i++) {
                 if (account == user[i].aId && pass == user[i].pass) { // 護士, 密碼正確
-                    //req.session.auth = user[i].title;
-                    //req.session.user = account;
-					//const payload = {a :1}
-					//const token = jwt.sign({ payload, exp: Math.floor(Date.now() / 1000) + (60 * 15) }, 'my_secret_key');
-					//req.token = token
+					try {
+						await conn.query('insert into login_log(`ip`, `aId`) values(?, ?)', [req.ip, account]);
+					}
+					catch(e) {
+						console.log(e);
+					}
                     if (user[i].title == 'nur') { // 護士
 						const data = {title : 'nur', aId : account}
 						const token = jwt.sign({ data, exp: Math.floor(Date.now() / 1000) + (60 * 15) }, 'my_secret_key');
@@ -111,7 +121,7 @@ router.post('/check', async function(req, res) {
                     }
                     else {
 						const data = {title : 'doc', aId : account}
-						const token = jwt.sign({ data, exp: Math.floor(Date.now() / 1000) + (60 * 15) }, 'my_secret_key');
+						const token = jwt.sign({ data, exp: Math.floor(Date.now() / 1000) + (600 * 15) }, 'my_secret_key');
 						res.cookie('token', token,  { httpOnly: false, secure: false, maxAge: 3600000 });
 						return res.json({'title' : 'doc', 'aId' : account});
                     }
@@ -119,6 +129,12 @@ router.post('/check', async function(req, res) {
                 }
             }
             if (!login_suc) { // 登入失敗
+				try {
+					await conn.query('insert into login_log(`ip`) values(?)', req.ip);
+				}
+				catch(e) {
+					console.log(e);
+				}
                 return res.json({ error: `帳號密碼錯誤` });
             }
 		}

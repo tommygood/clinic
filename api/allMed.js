@@ -10,7 +10,7 @@ const pool = db.createPool({
     database : 'clinic'
 });
 
-router.get('/', function(req, res) {
+router.get('/', async function(req, res) {
 	try {
 		const user = jwt.verify(req.cookies.token, 'my_secret_key');
 	}
@@ -22,6 +22,9 @@ router.get('/', function(req, res) {
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId && user.data.title == 'nur') { // 登入中
+    	let conn = await pool.getConnection();
+		await conn.query('insert into look_medicines_inventory(`aId`) values(?)', user.data.aId);
+		conn.release();
         res.sendFile('/home/wang/nodejs/templates/allMed.html');  //回應靜態文件
         return;
     }

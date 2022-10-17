@@ -20,6 +20,10 @@ app.use('/ckMed', require('./api/ckMed'));
 app.use('/allMed', require('./api/allMed'));
 app.use('/addMed', require('./api/addMed'));
 app.use('/ckPatients', require('./api/ckPatients'));
+app.use('/fullcalendar', require('./api/calendar'));
+app.use('/financial', require('./api/financial'));
+app.use('/financial_today', require('./api/financial_today'));
+app.use('/cardDebt', require('./api/cardDebt'));
 const db = require("mariadb");
 const pool = db.createPool({
     host : 'localhost',
@@ -27,6 +31,8 @@ const pool = db.createPool({
     password : 'wang313',
     database : 'clinic'
 });
+
+var html_home = "/home/wang/nodejs/templates/";
 
 app.get('/get', function(req, res) {
     res.end
@@ -77,13 +83,13 @@ app.get('/records', async function(req, res) {
 		return;
 	};
     let conn = await pool.getConnection();
-    let records = await conn.query('select * from records');
+    let records = await conn.query('select * from records order by `num`');
     conn.release();
     res.json(records);
     res.end
 });
     
-app.get('/no_records', async function(req, res) {
+/*app.get('/no_records', async function(req, res) {
 	try {
 		const user = jwt.verify(req.cookies.token, 'my_secret_key');
 	}
@@ -98,7 +104,7 @@ app.get('/no_records', async function(req, res) {
     conn.release();
     res.json(records);
     res.end
-});
+});*/
 
 app.get('/vac', async function(req, res) {
 	try {
@@ -202,6 +208,146 @@ app.get('/symptoms', async function(req, res) {
 	res.end;
 });
 	
+app.get('/medicines_normal', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+    let medicines_normal = await conn.query('select * from medicines_normal;');
+	conn.release();
+	res.json(medicines_normal);
+	res.end;
+});
+
+app.get('/hot_key', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+    let medicines_normal = await conn.query('select * from hot_key;');
+	conn.release();
+	res.json(medicines_normal);
+	res.end;
+});
+	
+app.get('/expense', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+    let expense = await conn.query('select * from expense;');
+	conn.release();
+	res.json(expense);
+	res.end;
+});
+	
+app.get('/main_pos', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+    let expense = await conn.query('select * from main_pos;');
+	conn.release();
+	res.json(expense);
+	res.end;
+});
+
+app.get('/total_financial', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+    let expense = await conn.query('select * from financial;');
+	conn.release();
+	res.json(expense);
+	res.end;
+});
+
+app.get('/today_financial', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+    let expense = await conn.query('select * from financial_today;');
+	conn.release();
+	res.json(expense);
+	res.end;
+});
+
+app.get('/updatePa', function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		res.redirect('/login');
+		res.end();
+		return;
+	};
+	const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    if (user.data.aId && user.data.title == 'nur') { // 登入中
+		res.sendFile(html_home + 'updatePa.html');
+    }
+	res.end;
+	return;
+});
+
+app.get('/no_card', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		res.json({error:'未登入'});
+		res.end;
+		return;
+	};
+	const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    if (user.data.aId && user.data.title == 'nur') { // 登入中
+    	let conn = await pool.getConnection();
+   	 	let no_card = await conn.query('select * from no_card;');
+		conn.release();
+		res.json({no_card : no_card});
+    }
+	res.end;
+	return;
+});
 
 var server = app.listen(5000, function () {
     console.log('Node server is running..');

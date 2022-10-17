@@ -4,7 +4,8 @@
             醫生看診
         </title>
         <h1>
-            醫生看診
+			<span id = 'dId'></span>
+            號醫生看診
         </h1>
     </head>
     <body>
@@ -19,6 +20,9 @@
 				<td>過敏</td>
 				<td>不喜</td>
 				<td>備註</td>
+				<td>掛號費</td>
+				<td>部份負擔</td>
+				<td>自費</td>
             </tr>
         </table>
 		<span id = 'symptoms'>
@@ -30,11 +34,54 @@
 			<input type = 'hidden' id = 'rId' name = 'rId'/>
 			<input type = 'hidden' id = 'nrId' name = 'nrId'/>
 			<input type = 'hidden' id = 'diagnose_code_pass' name = 'diagnose_code_pass'/>
-			<br/>
-			主訴：<textarea id = 'main_sue' name = 'main_sue' cols = '80' rows = '5'></textarea>
-			<br/>
+			<br/><br/>
+			主訴：
+			<textarea id = 'main_sue' name = 'main_sue' cols = '80' rows = '5'></textarea>
+			<br/><br/>
 			理學：<textarea id = 'science' name = 'science' cols = '80' rows = '5'></textarea>
-			<input type = 'submit'></input>
+			<br/><br/><br/>
+			<span>藥====品====名====稱 &nbsp;&nbsp;&nbsp;每日量x天 &nbsp;&nbsp;用法 &nbsp;&nbsp;註</span>
+			<br/><br/>
+			<input style = 'width:170px' type = 'text' id = 'medicines0' name = 'medicines0'></input>
+			&nbsp;&nbsp;&nbsp;
+			<input style = "width:40px" type = 'text' id = 'medi_amount0' name = 'medi_amount0'></input>
+			&nbsp;
+			<input style = 'width :20px' type = 'text' id = 'day0' name = 'day'></input>
+			<input type = 'text' id = 'method0' name = 'method0'></input>
+			<input type = 'text' id = 'medi_mark0' name = 'medi_mark0'></input>
+			<br/><br/>
+			<input style = 'width:170px' type = 'text' id = 'medicines1' name = 'medicines1'></input>
+			&nbsp;&nbsp;&nbsp;
+			<input style = "width:40px" type = 'text' id = 'medi_amount1' name = 'medi_amount1'></input>
+			&nbsp;
+			<input style = 'width :20px' type = 'text' id = 'day1' name = 'day1'></input>
+			<input type = 'text' id = 'method1' name = 'method1'></input>
+			<input type = 'text' id = 'medi_mark1' name = 'medi_mark1'></input>
+			<br/><br/>
+			<input style = 'width:170px' type = 'text' id = 'medicines2' name = 'medicines2'></input>
+			&nbsp;&nbsp;&nbsp;
+			<input style = "width:40px" type = 'text' id = 'medi_amount2' name = 'medi_amount2'></input>
+			&nbsp;
+			<input style = 'width :20px' type = 'text' id = 'day2' name = 'day2'></input>
+			<input type = 'text' id = 'method2' name = 'method2'></input>
+			<input type = 'text' id = 'medi_mark2' name = 'medi_mark2'></input>
+			<br/><br/>
+			<input style = 'width:170px' type = 'text' id = 'medicines3' name = 'medicines3'></input>
+			&nbsp;&nbsp;&nbsp;
+			<input style = "width:40px" type = 'text' id = 'medi_amount3' name = 'medi_amount3'></input>
+			&nbsp;
+			<input style = 'width :20px' type = 'text' id = 'day3' name = 'day3'></input>
+			<input type = 'text' id = 'method3' name = 'method3'></input>
+			<input type = 'text' id = 'medi_mark3' name = 'medi_mark3'></input>
+			<br/><br/>
+			<input style = 'width:170px' type = 'text' id = 'medicines4' name = 'medicines4'></input>
+			&nbsp;&nbsp;&nbsp;
+			<input style = "width:40px" type = 'text' id = 'medi_amount4' name = 'medi_amount4'></input>
+			&nbsp;
+			<input style = 'width :20px' type = 'text' id = 'day4' name = 'day4'></input>
+			<input type = 'text' id = 'method4' name = 'method4'></input>
+			<input type = 'text' id = 'medi_mark4' name = 'medi_mark4'></input>
+			<button type = 'button' id = 'submit_bt'>送出</button>
 		</form>
     </body>
 	<style>
@@ -47,27 +94,34 @@
 			position : absolute;	
 			margin : 40px 120px;	
 		}
+
+		#submit_bt {
+			padding : 16px;
+		}
+	
+		td {
+			width : 100px;
+			text-align : center;
+		}
 	</style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
         (async() => {
 			const {data : rec} = await axios.get('/records');
-			const {data : no_rec} = await axios.get('/no_records');
 			const {data : pa_num} = await axios.get('/ckPatients/rNum');
 			const {data : info} = await axios.get('/data');
 			const {data : dId} = await axios.get('/docMain/dId');
 			const {data : done_records} = await axios.get('/done_records'); // done records
-            for (let i = 0;i < no_rec.length;i++) 
-                rec.push(no_rec[i])
+			getId('dId').innerHTML = Object.values(dId);
             rec.sort(function(a,b){
-                return a.r_num - b.r_num;
+                return a.num - b.num;
             });
 			const this_doc = []; // only this doctor's records
 			var done = false; // whether the record is done
 			for (let i = 0;i < rec.length;i++) { // push records in array, which only have this doctor
 				done = false;
 				for (let j = 0;j < done_records.length;j++) {
-					if (rec[i].r_num == done_records[j].r_num) { // this records had done
+					if (rec[i].no == done_records[j].rId) { // this records had done
 						done = true;
 					}
 				}
@@ -75,26 +129,47 @@
 					this_doc.push(rec[i]);
 				}
 			}
-			console.log(rec);
-			console.log(this_doc);
             rec.sort(function(a,b){
-                return a.r_num - b.r_num;
+                return a.num - b.num;
             });
-			for (let j = 0;j < info.length;j++) { // find the patient
-				if (this_doc[pa_num.pa_num].pId == info[j].pId) { // same pId
-					document.getElementById('r_num').value = this_doc[pa_num.pa_num].r_num;
-					document.getElementById('rId').value = this_doc[pa_num.pa_num].rId;
-					document.getElementById('nrId').value = this_doc[pa_num.pa_num].nrId;
-                    tab.innerHTML += "<tr" + j + "/><td/>"+ info[j].name  + 
-					"<td>" + info[j].birth + "</td>" +
-					"<td>" + info[j].sex + "</td>" +
-					"<td>" + info[j].birth + "</td>" +
-					"<td>" + info[j].birth + "</td>" +
-					"<td>" + info[j].pass + "</td>" +
-					"<td>" + info[j].allergy + "</td>" +
-					"<td>" + info[j].hate + "</td>" +
-					"<td>" + info[j].mark + "</td></tr>"
-					break;
+			var not_null = true; // 是否沒有 pId
+			document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
+			if (this_doc[pa_num.pa_num].pId == null) { // 沒有 pId
+				not_null = false;
+                tab.innerHTML += "<tr/><td/>"+ null  + 
+				"<td>" + null + "</td>" +
+				"<td>" + null + "</td>" +
+				"<td>" + null + "</td>" +
+				"<td>" + null + "</td>" +
+				"<td>" + null + "</td>" +
+				"<td>" + null + "</td>" +
+				"<td>" + null + "</td>" +
+				"<td>" + null + "</td>" + 
+				"<td ><input type = 'text' id = 'regist' style = 'width:50px' value = '" + this_doc[pa_num.pa_num].regist + "'></input></td>" +
+				"<td><input type = 'text' id = 'self_part' style = 'width:50px' value = '" + this_doc[pa_num.pa_num].self_part + "'></input></td>" +
+				"<td><input type = 'text' id = 'all_self' style = 'width:50px' value = '" + this_doc[pa_num.pa_num].all_self + "'></input></td></tr>"
+			}
+			if (not_null) { // 有 pId
+				for (let j = 0;j < info.length;j++) { // find the patient
+					if (this_doc[pa_num.pa_num].pId == info[j].pId) { // same pId
+						in_patients = true;
+					//document.getElementById('r_num').value = this_doc[pa_num.pa_num].r_num;
+						//document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
+					//document.getElementById('nrId').value = this_doc[pa_num.pa_num].nrId;
+                    	tab.innerHTML += "<tr" + j + "/><td/>"+ info[j].name  + 
+						"<td>" + info[j].birth + "</td>" +
+						"<td>" + info[j].sex + "</td>" +
+						"<td>" + info[j].birth + "</td>" +
+						"<td>" + info[j].birth + "</td>" +
+						"<td>" + info[j].pass + "</td>" +
+						"<td>" + info[j].allergy + "</td>" +
+						"<td>" + info[j].hate + "</td>" +
+						"<td>" + info[j].mark + "</td>" + 
+						"<td ><input type = 'text' id = 'regist' style = 'width:50px' value = '" + this_doc[pa_num.pa_num].regist + "'></input></td>" +
+						"<td><input type = 'text' id = 'self_part' style = 'width:50px' value = '" + this_doc[pa_num.pa_num].self_part + "'></input></td>" +
+						"<td><input type = 'text' id = 'all_self' style = 'width:50px' value = '" + this_doc[pa_num.pa_num].all_self + "'></input></td></tr>"
+						break;
+					}
 				}
 			}
         })();
@@ -125,10 +200,90 @@
 			}
         }
 
-        getId('records_form').addEventListener('submit', async(e) => { // 送出表單
-			e.preventDefault(); //
+
+		document.addEventListener("keyup", async(event) => {
+		var check_hot = ["main_sue", "science", "medicines0", "medicines1", "medicines2", "medicines3", "medicines4"]; // 總共需要檢查快捷的格
+			for (let num = 0;num < check_hot.length;num++) {
+				const {data : hot_key} = await axios.get('hot_key');
+				var main_sue = getId(check_hot[num]).value;
+				if (event.keyCode == 13 && main_sue.includes("/")) {
+					var relative = "";
+					var start_add = false;
+					var replace_pos = [];
+					for (let i = 0;i < main_sue.length;i++) {
+						if (start_add) {
+							if (main_sue[i] == " " || main_sue[i] == "\n") { // 遇到空白或換行就不要算之後的
+								start_add = false; // 停止繼續加
+							}
+							else { // 加上 / 後的值
+								relative += main_sue[i];
+								replace_pos.push(i);
+							}
+						}
+						if (main_sue[i] == "/") {
+							replace_pos.push(i);
+							start_add = true;
+						}
+					}
+					var replace_name;
+					for (let i = 0;i < hot_key.length;i++) {
+						if (hot_key[i].relative == relative) {
+							getId(check_hot[num]).value += hot_key[i].real_name;
+							replace_name = hot_key[i].real_name;
+						}
+					}
+					if (replace_name == undefined) { // 換短一點的比較好刪
+						replace_name = "null";
+					};
+					var in_replace = false; // 是否在要替換的位置
+					var new_mainsue = '';
+					var first_replace = false; // 是否是第一個要置換的
+					for (let i = 0;i < main_sue.length;i++) {
+						in_place = false;
+						first_replace = false;
+						if (i == replace_pos[0]) {
+							first_replace = true;
+						}
+						for (let j = 0;j < replace_pos.length;j++) {
+							if (i == replace_pos[j]) {
+								in_replace = true;
+							}
+						}
+						if (!in_replace) { // 不是要替換的
+							new_mainsue += main_sue[i];
+						}
+						if (first_replace) {
+							new_mainsue += replace_name;
+						}
+					}
+					console.log(new_mainsue);
+					getId(check_hot[num]).value = new_mainsue;
+				}
+			}
+		});
+
+        getId('submit_bt').addEventListener('click', async(e) => { // 送出表單
 			getId('diagnose_code_pass').value = getId('diagnose_code').value; // 放入 value
-			const data = {r_num : getId('r_num').value, rId : getId('rId').value, nrId : getId('nrId').value, diagnose_code_pass : getId('diagnose_code_pass').value, main_sue : getId('main_sue').value, science : getId('science').value}
+			const medicines0 = {medicines0 : getId('medicines0').value, medi_amount0 : getId('medi_amount0').value, day0 : getId('day0').value, method0 : getId('method0').value, medi_mark0 : getId('medi_mark0').value};
+			const medicines1 = {medicines1 : getId('medicines1').value, medi_amount1 : getId('medi_amount1').value, day1 : getId('day0').value, method1 : getId('method1').value, medi_mark1 : getId('medi_mark1').value};
+			const medicines2 = {medicines2 : getId('medicines2').value, medi_amount2 : getId('medi_amount2').value, day2 : getId('day2').value, method2 : getId('method2').value, medi_mark2 : getId('medi_mark2').value};
+			const medicines3 = {medicines3 : getId('medicines3').value, medi_amount3 : getId('medi_amount3').value, day3 : getId('day3').value, method3 : getId('method3').value, medi_mark3 : getId('medi_mark3').value};
+			const medicines4 = {medicines4 : getId('medicines4').value, medi_amount4 : getId('medi_amount4').value, day4 : getId('day4').value, method4 : getId('method4').value, medi_mark4 : getId('medi_mark4').value};
+			// 要回傳的資料
+			const data = {
+				dId : getId('dId').innerHTML,
+				all_self : getId('all_self').value, 
+				self_part : getId('self_part').value, 
+				regist : getId('regist').value, 
+				rId : getId('rId').value, 
+				diagnose_code_pass : getId('diagnose_code_pass').value, 
+				main_sue : getId('main_sue').value, 
+				science : getId('science').value}
+			data['medicines0'] = medicines0;
+			data['medicines1'] = medicines1;
+			data['medicines2'] = medicines2;
+			data['medicines3'] = medicines3;
+			data['medicines4'] = medicines4;
 			const ck_diagnose = await axios.post('/ckPatients', data);
 			if (ck_diagnose.data.suc) { // 沒有回傳錯誤
 				alert("看診成功");
@@ -136,8 +291,9 @@
 			}
 			else { // 印出錯誤
 				console.log(ck_diagnose.data.suc);
+				alert('看診失敗');
 				var error_mes = "text :[" + ck_diagnose.data.error.text + "]。 sql : [" + ck_diagnose.data.error.sql + "]";
-				alert(error_mes);
+				console.log(error_mes);
 			};
 		});
 

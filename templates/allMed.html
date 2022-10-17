@@ -21,11 +21,12 @@
     <script>
         (async() => {
             const {data : med_inventory_each} = await axios.get('/med_inventory_each');
-            const {data : medicines} = await axios.get('/medicines');
+            const {data : medicines} = await axios.get('/medicines_normal');
 			var combine_inventory = mkCombine(med_inventory_each); // 把重複的藥的數量加起來
             for (let i = 0;i < combine_inventory.length;i++) {
 				for (let k = 0;k < medicines.length;k++) {
-					if (combine_inventory[i].code == medicines[k].code) {
+					if (combine_inventory[i].code == medicines[k].code) { // 藥碼相同  
+						console.log(medicines[k].price);
 						tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + combine_inventory[i].no + 
 						"<td>" + combine_inventory[i].code + "</td>" +
 						"<td>" + medicines[k].medi_mand + "</td>" +

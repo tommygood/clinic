@@ -1,7 +1,6 @@
 create table patients(
 `pId` INT PRIMARY KEY AUTO_INCREMENT,
 `name` varchar(50),
-`chart_num` int(6),
 `id` varchar(10),
 `sex` varchar(1),
 `birth` varchar(10),
@@ -20,6 +19,5 @@ create table patients(
 `part_self` int(3),
 `deposit` int(4),
 `all_self` int(6),
-`times` datetime default current_timestamp,
-`dId` int(2),
+`times` datetime default current_timestamp
 )

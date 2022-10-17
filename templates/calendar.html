@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <meta charset='utf-8' />
+    <link href='fullcalendar/main.css' rel='stylesheet' />
+    <script src='fullcalendar/main.js'></script>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+
+	
+	</script>
+  </head>
+  <body>
+	<form id = 'form'>
+		開始時間<input type = input id = 'start'></input>
+		結束時間<input type = input id = 'end'></input>
+		主責人員<input type = input id = 'aId'></input>
+		<input type = 'submit'></input>
+	</form>
+    <div id='calendar'></div>
+  </body>
+	<script>
+	function getId(id) {
+		return document.getElementById(id);
+	}
+
+	function getTime(time) { // 不要最後的小數點
+		var new_time = '';
+		for (let i = 0;i < time.length-2;i++) {
+			new_time += time[i];
+		}
+		return new_time;
+	}
+
+    document.addEventListener('DOMContentLoaded', async function() {
+		const {data : main_pos} = await axios.get('/main_pos');
+		var events = [] // 所有主責資料
+		var color = ['green', 'yellow', 'red', 'brown', 'purple'];
+		for (let i = 0;i < main_pos.length;i++) {
+			in_json = {}; // 打包成 json
+			in_json['title'] = main_pos[i].aId + "號護士";
+			in_json['start'] = getTime(main_pos[i].start_time);
+			in_json['end'] = getTime(main_pos[i].end_time);
+			in_json['backgroundColor'] = color[main_pos[i].aId];
+			in_json['borderColor'] = color[main_pos[i].aId];
+			events.push(in_json); // 放入陣列
+		}
+		console.log(events);
+    	var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+          	initialView: 'dayGridMonth',
+			events, // 所有活動
+			eventTimeFormat: { // like '14:30:00'
+    			hour: '2-digit',
+    			minute: '2-digit',
+    			meridiem: false
+  			}
+        });
+        calendar.render();
+	});
+	
+    getId('form').addEventListener('submit', async(e) => {
+		e.preventDefault();
+		const {data : suc} = await axios.post('/fullcalendar/update', {aId : getId('aId').value, start : getId('start').value, end : getId('end').value});
+		if (suc) {
+			alert('更新成功');
+			location.reload();
+		}
+		else {
+			alert('更新失敗');
+			location.reload();
+		}
+	});
+  </script>
+</html>

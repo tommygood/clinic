@@ -80,4 +80,28 @@ router.post('/getPa', function(req, res) {
 	return res.json({suc : false});
 	res.end();
 });
+
+router.post('/patStart', async function(req, res) { // 設置看診開始時間
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		res.redirect('/login');
+		res.end();
+		return;
+	};
+	const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    if (user.data.aId && user.data.title == 'doc') { // 登入中
+    	let conn = await pool.getConnection();
+		console.log(req.body);
+		await conn.query('update records set `real_start` = ? where `no` = ?', [new Date(), req.body.rId]); 
+		conn.release();
+		res.end;
+		return res.json({suc : true}); 
+	}
+	else {
+		return res.json({suc : false});
+	}
+});
 module.exports = router;

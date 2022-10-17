@@ -1,0 +1,50 @@
+<html>
+    <head>
+        <title>
+            今日帳務紀錄
+        </title>
+        <h1>
+            今日帳務紀錄
+        </h1>
+    </head>
+    <body>
+		<span>總金額：</span>
+		<b><span id = 'total_money'></span></b>
+		<br/>
+		<br/>
+        <table id = 'tab' border = '2' align = center>
+            <tr>
+                <td>編號</td>
+                <td>時間</td>
+                <td>負責人員</td>
+                <td>理由</td>
+                <td>金額</td>
+            </tr>
+        </table>
+    </body>
+	<style>
+		 table {
+			position : absolute;
+		}
+	</style>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+		function getId(id) {
+			return document.getElementById(id);
+		}
+
+        (async() => {
+            const {data : financial} = await axios.get('/today_financial');
+			var total_money = 0;
+            for (let i = 0;i < financial.length;i++) {
+				tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + financial[i].no + 
+				"<td>" + financial[i].times + "</td>" +
+				"<td>" + financial[i].aId + "</td>" +
+				"<td>" + financial[i].reason + "</td>" +
+				"<td>" + financial[i].money + "</td></tr>";
+				total_money += financial[i].money;
+			}
+			getId('total_money').innerHTML = "$ " + total_money;
+        })();
+    </script>
+</html>

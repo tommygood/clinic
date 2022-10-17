@@ -4,6 +4,8 @@ create table med_inventory_each (
 	`purchase_date` datetime default current_timestamp,
 	`expire` varchar(10),
 	`aId` int(11),
-	`quantity` int(11)
+	`quantity` int(11),
+	`reason` varchar(50),
+	`mark` varchar(150)
 )
 	
