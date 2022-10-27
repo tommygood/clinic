@@ -29,4 +29,29 @@ router.get('/', function(req, res) {
 	return;
 });
 
+router.post('/', function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		res.json({suc : false});
+		res.end;
+		return;
+	};
+	const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    if (user.data.aId && user.data.title == 'nur') { // 登入中
+		console.log(req.body);
+		res.json({suc : true});
+		res.end;
+		return;
+	}
+	else {
+		console.log(e);
+		res.json({suc : false});
+		res.end;
+		return;
+	};
+})
+
 module.exports = router;

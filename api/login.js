@@ -91,7 +91,6 @@ router.post('/check', async function(req, res) {
 	};
     let conn = await pool.getConnection();
 	try {
-		console.log(config.login_times);
 		var fail_counts = await conn.query('select count(*) from login_log where `ip` = ? and `aId` is null and `times` >= current_timestamp - interval 5 minute', req.ip); // 五分鐘內相同 ip 的登入失敗次數
 		if (fail_counts[0]['count(*)'] >= 3) { // 在五分鐘內登入失敗超過三次
 			return res.json({error : '在五分鐘內登入失敗超過三次，請稍候再試'});

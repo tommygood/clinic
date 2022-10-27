@@ -94,7 +94,6 @@ router.post('/patStart', async function(req, res) { // 設置看診開始時間
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId && user.data.title == 'doc') { // 登入中
     	let conn = await pool.getConnection();
-		console.log(req.body);
 		await conn.query('update records set `real_start` = ? where `no` = ?', [new Date(), req.body.rId]); 
 		conn.release();
 		res.end;
@@ -102,6 +101,55 @@ router.post('/patStart', async function(req, res) { // 設置看診開始時間
 	}
 	else {
 		return res.json({suc : false});
+	}
+});
+
+router.post('/all_record', async function(req, res) { // 回傳該次病歷紀錄
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		res.redirect('/login');
+		res.end();
+		return;
+	};
+	const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    if (user.data.aId && user.data.title == 'doc') { // 登入中
+    	let conn = await pool.getConnection();
+		var same_records = await conn.query('select `no` from records where `no` in (select `rId` from done_records where `rId` not in (select `rId` from delete_records)) and `pId` = ? and `no` in (select `rId` from diagnose_records);', req.body.pId); // 找出已完成, 不在刪除的紀錄, 病人代號相同, 有在診斷紀錄的 records
+		if (same_records.length == 0) { // 沒有以前的病歷
+			conn.release();
+			res.end;
+			return res.json({suc : false, msg : '該病人沒有之前病歷'});
+		}
+		try {
+			if (req.body.last_times == 0) { // 要找的次數為 0 ，清空
+				conn.release();
+				res.end;
+				return res.json({suc : true, clear : 'clear'}); 
+			}
+			var last_rId = same_records[same_records.length-req.body.last_times].no; // 這個病人上次病歷號
+		}
+		catch(e) {
+			// 沒有再更之前的病歷紀錄
+			console.log('normal: ' + e);
+			conn.release();
+			res.end;
+			return res.json({suc : false, msg : '已無再之前的病歷紀錄'});
+		}
+		var last_diagnose = await conn.query('select * from diagnose_records where `rId` = ?', last_rId); // 上次看診的診斷
+		var last_medicines = await conn.query('select * from medicines_records where `rId` = ?', last_rId); // 上次看診的診斷
+		var all_last_medicines = []; // 該次看診的全部用藥，有可能不止一個用藥
+		for (let i = 0;i < last_medicines.length;i++) {
+			all_last_medicines.push(last_medicines[i])
+		}
+		conn.release();
+		res.end;
+		return res.json({suc : true, last_diagnose : last_diagnose[0], last_medicines : all_last_medicines}); 
+	}
+	else {
+		return res.json({suc : false, msg : '身份認證失敗'});
 	}
 });
 module.exports = router;

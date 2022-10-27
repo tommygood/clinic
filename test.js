@@ -341,7 +341,7 @@ app.get('/no_card', async function(req, res) {
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId && user.data.title == 'nur') { // 登入中
     	let conn = await pool.getConnection();
-   	 	let no_card = await conn.query('select * from no_card;');
+   	 	let no_card = await conn.query('select * from no_card where `rId` not in (select `rId` from delete_records);'); // 找出沒有帶卡且不在被刪除的名單中的病歷號
 		conn.release();
 		res.json({no_card : no_card});
     }

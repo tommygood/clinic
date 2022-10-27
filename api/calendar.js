@@ -77,11 +77,12 @@ router.post('/update', async function(req, res) {
 	var start = req.body.start;
 	var end = req.body.end;
 	var aId = req.body.aId;
+	var is_main = req.body.is_main;
     let conn = await pool.getConnection();
 	console.log(start);
 	console.log(end);
 	try {
-		await conn.query('insert into main_pos(`start_time`, `end_time`, `aId`) values(?, ?, ?)', [start, end, aId]);
+		await conn.query('insert into main_pos(`start_time`, `end_time`, `aId`, `status`) values(?, ?, ?, ?)', [start, end, aId, is_main]);
 		suc = true;
 	}
 	catch(e) {
@@ -109,7 +110,7 @@ router.get('/getMain', async function(req, res) {
 	now_date = new Date();
 	var aId;
 	try {
-		aId = await conn.query('select aId from main_pos where `start_time` <= ? and `end_time` >= ?;', [now_date, now_date]);
+		aId = await conn.query('select aId from main_pos where `start_time` <= ? and `end_time` >= ? and `status` = 1;', [now_date, now_date]);
 	}
 	catch(e) {
 		console.log(e);

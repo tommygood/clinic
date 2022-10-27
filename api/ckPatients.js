@@ -59,7 +59,6 @@ router.post('/', async function(req, res) {
 		return;
 	};
     let conn = await pool.getConnection();
-	console.log(req.body);
 	try {
 		await conn.query('insert into done_records(`rId`) values(?)', req.body.rId); // 新增至已完成紀錄
 		await conn.query('update records set `regist` = ?, `self_part` = ?, `all_self` = ? where `no` = ?', [req.body.regist, req.body.self_part, req.body.all_self, req.body.rId]);

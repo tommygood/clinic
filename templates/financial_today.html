@@ -6,12 +6,14 @@
         <h1>
             今日帳務紀錄
         </h1>
+		<h2><span id = 'nId'></span><span> 號護士</span></h2>
     </head>
     <body>
 		<span>總金額：</span>
 		<b><span id = 'total_money'></span></b>
 		<br/>
 		<br/>
+		<button id = 'changed_bt' type = 'button'>保存更改</button>
         <table id = 'tab' border = '2' align = center>
             <tr>
                 <td>編號</td>
@@ -19,12 +21,18 @@
                 <td>負責人員</td>
                 <td>理由</td>
                 <td>金額</td>
+				<td>備註</td>
+				<td>更改理由</td>
             </tr>
         </table>
     </body>
 	<style>
 		 table {
 			position : absolute;
+		}
+
+		td {
+			text-align : center;
 		}
 	</style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
@@ -37,14 +45,120 @@
             const {data : financial} = await axios.get('/today_financial');
 			var total_money = 0;
             for (let i = 0;i < financial.length;i++) {
-				tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + financial[i].no + 
+				tab.innerHTML += "<tr id = 'log_row" + i + "'/><td/>" + financial[i].no + 
 				"<td>" + financial[i].times + "</td>" +
 				"<td>" + financial[i].aId + "</td>" +
 				"<td>" + financial[i].reason + "</td>" +
-				"<td>" + financial[i].money + "</td></tr>";
+				`<td><input id = 'money_${i}' type = 'input' style = 'width:100px' value = '${financial[i].money}'></input></td>` +
+				"<td>" + financial[i].mark + "</td>" +
+				`<td><input id = 'changed_reason_${i}' type = 'input' style = 'width:100px;' ></input></td></tr>`;
 				total_money += financial[i].money;
+				//getId("money_"+i).addEventListener('change', changed_list); // 監聽錢
+				//getId('changed_reason_'+i).addEventListener('change', changed_list); // 監聽更改理由
 			}
 			getId('total_money').innerHTML = "$ " + total_money;
+			moneyChange(financial.length);
         })();
+
+        (async() => { // 查詢 nId
+			const {data : user} = await axios.get('/viewPa/nId');
+			getId('nId').innerHTML = user.nId;
+        })();
+
+		function moneyChange(total_len) {
+			getId("money_"+0).addEventListener('change', changed_list); // 監聽錢
+			for (let i = 0;i < total_len;i++) {
+				getId("money_"+i).addEventListener('change', changed_list); // 監聽錢
+				getId('changed_reason_'+i).addEventListener('change', changed_list); // 監聽更改理由
+			}
+		}
+
+		var changed_money_list = []; // 有更改的錢
+		var changed_reason_list = []; // 有更改的更改理由
+		var all_change = [];
+
+		function test() {
+			alert(1);
+		}
+
+		async function changed_list(e) { // 更改金額或更改理由
+			log_row = e.path[2].getElementsByTagName('td');
+			var key_id = log_row[0].innerHTML;
+			var in_all = false; // 是否放過
+			var log_id = e.path[2].id;
+			for (let i = 0;i < all_change.length;i++) {
+				if (all_change[i] == log_id) {
+					in_all = true;
+					break;
+				}
+			}
+			if (!in_all)
+				all_change.push(log_id);
+			if (e.target.id.includes('money')) { // 錢
+				log_row[6].getElementsByTagName('input')[0].style.visibility = 'initial' ;
+				var money = log_row[4].getElementsByTagName('input')[0].value; // 取得錢
+				var in_money = false; // 先假設還沒算過這筆資料的錢
+				// 找出是否有改過這筆
+				for (let i = 0;i < Object.keys(changed_money_list).length;i++) { 
+					if (key_id == Object.keys(changed_money_list[i])) { // 有改過
+						changed_money_list[i][key_id][0] = money; // 只要改內容就好
+						in_money = true;
+					}
+				}
+				if (!in_money) // 還沒換過這筆資料的錢, 要新增
+					changed_money_list.push({[key_id] : [money]});
+			}
+			else { // 更改理由
+				var reason = log_row[6].getElementsByTagName('input')[0].value;
+				var in_reason = false; // 先假設還沒算過這筆資料的錢
+				// 找出是否有改過這筆
+				for (let i = 0;i < Object.keys(changed_reason_list).length;i++) { 
+					if (key_id == Object.keys(changed_reason_list[i])) { // 有改過
+						changed_reason_list[i][key_id] = reason; // 只要改內容就好
+						in_reason = true;
+					}
+				}
+				console.log(changed_reason_list);
+				if (!in_reason) // 還沒換過這筆資料的錢, 要新增
+					changed_reason_list.push({[key_id] : reason});
+			}
+		}
+
+		getId('changed_bt').addEventListener('click', submitChange); // 監聽更改理由
+
+		function submitChange() {
+			var final_all = {};
+			for (let i = 0;i < all_change.length;i++) {
+				log_row = getId(all_change[i]).getElementsByTagName('td');
+				var money = log_row[4].getElementsByTagName('input')[0].value; // 取得錢
+				var reason = log_row[6].getElementsByTagName('input')[0].value; // 取得理由
+				if (reason == "") { // 檢查是否必填欄位為空值
+					alert("理由欄位為必填");
+					return;
+				}
+				else if (money == "") {
+					alert("金額欄位為必填");
+					return;
+				}
+				else { // 不是空值, 就加入準備傳送的集合
+					final_all[onlyNum(all_change[i])] = [money, reason];
+				}
+			}
+			alert(final_all);
+			//const {body : suc} = await axios.post('/financial_today', {final_all : final_all});
+		}
+
+		function onlyNum(log_id) { // 把 log_row 拿掉
+			var new_id = '';
+			for (let i = 0;i < log_id.length;i++) {
+				if (isNum(log_id[i])) // 是數字
+					new_id += log_id[i];
+			}
+			return new_id;
+		}		
+
+		function isNum(n) { // 是不是數字
+			return !isNaN(parseFloat(n)) && isFinite(n);
+		}
     </script>
 </html>

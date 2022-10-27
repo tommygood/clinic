@@ -9,6 +9,8 @@
         </h1>
     </head>
     <body>
+		<button id = 'last_records' type = 'button'>上次病歷</button>
+		<button id = 'next_records' type = 'button'>下次病歷</button>
         <table id = 'tab' border = '2' align = center>
             <tr>
                 <td>姓名</td>
@@ -106,6 +108,9 @@
 	</style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
+		var rId;
+		var pId;
+
         (async() => {
 			const {data : rec} = await axios.get('/records');
 			const {data : pa_num} = await axios.get('/ckPatients/rNum');
@@ -134,6 +139,7 @@
             });
 			var not_null = true; // 是否沒有 pId
 			document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
+			rId = this_doc[pa_num.pa_num].no;
 			if (this_doc[pa_num.pa_num].pId == null) { // 沒有 pId
 				not_null = false;
                 tab.innerHTML += "<tr/><td/>"+ null  + 
@@ -150,6 +156,7 @@
 				"<td><input type = 'text' id = 'all_self' style = 'width:50px' value = '" + this_doc[pa_num.pa_num].all_self + "'></input></td></tr>"
 			}
 			if (not_null) { // 有 pId
+				pId = this_doc[pa_num.pa_num].pId;
 				for (let j = 0;j < info.length;j++) { // find the patient
 					if (this_doc[pa_num.pa_num].pId == info[j].pId) { // same pId
 						in_patients = true;
@@ -202,7 +209,7 @@
 
 
 		document.addEventListener("keyup", async(event) => {
-		var check_hot = ["main_sue", "science", "medicines0", "medicines1", "medicines2", "medicines3", "medicines4"]; // 總共需要檢查快捷的格
+			var check_hot = ["main_sue", "science", "medicines0", "medicines1", "medicines2", "medicines3", "medicines4"]; // 總共需要檢查快捷的格
 			for (let num = 0;num < check_hot.length;num++) {
 				const {data : hot_key} = await axios.get('hot_key');
 				var main_sue = getId(check_hot[num]).value;
@@ -297,5 +304,66 @@
 			};
 		});
 
+		getId('last_records').addEventListener('click', putRecord);
+		getId('next_records').addEventListener('click', putRecord);
+
+		async function putRecord(e) { // 放入病歷
+			if (e.target.id == 'next_records') {
+				if (!last_times <= 0) // 到 0 就不要再加上去了
+					last_times--;
+			}
+			else 
+				last_times++;
+			const {data : all_record} = await axios.post('/docMain/all_record', {rId : rId, aId : getId('dId').innerHTML, pId : pId, last_times : last_times});
+			if (!Object.values(all_record)[0]) { // 搜尋失敗
+				alert(Object.values(all_record)[1]); // 跳出錯誤訊息
+				if (Object.values(all_record)[1] == '已無再之前的病歷紀錄') // 已經到最之前的病歷紀錄, 所以要減一個
+					last_times -= 1;
+			}
+			else {
+				if (Object.values(all_record)[1] == 'clear') {
+					clearRecords();
+				}
+				else {
+					// 先清理病歷
+					clearRecords(); 
+					// 插入病歷
+					insertRecords(Object.values(all_record)[1], Object.values(all_record)[2]);
+				}
+			}
+		}
+  		
+		var last_times = 0; // 要找的病歷次數
+
+		function insertRecords(diagnose_record, medicines_records) { // 把病歷放進去
+			// 放入診斷紀錄
+			getId('diagnose_code').value = Object.values(diagnose_record)[2];
+			getId('main_sue').value = Object.values(diagnose_record)[3];
+			getId('science').value = Object.values(diagnose_record)[4]; 
+			outSymptoms(); // 印出症狀
+			// 放入用藥紀錄
+			for (let i = 0;i < Object.values(medicines_records).length;i++) {
+				getId('medicines'+i).value = Object.values(medicines_records[i])[2];
+				getId('medi_amount'+i).value = Object.values(medicines_records[i])[3];
+				getId('day'+i).value = Object.values(medicines_records[i])[4];
+				getId('method'+i).value = Object.values(medicines_records[i])[5];
+				getId('medi_mark'+i).value = Object.values(medicines_records[i])[6];
+			}
+		}
+
+		function clearRecords() { // 清理紀錄
+			getId('diagnose_code').value = '';
+			getId('main_sue').value = '';
+			getId('science').value = ''; 
+			//outSymptoms(); // 印出症狀
+			getId('diagnose').innerHTML = '';
+			for (let i = 0;i < 5;i++) {
+				getId('medicines'+i).value = '';
+				getId('medi_amount'+i).value = '';
+				getId('day'+i).value = '';
+				getId('method'+i).value = '';
+				getId('medi_mark'+i).value = '';
+			}
+		}
     </script>
 </html>

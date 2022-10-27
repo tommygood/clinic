@@ -64,63 +64,18 @@
         </form>
     </div>
 	<button id = 'save' type = 'button'>保存更改</button>
-    <table id = 'tab1' border = '2' align = center>
-		<tr>
-			<td style = "text-align:center;" colspan = 17>
-			Doc. 1
-			</td>
-		</tr>
-        <tr>
-            <td><span id = 'chart_num'>病歷號</span></td>
-            <td><span id = 'dId'>醫生代號</span><br/></td>
-            <td><span id = 'num'>看診號</span></td>
-            <td><span id = "pat_name">姓名</span></td>
-            <td><span id = 'time'>掛號時間</span></td>
-            <td><span id = 'end_time'>完診時間</span></td>
-            <td><span id = 'id'>身份證號</span></td>
-            <td><span id = 'sex'>性別</span></td>
-            <td><span id = 'birth'>生日</span></td>
-            <td><span id = 'tel1'>電話1</span></td>
-            <td><span id = 'tel2'>電話2</span></td>
-            <td><span id = 'mark'>註記</span></td>
-            <td><span id = 'regist'>掛號費</span></td>
-            <td><span id = 'part_self'>部份負擔</span></td>
-            <td><span id = 'deposit'>押金</span></td>
-            <td><span id = 'all_self'>自費</span></td>
-            <td><span id = 'in'>是否在場</span><br/></td>
-            <td><span id = 'delete'>刪除</span><br/></td>
-            <td><span id = 'return_card'>還卡</span><br/></td>
-        </tr>
-    </table>
-	<div>&nbsp;</div>
-    <table id = 'tab3' border = '2' align = center>
-		<tr>
-			<td style = "text-align:center;" colspan = 17>
-			Doc. 3
-			</td>
-		</tr>
-        <tr>
-            <td><span id = 'chart_num'>病歷號</span></td>
-            <td><span id = 'dId'>醫生代號</span><br/></td>
-            <td><span id = 'num'>看診號</span></td>
-            <td><span id = "pat_name">姓名</span></td>
-            <td><span id = 'time'>掛號時間</span></td>
-            <td><span id = 'end_time'>完診時間</span></td>
-            <td><span id = 'id'>身份證號</span></td>
-            <td><span id = 'sex'>性別</span></td>
-            <td><span id = 'birth'>生日</span></td>
-            <td><span id = 'tel1'>電話1</span></td>
-            <td><span id = 'tel2'>電話2</span></td>
-            <td><span id = 'mark'>註記</span></td>
-            <td><span id = 'regist'>掛號費</span></td>
-            <td><span id = 'part_self'>部份負擔</span></td>
-            <td><span id = 'deposit'>押金</span></td>
-            <td><span id = 'all_self'>自費</span></td>
-            <td><span id = 'in'>是否在場</span><br/></td>
-            <td><span id = 'delete'>刪除</span><br/></td>
-            <td><span id = 'return_card'>還卡</span><br/></td>
-        </tr>
-    </table>
+		<ul class="nav nav-tabs" id="myTab" role="tablist">
+			<li class="nav-item" role="presentation">
+				<button class="nav-link active" id="doc1" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">醫生1</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link" id="doc3" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">醫生3</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link" id="doc4" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false">醫生4</button>
+			</li>
+		</ul>
+	<div id = 'tab_pos'></div>	
 </body>
 	<style>
 		body{
@@ -179,7 +134,7 @@
     		e.preventDefault();
 		};
 
-		getId('save').addEventListener('click', updateNum);
+		getId('save').addEventListener('click', updateNum); // 保存更改
 
 		async function updateNum() { // 更新順序
 			update_records = [] // 更新後的資料
@@ -239,12 +194,12 @@
 		}
 
 		// 監聽拖曳
-		getId('tab1').addEventListener('drop', dropped);
+		/*getId('tab1').addEventListener('drop', dropped);
 		getId('tab1').addEventListener('dragenter', cancelDefault);
 		getId('tab1').addEventListener('dragover', cancelDefault);
 		getId('tab3').addEventListener('drop', dropped);
 		getId('tab3').addEventListener('dragenter', cancelDefault);
-		getId('tab3').addEventListener('dragover', cancelDefault);
+		getId('tab3').addEventListener('dragover', cancelDefault);*/
 
 		var change_num = {}; // key = 更改的序號, value = 改了多少(singed)
 
@@ -307,8 +262,9 @@
 
         (async() => { // 查詢是否為主責, 是就標示
 			const {data : main_pos} = await axios.get('/fullcalendar/getMain'); // 主責帳號
+			console.log(main_pos);
 			for (let i = 0;i < main_pos.aId.length;i++) { // 所有時間相符的主責帳號
-				if (onlyNid(getId('nId').innerHTML) == main_pos.aId[i].aId) // 相符的帳號
+				if (getNid(getId('nId').innerHTML) == main_pos.aId[i].aId) // 相符的帳號
 					getId('nId').innerHTML += "（主責）"; 
 			}
         })();
@@ -339,6 +295,7 @@
 		var index = 0;
 		var in_done;
 		var start_in = {}; // 一開始是否在場
+		function putRecord(dId) {
         axios.get('/records').then(function(response) {
             axios.get('/data').then(function(data) {
                 axios.get('/done_records').then(function(done) {
@@ -349,6 +306,8 @@
                     });
 					var in_patients;
                     for (let j = 0;j < response.data.length;j++) { // 每一筆紀錄 
+						if (response.data[j].dId != dId) // 不是此醫生
+							continue;
 						in_patients = false;
 						in_done = false; // 還沒看過診
 						for (let k = 0;k < done.data.length;k++) { // 是否已經看診過
@@ -440,11 +399,11 @@
 							total_len += 1;
 						}
                     }
-					mkStyle();
+					//mkStyle();
                 })
             })
         })
-	
+		}
 
 		async function callPat(pa_num, rId) { // 按下刪除
 			var row_id;
@@ -587,4 +546,65 @@
 			}
 		}
 		navDirect();
+
+		function mkTable(tab_id) { // 依照醫生數量，製作 table
+				getId('tab_pos').innerHTML = 
+				`<table id = 'tab${tab_id}' border = '2' align = center>` +
+				"<tr>" + 
+				"<td style = 'text-align:center;' colspan = 17>" + 
+				`Doc.${tab_id}` +  
+				"</td>" +
+				"</tr>" + 
+        		"<tr>" + 
+            	"<td><span id = 'chart_num'>病歷號</span></td>" + 
+            	"<td><span id = 'dId'>醫生代號</span><br/></td>" +
+            	"<td><span id = 'num'>看診號</span></td>" + 
+            	"<td><span id = 'pat_name'>姓名</span></td>" +
+            	"<td><span id = 'time'>掛號時間</span></td>" +
+            	"<td><span id = 'end_time'>完診時間</span></td>" +
+            	"<td><span id = 'id'>身份證號</span></td>" +
+            	"<td><span id = 'sex'>性別</span></td>" +
+            	"<td><span id = 'birth'>生日</span></td>" +
+            	"<td><span id = 'tel1'>電話1</span></td>" +
+            	"<td><span id = 'tel2'>電話2</span></td>" +
+            	"<td><span id = 'mark'>註記</span></td>" +
+            	"<td><span id = 'regist'>掛號費</span></td>" +
+            	"<td><span id = 'part_self'>部份負擔</span></td>" +
+            	"<td><span id = 'deposit'>押金</span></td>" + 
+            	"<td><span id = 'all_self'>自費</span></td>" +
+            	"<td><span id = 'in'>是否在場</span><br/></td>" +
+            	"<td><span id = 'delete'>刪除</span><br/></td>" +
+            	"<td><span id = 'return_card'>還卡</span><br/></td>" +
+        	"</tr>" +
+    		"</table>" +
+			"<div>&nbsp;</div>"
+		}
+	
+		getId('doc1').addEventListener('click', mkDoc); // 
+
+		getId('doc3').addEventListener('click', mkDoc); // 
+
+		function mkDoc(e) {
+			var tab_id = getDid(e.target.id); // 取得 dId
+			mkTable(tab_id); // 製作該 id 的 table
+			// 監聽拖曳
+			getId('tab' + tab_id).addEventListener('drop', dropped);
+			getId('tab' + tab_id).addEventListener('dragenter', cancelDefault);
+			getId('tab' + tab_id).addEventListener('dragover', cancelDefault);
+			// 放入 table
+			putRecord(tab_id);
+		}
+
+		function getDid(origin_dId) {
+			var dId = ''
+			for (let i = 0;i < origin_dId.length;i++) {
+				if (isNum(origin_dId[i]))
+					dId += origin_dId[i];
+			}
+			return dId;
+		}
+
+		function isNum(n) { // 是不是數字
+			return !isNaN(parseFloat(n)) && isFinite(n);
+		}
     </script>

@@ -14,7 +14,8 @@
 	<form id = 'form'>
 		開始時間<input type = input id = 'start'></input>
 		結束時間<input type = input id = 'end'></input>
-		主責人員<input type = input id = 'aId'></input>
+		人員帳號<input type = input id = 'aId'></input>
+		是否主責<input type = 'checkbox' id = 'is_main'></input>
 		<input type = 'submit'></input>
 	</form>
     <div id='calendar'></div>
@@ -35,10 +36,15 @@
     document.addEventListener('DOMContentLoaded', async function() {
 		const {data : main_pos} = await axios.get('/main_pos');
 		var events = [] // 所有主責資料
-		var color = ['green', 'yellow', 'red', 'brown', 'purple'];
+		var color = ['green', 'yellow', 'red', 'brown', 'purple']; // 對應的顏色
 		for (let i = 0;i < main_pos.length;i++) {
+			if (main_pos[i].status)
+				is_main = '(主責)';
+			else
+				is_main = '';
+			console.log(is_main);
 			in_json = {}; // 打包成 json
-			in_json['title'] = main_pos[i].aId + "號護士";
+			in_json['title'] = main_pos[i].aId + "號護士 " + is_main;
 			in_json['start'] = getTime(main_pos[i].start_time);
 			in_json['end'] = getTime(main_pos[i].end_time);
 			in_json['backgroundColor'] = color[main_pos[i].aId];
@@ -61,7 +67,7 @@
 	
     getId('form').addEventListener('submit', async(e) => {
 		e.preventDefault();
-		const {data : suc} = await axios.post('/fullcalendar/update', {aId : getId('aId').value, start : getId('start').value, end : getId('end').value});
+		const {data : suc} = await axios.post('/fullcalendar/update', {is_main : getId('is_main').checked ? 1 : 0, aId : getId('aId').value, start : getId('start').value, end : getId('end').value});
 		if (suc) {
 			alert('更新成功');
 			location.reload();

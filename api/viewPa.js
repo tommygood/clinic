@@ -169,6 +169,7 @@ router.post('/del', async function(req, res) {
     	let conn = await pool.getConnection();
 		try { 
 			await conn.query('insert into done_records(`rId`) values(?)', req.body.rId);
+			await conn.query('insert into delete_records(`aId`, `rId`) values(?, ?)', [user.data.aId, req.body.rId]);
 			suc = true;
 		}
 		catch(e) {
