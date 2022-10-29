@@ -65,13 +65,13 @@ router.post('/check', async function(req, res) {
 	if (expense) {
 		if (reason == "購入") { // 有花費且是購入
 			//await conn.query("insert into expense(`aId`, `cost`, `emId`, `mark`) values(?, ?, ?, ?)", [aId, parseInt(expense, 10), emId.insertId, mark]);
-			await conn.query('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, '藥物,' + emId.insertId, parseInt(expense, 10) * -1, mark]); // 新增到總帳務
-			await conn.query('insert into financial_today(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, '藥物,' + emId.insertId, parseInt(expense, 10) * -1, mark]); // 新增到總帳務
+			var fId = await conn.query('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, '藥物,' + emId.insertId, parseInt(expense, 10) * -1, mark]); // 新增到總帳務
+			await conn.query('insert into financial_today(`aId`, `reason`, `money`, `mark`, `fId`) values(?, ?, ?, ?, ?);', [aId, '藥物,' + emId.insertId, parseInt(expense, 10) * -1, mark, fId.insertId]); // 新增到總帳務
 		}
 		else { // 售出
 			//await conn.query("insert into expense(`aId`, `cost`, `emId`, `mark`) values(?, ?, ?, ?)", [aId, parseInt(expense, 10) * -1, emId.insertId, mark]);
-			await conn.query('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, '藥物,' + emId.insertId, parseInt(expense, 10) * 1, mark]); // 新增到總帳務
-			await conn.query('insert into financial_today(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, '藥物,' + emId.insertId, parseInt(expense, 10) * 1, mark]); // 新增到總帳務
+			var fId = await conn.query('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, '藥物,' + emId.insertId, parseInt(expense, 10) * 1, mark]); // 新增到總帳務
+			await conn.query('insert into financial_today(`aId`, `reason`, `money`, `mark`, `fId`) values(?, ?, ?, ?, ?);', [aId, '藥物,' + emId.insertId, parseInt(expense, 10) * 1, mark, fId.insertId]); // 新增到總帳務
 		}
 	}
     conn.release();

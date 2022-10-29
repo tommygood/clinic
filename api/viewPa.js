@@ -103,16 +103,16 @@ router.post('/', async function(req, res) {
 			await conn.query('insert into no_card(`rId`) values(?)', rId);
 		}
 		if (req.body.regist != 0) { // 掛號費不為 0
-			await conn.query('insert into financial(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '掛號費,' + rId, req.body.regist]); // 新增到總帳務
-			await conn.query('insert into financial_today(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '掛號費,' + rId, req.body.regist]); // 新增到今日帳務
+			var fId = await conn.query('insert into financial(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '掛號費,' + rId, req.body.regist]); // 新增到總帳務
+			await conn.query('insert into financial_today(`aId`, `reason`, `money`, `fId`) values(?, ?, ?, ?);', [req.body.nId, '掛號費,' + rId, req.body.regist, fId.insertId]); // 新增到今日帳務
 		}
 		if (req.body.part_self != 0) { // 部份負擔不為 0
-			await conn.query('insert into financial(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '部份負擔,' + rId, req.body.part_self]); // 新增到總帳務
-			await conn.query('insert into financial_today(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '部份負擔,' + rId, req.body.part_self]); // 新增到今日帳務
+			var fId = await conn.query('insert into financial(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '部份負擔,' + rId, req.body.part_self]); // 新增到總帳務
+			await conn.query('insert into financial_today(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '部份負擔,' + rId, req.body.part_self, fId.insertId]); // 新增到今日帳務
 		}
 		if (req.body.all_self != 0) { // 自費不為 0
-			await conn.query('insert into financial(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '自費,' + rId, req.body.all_self]); // 新增到總帳務
-			await conn.query('insert into financial_today(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '自費,' + rId, req.body.all_self]); // 新增到今日帳務
+			var fId = await conn.query('insert into financial(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.nId, '自費,' + rId, req.body.all_self]); // 新增到總帳務
+			await conn.query('insert into financial_today(`aId`, `reason`, `money`, `fId`) values(?, ?, ?, ?);', [req.body.nId, '自費,' + rId, req.body.all_self, fId.insertId]); // 新增到今日帳務
 		}
 	}
 	catch(e) {
