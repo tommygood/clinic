@@ -24,6 +24,8 @@ app.use('/fullcalendar', require('./api/calendar'));
 app.use('/financial', require('./api/financial'));
 app.use('/financial_today', require('./api/financial_today'));
 app.use('/cardDebt', require('./api/cardDebt'));
+app.use('/view_today_pa', require('./api/view_today_pa'));
+app.use('/view_history_pa', require('./api/view_history_pa'));
 const db = require("mariadb");
 const pool = db.createPool({
     host : 'localhost',
@@ -83,12 +85,67 @@ app.get('/records', async function(req, res) {
 		return;
 	};
     let conn = await pool.getConnection();
-    let records = await conn.query('select * from records order by `num`');
+	let records = await conn.query('select * from records where `no` not in (select `rId` from delete_records) order by `num`;');
     conn.release();
     res.json(records);
     res.end
 });
     
+
+app.get('/all_records', async function(req, res) { // all records but not order by num
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+	let records = await conn.query('select * from records where `no` not in (select `rId` from delete_records);');
+    conn.release();
+    res.json(records);
+    res.end
+});
+
+app.get('/today_records', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+	// let records = await conn.query('select * from records order by `num`');
+    let records = await conn.query('select * from records `num` where date(`start`) = curdate() order by `num`;');
+    conn.release();
+    res.json(records);
+    res.end
+});
+
+
+app.get('/history_records', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+	// let records = await conn.query('select * from records order by `num`');
+    let records = await conn.query('select * from records `num` where date(`start`) != curdate() order by `num`;');
+    conn.release();
+    res.json(records);
+    res.end
+});
+
 /*app.get('/no_records', async function(req, res) {
 	try {
 		const user = jwt.verify(req.cookies.token, 'my_secret_key');

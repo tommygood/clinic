@@ -335,15 +335,19 @@
   		
 		var last_times = 0; // 要找的病歷次數
 
-		function insertRecords(diagnose_record, medicines_records) { // 把病歷放進去
+		async function insertRecords(diagnose_record, medicines_records) { // 把病歷放進去
 			// 放入診斷紀錄
 			getId('diagnose_code').value = Object.values(diagnose_record)[2];
 			getId('main_sue').value = Object.values(diagnose_record)[3];
 			getId('science').value = Object.values(diagnose_record)[4]; 
 			outSymptoms(); // 印出症狀
 			// 放入用藥紀錄
-			for (let i = 0;i < Object.values(medicines_records).length;i++) {
-				getId('medicines'+i).value = Object.values(medicines_records[i])[2];
+			const {data : medicines_normal} = await axios.get("/medicines_normal"); // all medicines data
+			for (let i = 0;i < Object.values(medicines_records).length;i++) { // put this medicines records
+				for (let j = 0;j < medicines_normal.length;j++) { // use the mId to find the medicines name
+					if (medicines_normal[j]["mId"] == Object.values(medicines_records[i])[2]) // same mId
+						getId('medicines'+i).value = medicines_normal[j]["medi_eng"];
+				}
 				getId('medi_amount'+i).value = Object.values(medicines_records[i])[3];
 				getId('day'+i).value = Object.values(medicines_records[i])[4];
 				getId('method'+i).value = Object.values(medicines_records[i])[5];

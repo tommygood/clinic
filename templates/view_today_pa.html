@@ -1,14 +1,13 @@
-<html>
 <head>
     <title>
-         候診病人清單
+         今日看診明細
     </title>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
 </head>
 <body>
-    <h1>候診病人清單</h1>
+    <h1>今日看診明細</h1>
     <form id = 'logout' action = '/viewPa' method = 'post'>
         <input type = 'hidden' name = 'logout' value = '1'/>
         <input type = 'submit' value = '登出'/>
@@ -19,7 +18,7 @@
 			其他選項
   		</button>
   		<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-    		<li><a class="dropdown-item" href="/view_today_pa">今日看診明細</a></li>
+    		<li><a class="dropdown-item" href="/viewPa">看診明細</a></li>
 			<li><a class="dropdown-item" href="/addPa">新增病人</a></li>
 			<li><a class="dropdown-item" href="/ckVac">疫苗紀錄</a></li>
 			<li><a class="dropdown-item" href="/allMed">藥品庫存</a></li>
@@ -32,7 +31,7 @@
 	</div>
 	<nav class="navbar navbar-light bg-light">
   		<form id = 'navbar' class="container-fluid justify-content-start">
-			<button id = 'view_today_pa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">今日看診明細</button>
+			<button id = 'viewPa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">看診清單</button>
 			<button id = 'view_history_pa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">歷史看診明細</button>
 			<button id = 'addPa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">新增病人</button>
 			<button id = 'ckVac' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">疫苗紀錄</button>
@@ -146,7 +145,6 @@
 			var value_id = ''; // column id
 			for (let i = 0;i < total_len;i++) { // 總共有 total_len 行 row
 				name = "log_row" + i;
-				console.log(name);
 				var value_index = getId(name).getElementsByTagName('td')[2].innerHTML.indexOf('id');
 				update_index.push(getId(name).getElementsByTagName('td')[0].innerHTML); // 放入對照的 rId
 				value_id = '';
@@ -235,26 +233,19 @@
 				return;
 			}
 			if (start_pos[start_num] == end_pos[end_num]) { // 相同 table 才能換位置
-  				let children= Array.from(e.target.parentNode.parentNode.parentNode.children); // table layer
-				if(children.indexOf(e.target.parentNode.parentNode)>children.indexOf(start_tar.parentNode)) { // if the end target tbody order is bigger than start target tbody order
-    				e.target.parentNode.parentNode.after(start_tar.parentNode); // up the end target
+  				let children= Array.from(e.target.parentNode.parentNode.children);  
+				if(children.indexOf(e.target.parentNode)>children.indexOf(start_tar)) {
+    				e.target.parentNode.after(start_tar);
 				}
-				else { // down the end target
-    				e.target.parentNode.parentNode.before(start_tar.parentNode);
+				else {
+    				e.target.parentNode.before(start_tar);
 				}
 				var start_value = getId(getColId(start_tar.getElementsByTagName('td')[2].innerHTML)).value; // 一開始的看診號
-				var table_id = getId(start_pos[start_num].id).getElementsByTagName('table'); // the table id of start row
-				var all_tbody = getId(table_id[0].id).getElementsByTagName('tbody'); // tbody of this table
-				console.log(all_tbody);
-				for (let i = 1;i < all_tbody.length;i++) { // 重新排序看診, start from index 1, as the first is title
+				for (let i = 0;i < getCla(start_pos[start_num].id).length;i++) { // 重新排序看診號
 					//console.log(getCla(start_pos[start_num].id)[i].id);
 					//getCla(start_pos[start_num].id)[i].value = i+1;
 					//console.log(getId('log_col1').value);
-					//getId(getCla(start_pos[start_num].id)[i].id).value = i+1;
-					var log_row = all_tbody[i].getElementsByTagName("tr")[0]; // the row
-					var log_column = log_row.getElementsByTagName("td");
-					var num_id = log_column[2].getElementsByTagName("input")[0].id; // id of num of this record
-					getId(num_id).value = i;
+					getId(getCla(start_pos[start_num].id)[i].id).value = i+1;
 				}
 				var end_value = getId(getColId(start_tar.getElementsByTagName('td')[2].innerHTML)).value; // 改完的看診號
 				var start_rnum = start_tar.getElementsByTagName('td')[0].innerHTML; // 被換的病人的 rId
@@ -273,7 +264,6 @@
 
         (async() => { // 查詢是否為主責, 是就標示
 			const {data : main_pos} = await axios.get('/fullcalendar/getMain'); // 主責帳號
-			console.log(main_pos);
 			for (let i = 0;i < main_pos.aId.length;i++) { // 所有時間相符的主責帳號
 				if (getNid(getId('nId').innerHTML) == main_pos.aId[i].aId) // 相符的帳號
 					getId('nId').innerHTML += "（主責）"; 
@@ -304,12 +294,10 @@
 
 		var total_len = 0;
 		var index = 0;
-		var in_done;
 		var start_in = {}; // 一開始是否在場
 		function putRecord(dId) {
-        axios.get('/records').then(function(response) {
+        axios.get('/today_records').then(function(response) {
             axios.get('/data').then(function(data) {
-                axios.get('/done_records').then(function(done) {
                     /*for (let i = 0;i < no_rec.data.length;i++) 
                         response.data.push(no_rec.data[i])*/
                     response.data.sort(function(a,b){
@@ -320,15 +308,6 @@
 						if (response.data[j].dId != dId) // 不是此醫生
 							continue;
 						in_patients = false;
-						in_done = false; // 還沒看過診
-						for (let k = 0;k < done.data.length;k++) { // 是否已經看診過
-							if (response.data[j].no == done.data[k].rId) { // 看過了
-								in_done = true;
-								break;
-							}
-						}
-						if (in_done) // 看過了
-							continue; // 找下一個
                         for (let i = 0;i < data.data.length;i++) { // left join 到 patients
                             if (response.data[j].pId == data.data[i].pId) { // 病人代號相同
 								start_in[total_len] = response.data[j].in;
@@ -336,7 +315,7 @@
                                 var no_card = 0; // 是否未帶卡
 								var tab_name = "tab"+ response.data[j].dId;
                                 getId(tab_name).innerHTML += 
-								"<tbody id = 'tbody'" + total_len + "'><tr draggable='true' ondragstart='start()' " + " id = 'log_row" + total_len + "'/><td/>"+ response.data[j].no  +  
+								"<tr draggable='true' ondragstart='start()' " + " id = 'log_row" + total_len + "'/><td/>"+ response.data[j].no  +  
                                 "<td>" + response.data[j].dId + "</td>" + 
 								"<td><input type = 'text' " + "class = 'tab" + response.data[j].dId + "' id = 'log_col" + j + "' style = 'width:50px' value = '" + response.data[j].num + "'></input></td>" +
 								"<td>" + data.data[i]["name"] + "</td>" + 
@@ -354,7 +333,7 @@
                                 "<td>" + response.data[j].deposit + "</td>" +
 								"<td><input type = 'checkbox'" + `${response.data[j].in && "checked"}` + " id = 'in_" + total_len + "'></input></td>" +
 								"<td><button id = '" + j + "' type = 'button' onclick = 'callPat(" + index + "," + response.data[j].no + ")'>刪除</button></td>" +  
-								"<td><button id = 'return" + j + "' type = 'button' onclick = 'returnCard(" + response.data[j].no + ")'>還卡</button></td></tr></tbody>"; 
+								"<td><button id = 'return" + j + "' type = 'button' onclick = 'returnCard(" + response.data[j].no + ")'>還卡</button></td></tr>"; 
 								//document.getElementById("in_"+total_len).checked = response.data[j].in;
 
 								//getId("in_" + total_len).checked = response.data[j].in == 1;
@@ -413,7 +392,6 @@
 					//mkStyle();
                 })
             })
-        })
 		}
 
 		async function callPat(pa_num, rId) { // 按下刪除
@@ -438,7 +416,6 @@
 			var tab_len; // 每個 tab 的長度
 			var tab_id; // 每個 tab 的 id
 			var log_row; // 每個 row
-			//for (let j = 0;j < all_tab.length;j++) { // 全部的 table
 				tab_id = "tab" + now_table; // 該 table 的 id
 				tab_len = getId(tab_id).getElementsByTagName('tbody').length - 1; // 該 tab 長度，第一個是表頭所以-1
 				resort_index = 0; // 重新排序的看診號
@@ -457,7 +434,6 @@
 					(getId(value_id).value) = resort_index+1; // 替換看診號
 					resort_index++; // 下一個看診號
 				}
-			//}
 		}
 
 		async function updateIn() { // 更新在場
@@ -591,14 +567,18 @@
 			"<div>&nbsp;</div>"
 		}
 	
+		getId('doc1').addEventListener('click', mkDoc); // 
+
+		getId('doc3').addEventListener('click', mkDoc); // 
+
 		function mkDoc(e) {
 			var tab_id = getDid(e.target.id); // 取得 dId
 			now_table = tab_id;
 			mkTable(tab_id); // 製作該 id 的 table
 			// 監聽拖曳
-			getId('tab' + tab_id).addEventListener('drop', dropped);
-			getId('tab' + tab_id).addEventListener('dragenter', cancelDefault);
-			getId('tab' + tab_id).addEventListener('dragover', cancelDefault);
+			//getId('tab' + tab_id).addEventListener('drop', dropped);
+			//getId('tab' + tab_id).addEventListener('dragenter', cancelDefault);
+			//getId('tab' + tab_id).addEventListener('dragover', cancelDefault);
 			// 放入 table
 			putRecord(tab_id);
 		}
@@ -615,13 +595,4 @@
 		function isNum(n) { // 是不是數字
 			return !isNaN(parseFloat(n)) && isFinite(n);
 		}
-
-		function listenDocBt() { // addEventListener on all doc bt
-			for (let i = 0;i < all_tab.length;i++) {
-				getId('doc'+all_tab[i]).addEventListener('click', mkDoc); // 
-			}
-		}	
-
-		listenDocBt();
     </script>
-</html>

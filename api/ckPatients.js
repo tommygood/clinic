@@ -89,9 +89,9 @@ router.post('/', async function(req, res) {
 			await conn.query('update records set `end` = ? where `r_num` = ?', [new Date(), req.body.r_num]); 
 		}*/
 	}
-	catch(e) {
-		console.log(e);
-		res.json({suc : false, error : e});
+	catch(error) {
+		console.log(error);
+		res.json({suc : false, error : error});
 		res.end;
 		conn.release();
 		return;
