@@ -1,5 +1,9 @@
 <html>
 <head>
+	<script src = "/socket.io/socket.io.js"></script>
+	<script>
+		var socket = io();
+	</script>
     <title>
          候診病人清單
     </title>
@@ -14,6 +18,7 @@
         <input type = 'submit' value = '登出'/>
     </form>
     <span id = 'nId'></span>
+	<div id = "docMsg"></div>
 	<div class="dropdown">
   		<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
 			其他選項
@@ -36,6 +41,7 @@
 			<button id = 'view_history_pa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">歷史看診明細</button>
 			<button id = 'addPa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">新增病人</button>
 			<button id = 'ckVac' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">疫苗紀錄</button>
+			<button id = 'ckTodayVac' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">今日疫苗紀錄</button>
 			<button id = 'allMed' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">藥品庫存</button>
 			<button id = 'ckMed' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">單筆藥品</button>
 			<button id = 'addMed' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">新增藥品</button>
@@ -623,5 +629,12 @@
 		}	
 
 		listenDocBt();
+
+		document.addEventListener("DOMContentLoaded", () => {
+			var content = document.getElementById("content");    // 加入這行
+			socket.on("msg", function (docMsg) {
+				getId("docMsg").innerHTML += docMsg + "<br/>";
+			})
+		});
     </script>
 </html>

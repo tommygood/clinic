@@ -1,5 +1,9 @@
 <html>
     <head>
+		<script src = "/socket.io/socket.io.js"></script>
+		<script>
+			var socket = io();
+		</script>
         <title>
             醫生登錄頁面
         </title>
@@ -7,7 +11,7 @@
             醫生登錄頁面
         </h1>
     </head>
-    <body>
+    <body id = 'body'>
 		<div id = 'dId'></div>
         <form action = '/docMain' method = 'post'>
             <input type = 'hidden' name = 'logout' value = '1'/>
@@ -30,7 +34,8 @@
             <td><span id = 'deposit'>押金</span></td>
         </tr>
     </table>
-		
+		<input type = "input" id = 'msg'></div>
+		<button id = "send_msg">send</button>
     </body>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
@@ -207,6 +212,22 @@
                     }
             })
         })*/
+
+		getId("send_msg").addEventListener("click", sendMsg);
+
+		function sendMsg() {
+			var msg = getId("msg").value;
+			socket.emit("docMsg", msg);
+		}	
+
+		socket.on("connect", function () {
+			socket.emit("returnDocMsg");
+		});
+
+		socket.on("returnDocMsg", function (msg) {
+			console.log(msg);
+		});
+
 	</script>
 	<style>
 		#doc_info {

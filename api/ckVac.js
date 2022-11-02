@@ -9,6 +9,7 @@ const pool = db.createPool({
     password : 'wang313',
     database : 'clinic'
 });
+pool.end();
 
 router.get('/', function(req, res) {
 	try {

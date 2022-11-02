@@ -5,6 +5,8 @@ var bodyParser = require("body-parser");
 var cookieParser = require('cookie-parser');
 var jwt = require('jsonwebtoken');
 const router = require('express').Router();
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
 app.use(session({secret : 'secret', saveUninitialized: false, resave: true}));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json());
@@ -16,6 +18,7 @@ app.use('/viewPa', require('./api/viewPa'));
 app.use('/login', require('./api/login'));
 app.use('/docMain', require('./api/docMain'));
 app.use('/ckVac', require('./api/ckVac'));
+app.use('/ckTodayVac', require('./api/ckTodayVac'));
 app.use('/ckMed', require('./api/ckMed'));
 app.use('/allMed', require('./api/allMed'));
 app.use('/addMed', require('./api/addMed'));
@@ -191,7 +194,10 @@ app.get('/vac_re', async function(req, res) {
 		return;
 	};
     let conn = await pool.getConnection();
-    let records = await conn.query('select * from vac_re;');
+	if (req.query["today"]) // today vacines_records
+    	var records = await conn.query('select * from vac_re where date(`time`) = curdate();');
+	else // all vaccine records
+    	var records = await conn.query('select * from vac_re;');
     conn.release();
     res.json(records);
     res.end
@@ -406,6 +412,20 @@ app.get('/no_card', async function(req, res) {
 	return;
 });
 
-var server = app.listen(5000, function () {
+var doc_msg;
+
+io.on('connection', (socket) => {
+	console.log('Hello!');  // 顯示 Hello!
+	socket.on('disconnect', () => {
+		console.log('Bye~');  // 顯示 bye~
+	});
+	
+	socket.on("docMsg", (msg) => {
+		console.log(msg);
+		io.emit("msg", msg);
+	});
+});
+
+server.listen(5000, function () {
     console.log('Node server is running..');
 });
