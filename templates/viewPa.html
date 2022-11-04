@@ -26,7 +26,7 @@
 		</div>
 		<div class = 'position-absolute top-0 end-0' id = "chat_title">---------------------<br/>聊天室<br/></div>
 		<div class = 'position-absolute top-0 end-0' id = "docMsg"></div>
-		<input class = "position-fixed bottom-0 end-0" type = "input" id = 'msg'></div>
+		<input class = "position-fixed bottom-0 end-0" style = "width:300px;" type = "input" id = 'msg'></div>
 		<button class = "position-fixed bottom-0 end-0" id = "send_msg">send</button>
 <div class="dropdown">
 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
@@ -653,5 +653,13 @@
 				getId("chat_title").innerHTML += new_msg;
 			})
 		});
+
+		getId("send_msg").addEventListener("click", sendMsg);
+
+		function sendMsg() {
+			var msg = getNid(getId('nId').innerHTML) + " 號護士: ";
+			msg += getId("msg").value;
+			socket.emit("docMsg", msg);
+		}	
     </script>
 </html>

@@ -10,6 +10,8 @@ const pool = db.createPool({
     database : 'clinic'
 });
 pool.end();
+var config = require("config"); // 設定檔
+var root = config.get('server.root'); // 根目錄位置
 
 router.get('/', function(req, res) {
 	try {
@@ -23,7 +25,7 @@ router.get('/', function(req, res) {
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId && user.data.title == 'nur') { // 登入中
-        res.sendFile('/home/wang/nodejs/templates/ckVac.html');  //回應靜態文件
+        res.sendFile(root + 'templates/ckVac.html');  //回應靜態文件
         return;
     }
     else {

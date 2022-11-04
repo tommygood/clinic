@@ -11,6 +11,8 @@ const pool = db.createPool({
     password : 'wang313',
     database : 'clinic'
 });
+var config = require("config");
+var root = config.get('server.root');
 
 router.get('/', function(req, res) {
 	try {
@@ -23,7 +25,7 @@ router.get('/', function(req, res) {
 		return;
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
-	var path = '/home/wang/nodejs/templates/financial.html';
+	var path = root + "templates/financial.html";
 	res.sendFile(path);
 	res.end;
 	return;

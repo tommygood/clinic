@@ -1,0 +1,7 @@
+{     
+    "server": {
+      "db_account": "wang",
+      "db_pwd" : "wang313",
+      "root": "/home/tommy/nodejs/"
+    }
+}

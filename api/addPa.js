@@ -3,8 +3,11 @@ var app = express();
 const router = require('express').Router();
 var bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: false }));
+var config = require("config");
+var root = config.get('server.root');
+
 router.get('/', function(req, res) {
-    res.sendFile('/home/wang/nodejs/templates/addPatients.html');
+    res.sendFile(root + 'templates/addPatients.html');
 });
 
 /*router.post('/add', async function(req, res) {

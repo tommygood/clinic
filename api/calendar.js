@@ -11,6 +11,8 @@ const pool = db.createPool({
     password : 'wang313',
     database : 'clinic'
 });
+var config = require("config"); // 設定檔
+var root = config.get('server.root'); // 根目錄位置
 
 router.get('/', function(req, res) {
 	try {
@@ -23,7 +25,7 @@ router.get('/', function(req, res) {
 		return;
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
-	var path = '/home/wang/nodejs/templates/calendar.html';
+	var path = root + 'templates/calendar.html';
 	res.sendFile(path);
 	res.end;
 	return;
@@ -40,7 +42,7 @@ router.get('/main.css', function(req, res) {
 		return;
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
-	var path = '/home/wang/nodejs/node_modules/fullcalendar/main.css';
+	var path = root + 'node_modules/fullcalendar/main.css';
 	res.sendFile(path);
 	res.end;
 	return;
@@ -57,7 +59,7 @@ router.get('/main.js', function(req, res) {
 		return;
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
-	var path = '/home/wang/nodejs/node_modules/fullcalendar/main.js';
+	var path = root + 'node_modules/fullcalendar/main.js';
 	res.sendFile(path);
 	res.end;
 	return;

@@ -11,6 +11,8 @@ const pool = db.createPool({
     password : 'wang313',
     database : 'clinic'
 });
+var config = require("config"); // 設定檔
+var root = config.get('server.root'); // 根目錄位置
 
 router.get('/', function(req, res) {
 	try { // 驗證 token
@@ -25,7 +27,7 @@ router.get('/', function(req, res) {
 	}
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId && user.data.title == 'nur') { // 醫生登入成功
-        res.sendFile('/home/wang/nodejs/templates/view_history_pa.html')
+        res.sendFile(root + 'templates/view_history_pa.html')
         res.end;
         return;
     }

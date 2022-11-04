@@ -9,6 +9,8 @@ const pool = db.createPool({
     password : 'wang313',
     database : 'clinic'
 });
+var config = require("config");
+var root = config.get('server.root');
 
 router.get('/', async function(req, res) {
 	try {
@@ -25,7 +27,7 @@ router.get('/', async function(req, res) {
     	let conn = await pool.getConnection();
 		await conn.query('insert into look_medicines_inventory(`aId`) values(?)', user.data.aId);
 		conn.release();
-        res.sendFile('/home/wang/nodejs/templates/allMed.html');  //回應靜態文件
+        res.sendFile(root + 'templates/allMed.html');  //回應靜態文件
         return;
     }
     else {

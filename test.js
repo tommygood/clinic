@@ -4,6 +4,7 @@ var app = express();
 var bodyParser = require("body-parser");
 var cookieParser = require('cookie-parser');
 var jwt = require('jsonwebtoken');
+var config = require("config");
 const router = require('express').Router();
 const server = require('http').Server(app);
 const io = require('socket.io')(server);
@@ -37,8 +38,7 @@ const pool = db.createPool({
     database : 'clinic'
 });
 
-var html_home = "/home/wang/nodejs/templates/";
-
+var html_home = config.get("server.root")+"templates/";
 app.get('/get', function(req, res) {
     res.end
 })

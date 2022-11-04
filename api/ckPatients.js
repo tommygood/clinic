@@ -9,6 +9,8 @@ const pool = db.createPool({
     password : 'wang313',
     database : 'clinic'
 });
+var config = require("config"); // 設定檔
+var root = config.get('server.root'); // 根目錄位置
 
 router.post('/updateNum', async function(req, res) { // 更新看診號
 	try {
@@ -116,7 +118,7 @@ router.get('/', function(req, res) {
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
 	const pa = jwt.verify(req.cookies.pa_num, 'my_secret_key');
     if (user.data.aId && (pa.data.pa_num != null) && user.data.title == 'doc') { // 登入中
-		return res.sendFile('/home/wang/nodejs/templates/patients.html');
+		return res.sendFile(root + 'templates/patients.html');
 		res.end();
 	}
 	else {

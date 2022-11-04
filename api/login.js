@@ -11,6 +11,8 @@ const pool = db.createPool({
     password : 'wang313',
     database : 'clinic'
 });
+var config = require("config"); // 設定檔
+var root = config.get('server.root'); // 根目錄位置
 
 router.get('/', function(req, res) {
 	try {
@@ -18,7 +20,7 @@ router.get('/', function(req, res) {
 	}
 	catch(e) {
 		console.log(e);
-		res.sendFile('/home/wang/nodejs/templates/login.html');
+		res.sendFile(root + 'templates/login.html');
 		//res.redirect('/login');
 		res.end;
 		return;
