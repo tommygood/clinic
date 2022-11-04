@@ -216,7 +216,8 @@
 		getId("send_msg").addEventListener("click", sendMsg);
 
 		function sendMsg() {
-			var msg = getId("msg").value;
+			var msg = getDocName(getId("dId").innerHTML) + " 號醫生: ";
+			msg += getId("msg").value;
 			socket.emit("docMsg", msg);
 		}	
 
@@ -228,6 +229,18 @@
 			console.log(msg);
 		});
 
+		function getDocName(dId_text) { // 只要醫生代號
+			var doc_name = "";
+			for (let i = 0;i < dId_text.length;i++) {
+				if (isNum(dId_text[i])) // 是數字
+					doc_name += dId_text[i];
+			}
+			return doc_name;
+		}
+
+		function isNum(n) { // 是不是數字
+			return !isNaN(parseFloat(n)) && isFinite(n);
+		}
 	</script>
 	<style>
 		#doc_info {
