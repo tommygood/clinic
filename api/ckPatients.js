@@ -117,8 +117,11 @@ router.get('/', function(req, res) {
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
 	const pa = jwt.verify(req.cookies.pa_num, 'my_secret_key');
-    if (user.data.aId && (pa.data.pa_num != null) && user.data.title == 'doc') { // 登入中
-		return res.sendFile(root + 'templates/patients.html');
+    if (user.data.aId && (pa.data.pa_num != null)) { // 登入中
+        if (req.query.view) // view the record
+            return res.sendFile(root + 'templates/viewPatients.html');
+        else // 醫生看診
+            return res.sendFile(root + 'templates/patients.html');
 		res.end();
 	}
 	else {
@@ -131,6 +134,7 @@ router.get('/rNum', async function(req, res) {
 	try {
 		const user = jwt.verify(req.cookies.token, 'my_secret_key');
 		const pa_num = jwt.verify(req.cookies.pa_num, 'my_secret_key');
+        const rId = jwt.verify(req.cookies.rId, 'my_secret_key');
 	}
 	catch(e) {
 		console.log(e);
@@ -140,8 +144,9 @@ router.get('/rNum', async function(req, res) {
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
 	const pa = jwt.verify(req.cookies.pa_num, 'my_secret_key');
+    const rId_cookie = jwt.verify(req.cookies.rId, 'my_secret_key');
     if (user.data.aId && (pa.data.pa_num != null) && user.data.title == 'doc') { // 登入中
-		res.json({pa_num : pa.data.pa_num});
+		res.json({pa_num : pa.data.pa_num, rId : rId_cookie.data_rId.rId});
 		res.end();
         return;
     }

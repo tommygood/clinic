@@ -412,6 +412,49 @@ app.get('/no_card', async function(req, res) {
 	return;
 });
 
+app.get('/getPageNum', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		return res.json({error:'未登入'});
+		res.end();
+		return;
+	};
+    let conn = await pool.getConnection();
+    if (req.query["history"] && req.query["dId"]) // history records, not filter the done records
+        var records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+	if (!req.query["history"] &&req.query["dId"]) // 候診清單, filter the done records
+    	var records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from done_records) and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+    console.log(records_num[0]['count(*)']);
+    console.log(req.query["dId"]);
+    conn.release();
+    res.json({page_num : records_num[0]['count(*)'].toString()});
+    res.end
+});
+
+app.get('/medRec', async function(req, res) {
+	try {
+		const user = jwt.verify(req.cookies.token, 'my_secret_key');
+	}
+	catch(e) {
+		console.log(e);
+		res.json({error:'未登入'});
+		res.end;
+		return;
+	};
+	const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    if (user.data.aId) { // 登入中
+    	let conn = await pool.getConnection();
+   	 	let med_rec = await conn.query('select `rId` from medicines_records group by `rId`;'); // 找出沒有帶卡且不在被刪除的名單中的病歷號
+		conn.release();
+		res.json({med_rec : med_rec});
+    }
+	res.end;
+	return;
+});
+
 var doc_msg;
 
 io.on('connection', (socket) => {

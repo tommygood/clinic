@@ -1,6 +1,9 @@
 <html>
     <head>
 		<script src = "/socket.io/socket.io.js"></script>
+		<script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
 		<script>
 			var socket = io();
 		</script>
@@ -17,11 +20,14 @@
             <input type = 'hidden' name = 'logout' value = '1'/>
             <input type = 'submit' value = '登出'/>
         </form>
+		<div class = 'position-absolute top-0 end-0' id = "chat_title">---------------------<br/>聊天室<br/></div>
+		<input class = "position-fixed bottom-0 end-0" style = "width:300px;" type = "input" id = 'msg'></div>
+		<button class = "position-fixed bottom-0 end-0" id = "send_msg">send</button>
 		<div id = 'doc_info'></div>
-    <table id = 'tab' border = '2' align = center>
+    <table class = 'col-md-10' id = 'tab' border = '2' align = center>
         <tr>
             <td><span id = 'num'>病歷號</span></td>
-            <td><span id = 'time'>掛號時間</span></td><
+            <td><span id = 'time'>掛號時間</span></td>
             <td><span id = "pat_name">姓名</span></td>
             <td><span id = 'sex'>性別</span></td>
             <td><span id = 'birth'>生日</span></td>
@@ -34,9 +40,16 @@
             <td><span id = 'deposit'>押金</span></td>
         </tr>
     </table>
-		<input type = "input" id = 'msg'></div>
-		<button id = "send_msg">send</button>
     </body>
+	<style>
+	#chat_msg {
+			margin :100px 0px 0px 0px;
+	}
+
+	#chat_title {
+			margin : 100px 0px 0px 0px;
+	}
+	</style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
 		function getId(id) {
@@ -49,7 +62,8 @@
 				alert('更新開診時間失敗');
 				return;
 			}
-			const {data : suc} = await axios.post('/docMain/getPa', {pa_num : pa_num}); // 檢查帳號的權限
+            // set cookie
+			const {data : suc} = await axios.post('/docMain/getPa', {pa_num : pa_num, rId : rId}); // 檢查帳號的權限
 			if (suc) {
 				window.location.href = "/ckPatients";
 			}
@@ -130,7 +144,7 @@
 						in_patients = true;
                         var no_card = 0; // 是否未帶卡
                         tab.innerHTML += 
-						"<tr draggable='true' ondragstart='start()' " + " id = 'log_row" + j + "'/><td/>"+ rec[j].num  +  
+						"<tr" + " id = 'log_row" + j + "'/><td/>"+ rec[j].num  +  
                         "<td>" + rec[j].start + "</td>" +
                         "<td>" + data[i].name + "</td>" +
                         "<td>" + data[i].sex + "</td>" +
@@ -148,7 +162,7 @@
                 }
 				if (!in_patients && rec[j].dId == user.dId) { // 不在病患中，未帶卡或預約
                    	tab.innerHTML += 
-					"<tr draggable='true' ondragstart='start()' " + " id = 'log_row" + j + "'/><td/>"+ rec[j].num  +  
+					"<tr" + " id = 'log_row" + j + "'/><td/>"+ rec[j].num  +  
                     "<td>" + rec[j].start + "</td>" +
                     "<td>" + null + "</td>" +
                     "<td>" + null + "</td>" +
@@ -160,7 +174,7 @@
                     "<td>" + rec[j].self_part + "</td>" +
                     "<td>" + rec[j].all_self + "</td>" +
 					"<td>" + rec[j].deposit + "</td>" + 
-					"<td><button id = '" + j + "' type = 'button' onclick = 'callPat(" + index + ")'(>看診</button></td></tr>"  
+					"<td><button id = '" + j + "' type = 'button' onclick = 'callPat(" + index + "," + rec[j].no +")'(>看診</button></td></tr>"  
 					index += 1;
                     var no_card_id = "log_row" + j;
                     document.getElementById(no_card_id).style.backgroundColor = "red";
@@ -240,6 +254,46 @@
 
 		function isNum(n) { // 是不是數字
 			return !isNaN(parseFloat(n)) && isFinite(n);
+		}
+		
+		document.addEventListener("DOMContentLoaded", () => { // load message into browser
+			socket.on("msg", function (chat_msg) {
+				var header_text = onlyText(chat_msg)[0]; // header text, include which account
+				var real_text = addBr(onlyText(chat_msg)[1], 10); // the content of text
+				var new_msg = header_text + real_text + "\n"; // all text
+				var new_div = document.createElement("div");
+				var new_content = document.createTextNode(new_msg);
+				new_div.className = "border border-primary";
+				new_div.appendChild(new_content);
+				var chat_title = getId('chat_title');
+				chat_title.appendChild(new_div);
+				chat_title.style = "white-space: pre;" // make /n == break
+			})
+		});
+		
+		function onlyText(chat_msg) { // return the real text
+			let start_index; // index of real start
+			var header_text = "";
+			var real_text = "";
+			for (let i = 0;i < chat_msg.length;i++) {
+				if (chat_msg[i] == ":") // start from 1 index behind
+					start_index = i+1; // escapt the space
+				if (i > start_index) // real text
+					real_text += chat_msg[i];
+				else
+					header_text += chat_msg[i];
+			}
+			return [header_text, real_text]; // return [header, content]
+		}
+		
+		function addBr(real_text, limit) { // add break into text when is too long
+			br_text = ""; // break added text
+			for (let i = 0;i < real_text.length;i++) {
+				if (i % limit == 0) // the limit char of a line
+					br_text += "\n"; // next line
+				br_text += real_text[i];
+			}
+			return br_text;
 		}
 	</script>
 	<style>

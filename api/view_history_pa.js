@@ -26,7 +26,7 @@ router.get('/', function(req, res) {
 		return;
 	}
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
-    if (user.data.aId && user.data.title == 'nur') { // 醫生登入成功
+    if (user.data.aId) { // 醫生登入成功
         res.sendFile(root + 'templates/view_history_pa.html')
         res.end;
         return;

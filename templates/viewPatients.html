@@ -45,8 +45,7 @@
 			<span>藥====品====名====稱 &nbsp;&nbsp;&nbsp;每日量x天 &nbsp;&nbsp;用法 &nbsp;&nbsp;註</span>
 			<br/><br/>
 		</form>
-        <button type = 'button' id = 'copy_bt'>複製</button>
-        <button type = 'button' id = 'paste_bt'>貼上</button>
+		<button type = 'button' id = 'copy_bt'>複製</button>
     </body>
 	<style>
 		#symptoms {
@@ -58,10 +57,6 @@
 			position : absolute;	
 			margin : 40px 120px;	
 		}
-
-		#submit_bt {
-			padding : 16px;
-		}
 	
 		td {
 			width : 100px;
@@ -70,17 +65,16 @@
 	</style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
-		var rId;
+		var rId;                                                                      
 		var pId;
         const medicine_input_num = 5; // total medicines row number
-        mkInput();
+         mkInput();
         (async() => {
 			const {data : rec} = await axios.get('/records');
 			const {data : pa_num} = await axios.get('/ckPatients/rNum');
             const {data : info} = await axios.get('/data');
 			const {data : dId} = await axios.get('/docMain/dId');
 			const {data : done_records} = await axios.get('/done_records'); // done records
-            console.log(pa_num.rId);
             getId('dId').innerHTML = Object.values(dId);
             for (let i = 0;i < done_records.length;i++) { // 先檢查這筆紀錄是否已經看完, 因有可能是醫生檢查已看診病歷
                 if (pa_num.rId == done_records[i].rId) { // 看完的
@@ -169,12 +163,15 @@
 		function getId(id) {
 			return document.getElementById(id);
 		}
+        
+        function getClass(id) {
+			return document.getElementsByClassName(id);
+		}
 
         getId("diagnose_code").addEventListener('change', outSymptoms); // 當搜尋內容有改變
 
 		var symptoms = null; // 所有症狀，先設 null
         async function outSymptoms() { // 印出症狀
-            console.log(getId('diagnose_code').value);
 			if (symptoms == null) { // 第一次讀取症狀
 				const {data : symptoms_data} = await axios.get('/symptoms');
 				symptoms = symptoms_data // 放入檔案
@@ -183,7 +180,7 @@
 						getId('diagnose').innerHTML = symptoms[i].eng_name;
 					}
 				}
-            }
+			}
 			else {
 				for (let i = 0;i < symptoms.length;i++) {
 					if (symptoms[i].index == getId('diagnose_code').value) {
@@ -196,9 +193,9 @@
 
 		document.addEventListener("keyup", async(event) => {
             // 總共需要檢查快捷的格
+			//var check_hot = ["main_sue", "science", "medicines0", "medicines1", "medicines2", "medicines3", "medicines4"]; 
 			var check_hot = ["main_sue", "science"]
-            // append medicine in hot_key array with total medicine input num
-            for (let i = 0;i < medicine_input_num;i++) 
+            for (let i = 0;i < medicine_input_num;i++) // append medicine in hot_key array with total medicine input num
                 check_hot.push('medicines'+i);
             for (let num = 0;num < check_hot.length;num++) {
 				const {data : hot_key} = await axios.get('hot_key');
@@ -253,46 +250,13 @@
 							new_mainsue += replace_name;
 						}
 					}
+					console.log(new_mainsue);
 					getId(check_hot[num]).value = new_mainsue;
 				}
 			}
 		});
 
-        getId('submit_bt').addEventListener('click', async(e) => { // 送出表單
-			getId('diagnose_code_pass').value = getId('diagnose_code').value; // 放入 value
-			const medicines0 = {medicines0 : getId('medicines0').value, medi_amount0 : getId('medi_amount0').value, day0 : getId('day0').value, method0 : getId('method0').value, medi_mark0 : getId('medi_mark0').value};
-			const medicines1 = {medicines1 : getId('medicines1').value, medi_amount1 : getId('medi_amount1').value, day1 : getId('day0').value, method1 : getId('method1').value, medi_mark1 : getId('medi_mark1').value};
-			const medicines2 = {medicines2 : getId('medicines2').value, medi_amount2 : getId('medi_amount2').value, day2 : getId('day2').value, method2 : getId('method2').value, medi_mark2 : getId('medi_mark2').value};
-			const medicines3 = {medicines3 : getId('medicines3').value, medi_amount3 : getId('medi_amount3').value, day3 : getId('day3').value, method3 : getId('method3').value, medi_mark3 : getId('medi_mark3').value};
-			const medicines4 = {medicines4 : getId('medicines4').value, medi_amount4 : getId('medi_amount4').value, day4 : getId('day4').value, method4 : getId('method4').value, medi_mark4 : getId('medi_mark4').value};
-			// 要回傳的資料
-			const data = {
-				dId : getId('dId').innerHTML,
-				all_self : getId('all_self').value, 
-				self_part : getId('self_part').value, 
-				regist : getId('regist').value, 
-				rId : getId('rId').value, 
-				diagnose_code_pass : getId('diagnose_code_pass').value, 
-				main_sue : getId('main_sue').value, 
-				science : getId('science').value}
-			data['medicines0'] = medicines0;
-			data['medicines1'] = medicines1;
-			data['medicines2'] = medicines2;
-			data['medicines3'] = medicines3;
-			data['medicines4'] = medicines4;
-			const ck_diagnose = await axios.post('/ckPatients', data);
-			if (ck_diagnose.data.suc) { // 沒有回傳錯誤
-				alert("看診成功");
-				window.location.href = "/docMain";
-			}
-			else { // 印出錯誤
-				console.log(ck_diagnose.data.suc);
-				alert('看診失敗');
-				var error_mes = "text :[" + ck_diagnose.data.error.text + "]。 sql : [" + ck_diagnose.data.error.sql + "]";
-				console.log(error_mes);
-			};
-		});
-
+        // listen the next and last bt
 		getId('last_records').addEventListener('click', putRecord);
 		getId('next_records').addEventListener('click', putRecord);
 
@@ -362,12 +326,9 @@
         
         getId("copy_bt").addEventListener('click', cpContent); // 當搜尋內容有改變
     
-        function getClass(obj_class) {
-            return document.getElementsByClassName(obj_class);
-        }
-    
         function cpContent() { // copy content to clipboard
             var all_need_copy = getClass('copy');
+            var need_copy = document.querySelectorAll('textarea');
             var total_str = '';
             // add the value needed to be copied
             for (let i = 0;i < all_need_copy.length;i++) {
@@ -387,20 +348,6 @@
             document.body.removeChild(el); // remove copt textarea
         }
         
-        getId("paste_bt").addEventListener('click', pasteContent); // paste the clipboard content
-        
-        async function pasteContent() { // paste the clipboard content
-            var paste_text = await navigator.clipboard.readText();
-             paste_text = paste_text.split("<new_element>");
-             // the element need to put in the content of copied 
-            var all_need_copy = getClass('copy');
-            // put clickboard content in
-            for (let i = 0;i < all_need_copy.length;i++) {
-                all_need_copy[i].value = paste_text[i];
-            }
-            outSymptoms();
-        }
-        
         function mkInput() { // make the input with format
             var records_form = getId("records_form");
             // each row's element
@@ -414,15 +361,8 @@
                 for (let j = 0;j < all_elements.length;j++) { // all input of a row
                     realPutIn(all_elements[j], records_form, i, all_elements_width[j]);
                 }
-                			//<button type = 'button' id = 'submit_bt'>送出</button>
-                
             }
             outSymptoms();
-            var submit_element = document.createElement("button");
-            submit_element.innerHTML = '送出';
-            submit_element.type = 'button';
-            submit_element.id = 'submit_bt';
-            records_form.appendChild(submit_element);
         }
                 
         function realPutIn(obj_id, records_form, i, width) { // real function put the input in form
