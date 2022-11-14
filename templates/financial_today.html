@@ -15,6 +15,7 @@
 		<br/>
 		<button id = 'changed_bt' type = 'button'>保存更改</button>
 		<button id = 'settle_bt' type = 'button'>結算當班金額</button>
+        結算提醒事項<textarea id = 'origin_log'></textarea>
         <table id = 'tab' border = '2' align = center>
             <tr>
                 <td>編號</td>
@@ -42,9 +43,9 @@
 			return document.getElementById(id);
 		}
 
+        var total_money = 0; // sum of total money
         (async() => {
             const {data : financial} = await axios.get('/today_financial');
-			var total_money = 0;
             for (let i = 0;i < financial.length;i++) {
 				tab.innerHTML += "<tr id = 'log_row" + i + "'/><td/>" + financial[i].no + 
 				"<td>" + financial[i].times + "</td>" +
@@ -172,7 +173,7 @@
 		getId("settle_bt").addEventListener('click', settle); // 監聽錢
 
 		async function settle() { // settle all financial records on the duty of this nurse
-			const {data : settle} = await axios.post("/financial_today/settle", {aId : getId('nId').innerHTML});
+			const {data : settle} = await axios.post("/financial_today/settle", {aId : getId('nId').innerHTML, total_money : total_money, origin_log : getId('origin_log').value});
 			if (settle["suc"]) { // settle successfully
 				alert('結算成功!');
 				window.location.reload();

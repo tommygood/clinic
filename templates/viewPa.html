@@ -19,10 +19,7 @@
 		</div>
 		<div class = "row">
 			<div class = 'col-md-11'></div>
-			<form id = 'logout' action = '/viewPa' method = 'post' class = "col-md-1">
-			<input type = 'hidden' name = 'logout' value = '1'/>
-			<input type = 'submit' value = '登出'/>
-			</form>
+            <button type = 'button' id = 'logout' style = "width:80px;">登出</button>
 		</div>
 		<div class = 'position-absolute top-0 end-0 panel panel-default' id = "chat_title">---------------------<br/>聊天室<br/></div>
 		<input class = "position-fixed bottom-0 end-0" style = "width:300px;" type = "input" id = 'msg'></div>
@@ -736,5 +733,12 @@
                 page_list.appendChild(page_li);
             }
         }
+        
+        getId('logout').addEventListener('click', async() => {
+            const {data : is_clear} = await axios.post('/viewPa', {logout : 1});
+            if (!is_clear.suc)
+                alert(`${is_clear.log}`);
+            window.location.href = "/login";
+        });
     </script>
 </html>

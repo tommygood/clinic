@@ -112,9 +112,12 @@ router.post('/settle', async function(req, res) { // the nurse settle the financ
 	var error = [] // error msg
     if (user.data.aId == aId && user.data.title == 'nur') { // 登入中
     	let conn = await pool.getConnection();
-		var del_suc = await conn.query('truncate financial_today;'); // reset the financial today
-		console.log(del_suc);
-		console.log(del_suc.affectedRows);
+        //var insert_suc = await conn.query("insert into done_financial(`money`, `origin_aId`, `origin_log`) values(?, ?, ?)",);
+		//var del_suc = await conn.query('truncate financial_today;'); // reset the financial today
+		del_suc = true;
+        console.log(del_suc);
+        console.log(req.body);
+		//console.log(del_suc.affectedRows);
 		if (!del_suc) { // delete failed
 			error.push('delete failed !');
 			suc = false;

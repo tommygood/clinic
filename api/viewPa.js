@@ -39,13 +39,33 @@ router.get('/', function(req, res) {
     }
 });
 
+async function checkFinancial() { // check whether still have financial_today records
+    let conn = await pool.getConnection();
+    var is_clear = await conn.query("select count(*) from financial_today;");
+    conn.release();
+    console.log(is_clear[0]['count(*)']);
+    return is_clear[0]['count(*)'];
+}
+
 router.post('/', async function(req, res) {
     try { // 是否是登出
-        if (req.body.logout=='1') { // 登出
-			res.clearCookie('token'); // 清除 cookie
-			res.redirect('/login');
-			res.end;
-            return false;
+            console.log(req.body);
+            if (req.body.logout=='1') { // 登出
+                checkFinancial().then(function(remaining) { // check if today_financial is clear
+                    if (remaining) { // not clear
+                        console.log(`not clear the financial today, still have ${remaining} records`);   
+                        var remaining_log = (`not clear the financial today, still have ${remaining} records`);
+                        res.clearCookie('token'); // 清除 cookie
+                        res.json({suc : false, log : remaining_log});
+                    }
+                    else {
+                        res.clearCookie('token'); // 清除 cookie
+                        res.json({suc : true});
+                        res.end;
+                        return;
+                    }
+                });
+                
         }
     } catch(error) {
         console.log(error);
