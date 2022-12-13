@@ -19,18 +19,17 @@ router.get('/', function(req, res) {
 	}
 	catch(e) {
 		console.log(e);
-		return res.json({error:'未登入'});
+        res.redirect('/login');
 		res.end();
 		return;
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
-    if (user.data.aId && user.data.title == 'nur') { // 登入中
+    if (user.data.aId) { // 登入中
         res.sendFile(root + 'templates/ckVac.html');  //回應靜態文件
         return;
     }
     else {
-        res.statusCode = 302;
-        res.setHeader("Location", "http://localhost:8080/login");
+        res.redirect('/login');
         res.end();
         return;
     }

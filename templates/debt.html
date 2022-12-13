@@ -1,0 +1,108 @@
+<html>
+    <title>
+        債務紀錄
+    </title>
+    <head>
+        <h1>債務紀錄</h1>
+    </head>
+    <body>
+        <table id = 'debt_table' border = '2' align = center>
+            <tr>
+            <td>編號</td>
+            <td>時間</td>
+            <td>負責人</td>
+            <td>金額</td>
+            <td>理由</td>
+            </tr>
+        </table>
+    </body>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+        function getId(id) {
+            return document.getElementById(id);
+        }
+        
+        (async() => { // put records in table
+            var {data : debt} = await axios.get('/debt/records');
+            var debt_records = debt.debt_records;
+            // total not return records' index
+            var not_return_num = [];
+            for (let i = 0;i < debt_records.length;i++) {
+                // not returned
+                if (!debt_records[i].turned) { 
+                    putNotTurn(debt_records[i], i);
+                    not_return_num.push(i);
+                }
+            }
+            btListener(not_return_num);
+        })();
+        
+        function putNotTurn(record, i) {
+            // add not return record element
+            getId('debt_table').innerHTML += 
+                "<tr id = 'log_row'" + i + "/><td/>" + record.no + 
+                "<td>" + lessTime(record.times) + "</td>" +
+                "<td>" + record.aId + "</td>" +
+                "<td>" + record.money + "</td>" +
+                "<td>" + record.reason + "</td>" +
+                "<td><button id = 'turned_" + i + "'>歸還</button></td></tr>";
+        }
+        
+        function lessTime(times) { // 把時間弄得好看一點
+            if (times == null) // 如果還沒有時間
+                return null;
+            var new_time = '';
+            for (let i = 0;i < times.length-5;i++) { // 不要後面五個字元
+                if (times[i] == 'T') { // 把 T 換掉
+                    new_time += '\n';
+                    continue;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
+        
+        function btListener(records_len) {
+            // make button listener with records length
+            for (let i = 0;i < records_len.length;i++) {
+                getId('turned_'+records_len[i]).addEventListener('click', submitTurn);
+            }
+        }
+        
+        async function submitTurn(e) { // press the return button
+            var {data : debt} = await axios.get('/debt/records');
+            var debt_records = debt.debt_records;
+            var debt_no = mkBtNum(e.target.id);
+            var no = debt_records[debt_no].no;
+            var money = debt_records[debt_no].money;
+            var reason = debt_records[debt_no].reason;
+            // user confirm the record is right
+            var is_sure = confirm(`歸還 : 編號:${no}, 總金額為:${money}。核對確認無誤`)
+            // submit
+            const {data : user} = await axios.get('/viewPa/nId');
+            if (is_sure) {
+                var {data : turned} = await axios.post('/debt/turned', {no : no, aId : user.nId, money : money, reason : reason});
+                if (turned.suc) { // return successfully
+                    alert('歸還成功');
+                    window.location.reload();
+                }
+                else { // return fail
+                    alert(`歸還失敗, ${error}`);
+                    window.location.reload();
+                }
+            }
+        }
+        
+        function mkBtNum(id) { // find button num from its id
+            var bt_num = ""; // default is empty
+            var start_num = false; // start add num character from _ 
+            for (let i = 0;i < id.length;i++) {
+                if (start_num) // start add
+                    bt_num += id[i];
+                if (id[i] == "_") // start from _
+                    start_num = true;
+            }
+            return bt_num; // return num of button
+        }
+    </script>
+</html>

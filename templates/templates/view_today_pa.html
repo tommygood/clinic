@@ -1,0 +1,599 @@
+<head>
+    <title>
+         今日看診明細
+    </title>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
+</head>
+<body>
+    <h1>今日看診明細</h1>
+    <form id = 'logout' action = '/viewPa' method = 'post'>
+        <input type = 'hidden' name = 'logout' value = '1'/>
+        <input type = 'submit' value = '登出'/>
+    </form>
+    <span id = 'nId'></span>
+	<div class="dropdown">
+  		<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+			其他選項
+  		</button>
+  		<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+    		<li><a class="dropdown-item" href="/viewPa">看診明細</a></li>
+			<li><a class="dropdown-item" href="/addPa">新增病人</a></li>
+			<li><a class="dropdown-item" href="/ckVac">疫苗紀錄</a></li>
+			<li><a class="dropdown-item" href="/allMed">藥品庫存</a></li>
+			<li><a class="dropdown-item" href="/addMed">新增藥品</a></li>
+			<li><a class="dropdown-item" href="/fullcalendar">主責帳號</a></li>
+			<li><a class="dropdown-item" href="/financial">總帳務表</a></li>
+			<li><a class="dropdown-item" href="/financial_today">今日帳務</a></li>
+			<li><a class="dropdown-item" href="/cardDebt">欠卡紀錄</a></li>
+  		</ul>
+	</div>
+	<nav class="navbar navbar-light bg-light">
+  		<form id = 'navbar' class="container-fluid justify-content-start">
+			<button id = 'viewPa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">看診清單</button>
+			<button id = 'view_history_pa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">歷史看診明細</button>
+			<button id = 'addPa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">新增病人</button>
+			<button id = 'ckVac' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">疫苗紀錄</button>
+			<button id = 'ckTodayVac' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">今日疫苗紀錄</button>
+			<button id = 'allMed' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">藥品庫存</button>
+			<button id = 'ckMed' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">單筆藥品</button>
+			<button id = 'addMed' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">新增藥品</button>
+			<button id = 'fullcalendar' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">主責帳號</button>
+			<button id = 'financial' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">總帳務表</button>
+			<button id = 'financial_today' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">今日帳務</button>
+			<button id = 'cardDebt' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">欠卡紀錄</button>
+  		</form>
+	</nav>
+	<div class="collapse navbar-collapse" id="navbarColor02">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Features</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Pricing</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">About</a>
+          </li>
+        </ul>
+        <form class="d-flex">
+          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+          <button class="btn btn-outline-light" type="submit">Search</button>
+        </form>
+    </div>
+	<button id = 'save' type = 'button'>保存更改</button>
+		<ul class="nav nav-tabs" id="myTab" role="tablist">
+			<li class="nav-item" role="presentation">
+				<button class="nav-link active" id="doc1" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">醫生1</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link" id="doc3" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">醫生3</button>
+			</li>
+			<li class="nav-item" role="presentation">
+				<button class="nav-link" id="doc4" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false">醫生4</button>
+			</li>
+		</ul>
+	<div id = 'tab_pos'></div>	
+</body>
+	<style>
+		body{
+ 			color:black;
+ 			font-size:25px;
+		}
+		td,tr,th{
+ 			border:1px solid black;
+ 			border-collapse: collapse;
+ 			cursor:all-scroll;
+			width : 4%;
+			text-align : center;
+		}
+		table{
+			position : absolute;
+ 			border-collapse: collapse;
+		}
+		
+		#tab3 {
+			padding-top: percentage (100%);
+		}
+
+		h1 {
+			text-align : center;
+		}
+	
+		#nId {
+			margin : 0px 0px 0px 1500px;
+		}
+
+		#logout {
+			margin : 0px 0px 0px 1700px;
+			position : absolute;
+		}
+		
+
+		#save {
+			margin : 0px 0px 0px 1500px;
+		}
+	</style>
+    <script>
+		var all_tab = [1, 3]; // 全部的 table id 
+		var now_table; // which doctor table is used
+
+        function jsonToString(json) {
+            return Object.keys(json).map(function(key) {
+                return encodeURIComponent(key) + '=' + encodeURIComponent(json[key]);
+            }).join('&');
+        }
+        axios.get('/get', {
+            params : {
+                id : 5
+            }
+        })
+
+		function cancelDefault(e) { // 預設是不能放置拖曳，所以要取消
+    		e.preventDefault();
+		};
+
+		getId('save').addEventListener('click', updateNum); // 保存更改
+
+		async function updateNum() { // 更新順序
+			update_records = [] // 更新後的資料
+			update_index = [] // 更新對照資料的 rId 順序
+			var name;
+			var value_id = ''; // column id
+			for (let i = 0;i < total_len;i++) { // 總共有 total_len 行 row
+				name = "log_row" + i;
+				var value_index = getId(name).getElementsByTagName('td')[2].innerHTML.indexOf('id');
+				update_index.push(getId(name).getElementsByTagName('td')[0].innerHTML); // 放入對照的 rId
+				value_id = '';
+				value_index += 4; // 從 i 開始，所以 +4
+				while (getId(name).getElementsByTagName('td')[2].innerHTML[value_index] != '"') { // 到 " 就停
+					value_id += getId(name).getElementsByTagName('td')[2].innerHTML[value_index]; // 加字元
+					value_index++; // 找下一個
+				}
+				update_records.push(getId(value_id).value); // 放進要更新的資料
+			}
+			const {data : suc} = await axios.post('/ckPatients/updateNum', {nId : getNid(getId('nId').innerHTML), change_num : change_num, update_records : update_records, update_index : update_index});
+			var in_suc = updateIn(); // 更新是否在場
+			if (suc.suc && in_suc) {
+				alert('更新看診號成功！');
+				location.reload();
+			}
+			else {
+				alert('更新看診號失敗！');
+				location.reload();
+			}
+		}
+
+
+
+		var start_tar;
+		var start_pos; // 拖曳起始的位置
+		function start(){  
+			start_tar = event.target;
+			start_pos = event.path; // 放入起始位置
+		}
+
+        function getId(id) {
+            return document.getElementById(id);
+        }
+
+		function getCla(cla) {
+			return document.getElementsByClassName(cla);
+		}
+
+		function getColId(text) { // 從 td 的 innerHTML 找出 col id
+			var id_index = text.indexOf('id');
+			var value_id = '';
+			id_index += 4;
+			while (text[id_index] != '"') { // 到 " 就停
+				value_id += text[id_index]; // 加字元
+				id_index++; // 找下一個
+			}
+			return value_id;
+		}
+
+		// 監聽拖曳
+		/*getId('tab1').addEventListener('drop', dropped);
+		getId('tab1').addEventListener('dragenter', cancelDefault);
+		getId('tab1').addEventListener('dragover', cancelDefault);
+		getId('tab3').addEventListener('drop', dropped);
+		getId('tab3').addEventListener('dragenter', cancelDefault);
+		getId('tab3').addEventListener('dragover', cancelDefault);*/
+
+		var change_num = {}; // key = 更改的序號, value = 改了多少(singed)
+
+		function dropped(e) { // 放下
+			e.preventDefault();
+    		e.stopPropagation();
+			var end_pos = e.path; // 放置的位置
+			var end_tar = e.target;
+			for (let i = 0;i < start_pos.length;i++) { // 起始的 table
+				if (typeof start_pos[i].id == "string") { // id 是字串型態
+					if (start_pos[i].id.includes("tab")) // id包含 tab
+						var start_num = i; // 記錄 table index
+					if (start_pos[i].id.includes("row")) // id包含 tab
+						var start_tr_num = i; // 記錄 table index
+				}
+			}
+			for (let i = 0;i < end_pos.length;i++) { // 最後放置的 table
+				if (typeof end_pos[i].id == "string") { // id 是字串型態
+					if (end_pos[i].id.includes("tab")) // id 包含 tab
+						var end_num = i; // 記錄 table index
+					if (end_pos[i].id.includes("row")) // id包含 row
+						var end_tr_num = i; // 記錄 table row index
+				}
+			}
+			var start_endtime = start_tar.getElementsByTagName('td')[5].innerHTML // 一開始的完診時間
+			var end_endtime = getId(end_pos[end_tr_num].id).getElementsByTagName('td')[5].innerHTML;
+			if (start_endtime != "null" || end_endtime != "null") { // 都要是還沒看診過得才能換位置
+				alert('不能和已完診的交換位置');
+				return;
+			}
+			if (start_pos[start_num] == end_pos[end_num]) { // 相同 table 才能換位置
+  				let children= Array.from(e.target.parentNode.parentNode.children);  
+				if(children.indexOf(e.target.parentNode)>children.indexOf(start_tar)) {
+    				e.target.parentNode.after(start_tar);
+				}
+				else {
+    				e.target.parentNode.before(start_tar);
+				}
+				var start_value = getId(getColId(start_tar.getElementsByTagName('td')[2].innerHTML)).value; // 一開始的看診號
+				for (let i = 0;i < getCla(start_pos[start_num].id).length;i++) { // 重新排序看診號
+					//console.log(getCla(start_pos[start_num].id)[i].id);
+					//getCla(start_pos[start_num].id)[i].value = i+1;
+					//console.log(getId('log_col1').value);
+					getId(getCla(start_pos[start_num].id)[i].id).value = i+1;
+				}
+				var end_value = getId(getColId(start_tar.getElementsByTagName('td')[2].innerHTML)).value; // 改完的看診號
+				var start_rnum = start_tar.getElementsByTagName('td')[0].innerHTML; // 被換的病人的 rId
+				change_num[start_rnum] = start_value - end_value; // 記錄替換
+				/*// 交換看診號
+				var temp = getCla(start_pos[start_tr_num].id)[0].value; // 暫存開始的值
+				getCla(start_pos[start_tr_num].id)[0].value = getCla(end_pos[end_tr_num].id)[0].value
+				getCla(end_pos[end_tr_num].id)[0].value = temp;*/
+				//console.log(getId('log_col1').value);
+			}
+		}
+        (async() => { // 查詢 nId
+			const {data : user} = await axios.get('/viewPa/nId');
+			getId('nId').innerHTML = user.nId + " 號護士登入中";
+        })();
+
+        (async() => { // 查詢是否為主責, 是就標示
+			const {data : main_pos} = await axios.get('/fullcalendar/getMain'); // 主責帳號
+			for (let i = 0;i < main_pos.aId.length;i++) { // 所有時間相符的主責帳號
+				if (getNid(getId('nId').innerHTML) == main_pos.aId[i].aId) // 相符的帳號
+					getId('nId').innerHTML += "（主責）"; 
+			}
+        })();
+
+        function alertLog(response) { // 登入
+            for (let i = 0;i < response.data[response.data.length-1].length;i++) {
+                if (response.data[response.data.length-1][i].status) 
+                    return 1;
+             }
+            var name = prompt("請輸入您的帳號", ""); //將輸入的內容賦給變數 name ，
+            var pass = prompt("請輸入您的密碼", ""); //將輸入的內容賦給變數 name ，
+            var log_suc = 0;
+            for (let i = 0;i < response.data[response.data.length-1].length;i++) {
+                if (response.data[response.data.length-1][i].nId==name && response.data[response.data.length-1][i].pass==pass) {
+                    //getId('nId').value = name;
+                    alert('登入成功');
+                    log_suc = 1;
+                    return 1;
+                }
+            }
+            if (log_suc == 0) {
+                alert('登入失敗');
+                location.reload();
+            }
+        }    
+
+		var total_len = 0;
+		var index = 0;
+		var start_in = {}; // 一開始是否在場
+		function putRecord(dId) {
+        axios.get('/today_records').then(function(response) {
+            axios.get('/data').then(function(data) {
+                    /*for (let i = 0;i < no_rec.data.length;i++) 
+                        response.data.push(no_rec.data[i])*/
+                    response.data.sort(function(a,b){
+                        return a.num - b.num;
+                    });
+					var in_patients;
+                    for (let j = 0;j < response.data.length;j++) { // 每一筆紀錄 
+						if (response.data[j].dId != dId) // 不是此醫生
+							continue;
+						in_patients = false;
+                        for (let i = 0;i < data.data.length;i++) { // left join 到 patients
+                            if (response.data[j].pId == data.data[i].pId) { // 病人代號相同
+								start_in[total_len] = response.data[j].in;
+								in_patients = true;
+                                var no_card = 0; // 是否未帶卡
+								var tab_name = "tab"+ response.data[j].dId;
+                                getId(tab_name).innerHTML += 
+								"<tr draggable='true' ondragstart='start()' " + " id = 'log_row" + total_len + "'/><td/>"+ response.data[j].no  +  
+                                "<td>" + response.data[j].dId + "</td>" + 
+								"<td><input type = 'text' " + "class = 'tab" + response.data[j].dId + "' id = 'log_col" + j + "' style = 'width:50px' value = '" + response.data[j].num + "'></input></td>" +
+								"<td>" + data.data[i]["name"] + "</td>" + 
+                                "<td>" + lessTime(response.data[j].start) + "</td>" +
+                                "<td>" + lessTime(response.data[j].end) + "</td>" +
+                                "<td>" + data.data[i].id + "</td>" +
+                                "<td>" + data.data[i].sex + "</td>" +
+                                "<td>" + data.data[i].birth + "</td>" +
+                                "<td>" + data.data[i].tel1 + "</td>" +
+                                "<td>" + data.data[i].tel2 + "</td>" +
+                                "<td>" + response.data[j].mark + "</td>" + 
+                                "<td>" + response.data[j].regist + "</td>" +
+                                "<td>" + response.data[j].self_part + "</td>" +
+                                "<td>" + response.data[j].all_self + "</td>" +
+                                "<td>" + response.data[j].deposit + "</td>" +
+								"<td><input type = 'checkbox'" + `${response.data[j].in && "checked"}` + " id = 'in_" + total_len + "'></input></td>" +
+								"<td><button id = '" + j + "' type = 'button' onclick = 'callPat(" + index + "," + response.data[j].no + ")'>刪除</button></td>" +  
+								"<td><button id = 'return" + j + "' type = 'button' onclick = 'returnCard(" + response.data[j].no + ")'>還卡</button></td></tr>"; 
+								//document.getElementById("in_"+total_len).checked = response.data[j].in;
+
+								//getId("in_" + total_len).checked = response.data[j].in == 1;
+								total_len += 1;
+                                /*if (response.data[j].pId == null) {
+                                    try {
+                                        var no_card_id = "log_row" + j;
+                                        document.getElementById(no_card_id).style.backgroundColor = "red";
+                                    }
+                                    catch (e) {
+                                        console.log(e);
+                                    }
+                                }*/
+                                /*for (let k = 0;k < no_rec.data.length;k++) { //
+                                    if (response.data[j].rId == no_rec.data[k].rId) {
+                                        try {
+                                            var no_card_id = "log_row" + j;
+                                            document.getElementById(no_card_id).style.backgroundColor = "red";
+                                        }
+                                        catch (e) {
+                                            console.log(e);
+                                        }
+                                    }
+                                }*/
+                            }
+                        }
+						if (!in_patients) { // 不在病患中，未帶卡或預約
+							start_in[total_len] = response.data[j].in;
+							var tab_name = "tab"+ response.data[j].dId;
+                        	getId(tab_name).innerHTML += 
+							"<tr draggable='true' ondragstart='start()' " + " id = 'log_row" + total_len + "'/><td/>"+ response.data[j].no  +  
+                            "<td>" + response.data[j].dId + "</td>" + 
+							"<td><input type = 'text' " + "class = 'tab" + response.data[j].dId + "' id = 'log_col" + j + "' style = 'width:50px' value = '" + response.data[j].num + "'></input></td>" +
+							"<td>" + null + "</td>" + 
+                            "<td>" + lessTime(response.data[j].start) + "</td>" +
+                            "<td>" + lessTime(response.data[j].end) + "</td>" +
+                            "<td>" + null + "</td>" +
+                            "<td>" + null + "</td>" +
+                            "<td>" + null + "</td>" +
+                            "<td>" + null + "</td>" +
+                            "<td>" + null + "</td>" +
+                            "<td>" + null + "</td>" + 
+                            "<td>" + response.data[j].regist + "</td>" +
+                            "<td>" + response.data[j].self_part + "</td>" +
+                            "<td>" + response.data[j].all_self + "</td>" +
+                            "<td>" + response.data[j].deposit + "</td>" +
+							"<td><input type = 'checkbox'" + `${response.data[j].in && "checked"}` + " id = 'in_" + total_len + "'></input></td>" +
+							"<td><button id = '" + j + "' type = 'button' onclick = 'callPat(" + index + "," + response.data[j].no + ")'>刪除</button></td>" +  
+							"<td><button id = 'return" + j + "' type = 'button' onclick = 'returnCard(" + response.data[j].no + ")'>還卡</button></td></tr>"; 
+                            var no_card_id = "log_row" + total_len;
+							//getId("in_" + total_len).checked = response.data[j].in;
+                            document.getElementById(no_card_id).style.backgroundColor = "red";
+							total_len += 1;
+						}
+                    }
+					//mkStyle();
+                })
+            })
+		}
+
+		async function callPat(pa_num, rId) { // 按下刪除
+			var row_id;
+			var value_id;
+			var value_index;
+			reSort(rId); // 重新排序
+			const {data : del_suc} = await axios.post('/viewPa/del', {rId : rId}); // 刪除
+			updateNum(); // 更新看診號
+			if (Object.values(del_suc)) { // 是否刪除成功
+				alert('刪除成功');
+				location.reload();
+			}
+			else {
+				alert('刪除失敗');
+				location.reload();
+			}
+		}
+
+		function reSort(rId) { // 重新排序看診號
+			var resort_index = 0;
+			var tab_len; // 每個 tab 的長度
+			var tab_id; // 每個 tab 的 id
+			var log_row; // 每個 row
+				tab_id = "tab" + now_table; // 該 table 的 id
+				tab_len = getId(tab_id).getElementsByTagName('tbody').length - 1; // 該 tab 長度，第一個是表頭所以-1
+				resort_index = 0; // 重新排序的看診號
+				console.log(tab_len);
+				for (let i = 1;i < tab_len+1;i++) { // 排序各個 table
+					log_row = (getId(tab_id).getElementsByTagName('tbody')[i]);
+					if (rId == log_row.getElementsByTagName('td')[0].innerHTML) // 是要刪除的，不要算
+						continue;
+					value_id = ""; // 看診號的 id
+					value_index = log_row.getElementsByTagName('td')[2].innerHTML.indexOf('id');
+					value_index += 4; // 從 i 開始，所以 +4
+					while (log_row.getElementsByTagName('td')[2].innerHTML[value_index] != '"') { // 到 " 就停
+						value_id += log_row.getElementsByTagName('td')[2].innerHTML[value_index]; // 加字元
+						value_index++; // 找下一個
+					}
+					(getId(value_id).value) = resort_index+1; // 替換看診號
+					resort_index++; // 下一個看診號
+				}
+		}
+
+		async function updateIn() { // 更新在場
+			var tab_len; // 每個 tab 的長度
+			var tab_id; // 每個 tab 的 id
+			var total_rId = [];
+			var total_in = [];
+			var each_in; // 每一個是否在場
+			var each_in_index; // 每一個是否在場的 index
+			for (let j = 0;j < all_tab.length;j++) { // 全部的 table
+				tab_id = "tab" + all_tab[j]; // 該 table 的 id
+				tab_len = getId(tab_id).getElementsByTagName('tbody').length - 1; // 該 tab 長度，第一個是表頭所以-1
+				for (let i = 1;i < tab_len+1;i++) { // 把每個 table 的 是否在場紀錄抓進去
+					log_row = (getId(tab_id).getElementsByTagName('tbody')[i]); // row id
+					each_rId = log_row.getElementsByTagName('td')[0].innerHTML; // rId
+					each_in_index = log_row.getElementsByTagName('td')[16].innerHTML.indexOf('id'); // 先找出 in 的 id
+					each_in_index += 4;
+					each_in = ""; 
+					while (log_row.getElementsByTagName('td')[16].innerHTML[each_in_index] != '"') { // 到 " 就停
+						each_in += log_row.getElementsByTagName('td')[16].innerHTML[each_in_index];
+						each_in_index++;
+					}
+					total_rId.push(each_rId); // 該筆資料 rId
+					total_in.push(getId(each_in).checked); // 對應的 in
+				}
+			}
+			const {data : suc} = await axios.post('/ckPatients/updateIn', {total_rId : total_rId, total_in : total_in});
+			return suc;
+		}
+
+		/*function inChk() { // 勾選是否在場
+			var in_id;
+			for (let i = 0;i < Object.values(start_in).length;i++) {
+				in_id = "in_" + Object.keys(start_in)[i]; // 在場的 id
+				getId(in_id).checked = Object.values(start_in)[i];
+			}
+		}
+		setTimeout(() => {
+			inChk();
+		}, "200") // 在 0.4 秒以後再啟動勾選*/
+
+		async function returnCard(rId) { // 按下刪除
+			const {data : up_suc} = await axios.post('/viewPa/updatePa', {rId : rId});
+			if (Object.values(up_suc)) { // 是否刪除成功
+				window.location.href = "/updatePa";
+			}
+			else {
+				alert('更新失敗');
+				location.reload();
+			}
+		}
+
+		function mkStyle() { // 設置間距
+			getId('tab' + all_tab[0]).style.margin = '0px 0px 0px 0px'; // 第一個 table 
+			getId('tab3').getBoundingClientRect().width+= '1090';
+			for (let i = 0;i < all_tab.length-1;i++) { // 設置每一個 table 的間距
+				spacing = getId('tab' + (all_tab[i])).getBoundingClientRect().bottom - getId('tab' + (all_tab[i+1])).getBoundingClientRect().top; // 計算前面的 table 的 bottom - 後面 table 的 top
+				distance = (-20 + -1 * spacing) * -1; // 保持間距
+				getId('tab' + (all_tab[i+1])).style.margin = `${distance}px 0px 0px 0px` // 設置 table 間距
+			}
+		}
+
+		function lessTime(times) { // 把時間弄得好看一點
+			if (times == null) // 如果還沒有時間
+				return null;
+			var new_time = '';
+			for (let i = 0;i < times.length-5;i++) { // 不要後面五個字元
+				if (times[i] == 'T') { // 把 T 換掉
+					new_time += '\n';
+					continue;
+				}
+				new_time += times[i];
+			}
+			return new_time;
+		}
+
+		function getNid(nId) { // 從 innerHTML 挑出 nId
+			var only_nId = '' // 只要 nId
+			for (let i = 0;i < nId.length;i++) {
+				if (nId[i] == " ") // 加完了
+					break;
+				else
+					only_nId += nId[i];
+			}
+			return only_nId;
+		}
+
+
+		function directId(e) { // 導向網址
+			window.location.href = "/" + e.target.id;
+		}
+
+		function navDirect() { // 導向 nav_bar 的 child 到該網址
+			var nav_bar = getId('navbar'); // 所有 nav bar 的 child
+			for (let i = 0;i < nav_bar.length;i++) { // 監聽所有的 child
+				getId(nav_bar[i].id).addEventListener('click', directId);
+			}
+		}
+		navDirect();
+
+		function mkTable(tab_id) { // 依照醫生數量，製作 table
+				getId('tab_pos').innerHTML = 
+				`<table id = 'tab${tab_id}' border = '2' align = center>` +
+				"<tr>" + 
+				"<td style = 'text-align:center;' colspan = 17>" + 
+				`Doc.${tab_id}` +  
+				"</td>" +
+				"</tr>" + 
+        		"<tr>" + 
+            	"<td><span id = 'chart_num'>病歷號</span></td>" + 
+            	"<td><span id = 'dId'>醫生代號</span><br/></td>" +
+            	"<td><span id = 'num'>看診號</span></td>" + 
+            	"<td><span id = 'pat_name'>姓名</span></td>" +
+            	"<td><span id = 'time'>掛號時間</span></td>" +
+            	"<td><span id = 'end_time'>完診時間</span></td>" +
+            	"<td><span id = 'id'>身份證號</span></td>" +
+            	"<td><span id = 'sex'>性別</span></td>" +
+            	"<td><span id = 'birth'>生日</span></td>" +
+            	"<td><span id = 'tel1'>電話1</span></td>" +
+            	"<td><span id = 'tel2'>電話2</span></td>" +
+            	"<td><span id = 'mark'>註記</span></td>" +
+            	"<td><span id = 'regist'>掛號費</span></td>" +
+            	"<td><span id = 'part_self'>部份負擔</span></td>" +
+            	"<td><span id = 'deposit'>押金</span></td>" + 
+            	"<td><span id = 'all_self'>自費</span></td>" +
+            	"<td><span id = 'in'>是否在場</span><br/></td>" +
+            	"<td><span id = 'delete'>刪除</span><br/></td>" +
+            	"<td><span id = 'return_card'>還卡</span><br/></td>" +
+        	"</tr>" +
+    		"</table>" +
+			"<div>&nbsp;</div>"
+		}
+	
+		getId('doc1').addEventListener('click', mkDoc); // 
+
+		getId('doc3').addEventListener('click', mkDoc); // 
+
+		function mkDoc(e) {
+			var tab_id = getDid(e.target.id); // 取得 dId
+			now_table = tab_id;
+			mkTable(tab_id); // 製作該 id 的 table
+			// 監聽拖曳
+			//getId('tab' + tab_id).addEventListener('drop', dropped);
+			//getId('tab' + tab_id).addEventListener('dragenter', cancelDefault);
+			//getId('tab' + tab_id).addEventListener('dragover', cancelDefault);
+			// 放入 table
+			putRecord(tab_id);
+		}
+
+		function getDid(origin_dId) {
+			var dId = ''
+			for (let i = 0;i < origin_dId.length;i++) {
+				if (isNum(origin_dId[i]))
+					dId += origin_dId[i];
+			}
+			return dId;
+		}
+
+		function isNum(n) { // 是不是數字
+			return !isNaN(parseFloat(n)) && isFinite(n);
+		}
+    </script>

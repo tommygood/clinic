@@ -19,5 +19,7 @@ create table patients(
 `part_self` int(3),
 `deposit` int(4),
 `all_self` int(6),
-`times` datetime default current_timestamp
+`times` datetime default current_timestamp,
+`weight` int(4),
+`height` int(4)
 )

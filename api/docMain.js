@@ -17,8 +17,7 @@ router.get('/', function(req, res) {
 		const user = jwt.verify(req.cookies.token, 'my_secret_key');
 	}
 	catch(e) { //
-        res.statusCode = 302;
-        res.setHeader("Location", "http://localhost:8080/login");
+        res.redirect("/login");
         res.end();
 		console.log(e);
 		return;
@@ -31,8 +30,7 @@ router.get('/', function(req, res) {
         return;
     }
     else {
-        res.statusCode = 302;
-        res.setHeader("Location", "http://localhost:8080/login");
+        res.redirect("/login");
         res.end();
         return;
     }
@@ -125,7 +123,8 @@ router.post('/all_record', async function(req, res) { // 回傳該次病歷紀�
     if (user.data.aId && user.data.title == 'doc') { // 登入中
     	let conn = await pool.getConnection();
         if (!req.body.check_first) { // not the first check
-            var same_records = await conn.query('select `no` from records where `no` in (select `rId` from done_records where `rId` not in (select `rId` from delete_records)) and `pId` = ? and `no` in (select `rId` from diagnose_records);', req.body.pId); // 找出已完成, 不在刪除的紀錄, 病人代號相同, 有在診斷紀錄的 records
+            // 找出已完成, 不在刪除的紀錄, 病人代號相同, 有在診斷紀錄的 records，並用完診時間排序
+            var same_records = await conn.query('select `no` from records where `no` in (select `rId` from done_records where `rId` not in (select `rId` from delete_records)) and `pId` = ? and `no` in (select `rId` from diagnose_records) order by `end`;', req.body.pId); 
             if (same_records.length == 0) { // 沒有以前的病歷
                 conn.release();
                 res.end;

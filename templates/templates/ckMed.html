@@ -1,0 +1,173 @@
+<html>
+    <head>
+        <title>
+            單筆藥品庫存紀錄
+        </title>
+        <h1>
+            單筆藥品庫存紀錄
+        </h1>
+    </head>
+    <body>
+		<span>過濾條件</span>
+		<select name = "search" id = "search">
+			<option value = "">---</option>
+			<option value = "day">當日</option>
+			<option value = "week">七日內</option>
+			<option value = "month">三十日內</option>
+		</select>
+		<button type = 'button' id = 'search_bt'>查詢</button>
+        <table id = 'tab' border = '2' align = center>
+            <tr>
+                <td>編號</td>
+				<td>理由</td>
+                <td>藥碼</td>
+                <td>中文名稱</td>
+                <td>英文名稱</td>
+                <td>進貨日期</td>
+                <td>過期日期</td>
+				<td>負責人</td>
+				<td>數量</td>
+				<td>費用</td>
+				<td>註記</td>
+            </tr>
+        </table>
+        <table id = 'tab1' border = '2' align = center>
+            <tr>
+                <td>編號</td>
+				<td>理由</td>
+                <td>藥碼</td>
+                <td>中文名稱</td>
+                <td>英文名稱</td>
+                <td>進貨日期</td>
+                <td>過期日期</td>
+				<td>負責人</td>
+				<td>數量</td>
+				<td>費用</td>
+				<td>註記</td>
+            </tr>
+        </table>
+    </body>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+	<style>
+		#tab1 {
+			  visibility: collapse;
+		}
+	</style>
+    <script>
+		function getId(id) {
+			return document.getElementById(id);
+		}
+
+		getId('search_bt').addEventListener('click', search);
+
+		function during(now_time, end) { // 檢查是否在過濾條件的時間內
+        	var curDate = new Date();
+			var today = curDate.getFullYear() + '/' + (curDate.getMonth() + 1) + '/' + curDate.getDate(); // 當日
+			today = new Date(today);
+			var in_week = new Date();
+			in_week.setDate(in_week.getDate() - 7);
+			var week = in_week.getFullYear() + '/' + (in_week.getMonth() + 1) + '/' + in_week.getDate();
+			week = new Date(week); // 七日內
+			var in_month = new Date();
+			in_month.setDate(in_month.getDate() - 30);
+			var month = in_month.getFullYear() + '/' + (in_month.getMonth() + 1) + '/' + in_month.getDate();
+			month = new Date(month); // 三十天內
+			if (end == "day") {
+				var endDate = today;
+			}
+			else if (end == "week") {
+				var endDate = week;
+			}
+			else if (end == 'month') {
+				var endDate = month;
+			}
+			else { // 條件為預設，列出全部
+				return true;
+			}
+			// 是否在時間內
+			if (now_time <= today && now_time >= endDate) {
+            	return true;
+        	}
+        	return false;
+    	}
+
+		function makeDate(text) {
+			var only_date = '';
+			for (let i = 0;i < 10;i++) {
+				if (text[i] == "-") {
+					only_date += "/";
+				}
+				else {
+					only_date += text[i];
+				}
+			}
+			return new Date(only_date);
+		}
+
+		function search() { // 按下搜尋
+			var new_text = ""; // 要新放進去的內容
+			new_text += "<tr><td>編號</td><td>理由</td><td>藥碼</td><td>中文名稱</td><td>英文名稱</td><td>進貨日期</td><td>過期日期</td><td>負責人</td><td>數量</td><td>費用</td><td>註記</td></tr>"; // 表頭
+			for (let i = 1;i < getId('tab1').getElementsByTagName('tr').length;i++) { // 從另外一個 tab 抓資料
+				if (during(makeDate(getId('tab1').getElementsByTagName('tr')[i].getElementsByTagName('td')[5].innerHTML), getId('search').value)) { // 在區間內
+					new_text += getId('tab1').getElementsByTagName('tr')[i].innerHTML + "</tr><tr>"; // 加入內容
+				}
+			}
+			getId('tab').innerHTML = new_text; // 更新內容
+		}
+
+        (async() => {
+            const {data : med_inventory_each} = await axios.get('/med_inventory_each');
+            const {data : medicines} = await axios.get('/medicines_normal');
+            const {data : expense} = await axios.get('/expense');
+            const {data : financial} = await axios.get('/total_financial');
+			var emId = '';
+			var cost_emId = [];
+			for (let i = 0;i < financial.length;i++) {
+				if (financial[i].reason.includes('藥物')) { // 是藥物的收支
+					for (let j = 3;j < financial[i].reason.length;j++) {
+						emId += financial[i].reason[j]; // 找出單筆藥品的 no
+					}
+					cost_emId.push({[emId]:financial[i].money});
+					emId = '';
+				}
+			}
+			var cost = null; // 藥品的費用，有可能沒有，先設 null
+            for (let i = 0;i < med_inventory_each.length;i++) { // 單筆藥品
+				console.log(med_inventory_each[i].code.length);
+				for (let k = 0;k < medicines.length;k++) { // 查詢藥品資料
+					if (med_inventory_each[i].code == medicines[k].code) { // 藥碼相同
+						cost = null;
+						for (let j = 0;j < cost_emId.length;j++) {
+							if (Object.keys(cost_emId[j]) == med_inventory_each[i].no)
+								cost = Object.values(cost_emId[j]);
+						}
+						tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + med_inventory_each[i].no + 
+						"<td>" + med_inventory_each[i].reason + "</td>" +
+						"<td>" + med_inventory_each[i].code + "</td>" +
+						"<td>" + medicines[k].medi_mand + "</td>" +
+						"<td>" + medicines[k].medi_eng + "</td>" +
+						"<td>" + med_inventory_each[i].purchase_date + "</td>" +
+						"<td>" + med_inventory_each[i].expire + "</td>" +
+						"<td>" + med_inventory_each[i].aId + "</td>" +
+						"<td>" + med_inventory_each[i].quantity + "</td>" +
+						"<td>" + cost + "</td>" +
+						"<td>" + med_inventory_each[i].mark + "</td></tr>" 
+						// 存兩筆，下面的隱藏起來，就不用再去抓
+						tab1.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + med_inventory_each[i].no + 
+						"<td>" + med_inventory_each[i].reason + "</td>" +
+						"<td>" + med_inventory_each[i].code + "</td>" +
+						"<td>" + medicines[k].medi_mand + "</td>" +
+						"<td>" + medicines[k].medi_eng + "</td>" +
+						"<td>" + med_inventory_each[i].purchase_date + "</td>" +
+						"<td>" + med_inventory_each[i].expire + "</td>" +
+						"<td>" + med_inventory_each[i].aId + "</td>" +
+						"<td>" + med_inventory_each[i].quantity + "</td>" +
+						"<td>" + cost + "</td>" +
+						"<td>" + med_inventory_each[i].mark + "</td></tr>" 
+						break;
+					}
+				}
+			}
+        })();
+    </script>
+</html>

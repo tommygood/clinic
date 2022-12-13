@@ -18,7 +18,7 @@ router.get('/', function(req, res) {
 	}
 	catch(e) {
 		console.log(e);
-		return res.json({error:'未登入'});
+        res.redirect('/login');
 		res.end();
 		return;
 	};
@@ -28,8 +28,7 @@ router.get('/', function(req, res) {
         return;
     }
     else {
-        res.statusCode = 302;
-        res.setHeader("Location", "http://localhost:8080/login");
+        res.redirect('/login');
         res.end();
         return;
     }

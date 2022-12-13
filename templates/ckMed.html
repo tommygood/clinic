@@ -23,7 +23,7 @@
                 <td>藥碼</td>
                 <td>中文名稱</td>
                 <td>英文名稱</td>
-                <td>進貨日期</td>
+                <td>進貨/開藥日期</td>
                 <td>過期日期</td>
 				<td>負責人</td>
 				<td>數量</td>
@@ -116,7 +116,10 @@
 		}
 
         (async() => {
-            const {data : med_inventory_each} = await axios.get('/med_inventory_each');
+            var {data : med_inventory_each} = await axios.get('/med_inventory_each');
+            const {data : each_use_medicines} = await axios.get('/each_use_medicines');
+            med_inventory_each = med_inventory_each.concat(each_use_medicines.records);
+            med_inventory_each = bSort(med_inventory_each);
             const {data : medicines} = await axios.get('/medicines_normal');
             const {data : expense} = await axios.get('/expense');
             const {data : financial} = await axios.get('/total_financial');
@@ -133,7 +136,7 @@
 			}
 			var cost = null; // 藥品的費用，有可能沒有，先設 null
             for (let i = 0;i < med_inventory_each.length;i++) { // 單筆藥品
-				console.log(med_inventory_each[i].code.length);
+				//console.log(med_inventory_each[i].code.length);
 				for (let k = 0;k < medicines.length;k++) { // 查詢藥品資料
 					if (med_inventory_each[i].code == medicines[k].code) { // 藥碼相同
 						cost = null;
@@ -141,13 +144,16 @@
 							if (Object.keys(cost_emId[j]) == med_inventory_each[i].no)
 								cost = Object.values(cost_emId[j]);
 						}
-						tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + med_inventory_each[i].no + 
+                        // 進貨時間，如果是看診就是開始時間
+                        var time = med_inventory_each[i].purchase_date ? med_inventory_each[i].purchase_date : med_inventory_each[i].time;
+                        console.log(time);
+						tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + (i+1) + 
 						"<td>" + med_inventory_each[i].reason + "</td>" +
 						"<td>" + med_inventory_each[i].code + "</td>" +
 						"<td>" + medicines[k].medi_mand + "</td>" +
 						"<td>" + medicines[k].medi_eng + "</td>" +
-						"<td>" + med_inventory_each[i].purchase_date + "</td>" +
-						"<td>" + med_inventory_each[i].expire + "</td>" +
+						"<td>" + lessTime(time) + "</td>" +
+						"<td>" + lessTime(med_inventory_each[i].expire) + "</td>" +
 						"<td>" + med_inventory_each[i].aId + "</td>" +
 						"<td>" + med_inventory_each[i].quantity + "</td>" +
 						"<td>" + cost + "</td>" +
@@ -158,8 +164,8 @@
 						"<td>" + med_inventory_each[i].code + "</td>" +
 						"<td>" + medicines[k].medi_mand + "</td>" +
 						"<td>" + medicines[k].medi_eng + "</td>" +
-						"<td>" + med_inventory_each[i].purchase_date + "</td>" +
-						"<td>" + med_inventory_each[i].expire + "</td>" +
+						"<td>" + lessTime(time) + "</td>" +
+						"<td>" + lessTime(med_inventory_each[i].expire) + "</td>" +
 						"<td>" + med_inventory_each[i].aId + "</td>" +
 						"<td>" + med_inventory_each[i].quantity + "</td>" +
 						"<td>" + cost + "</td>" +
@@ -169,5 +175,34 @@
 				}
 			}
         })();
+        
+        function bSort(arr) { // bubble sort 排序購買時間和開藥時間
+            for (let i = 0;i < arr.length-1;i++) {
+                for (let j = 0;j < arr.length-1;j++) {
+                    var time = arr[j].purchase_date ? arr[j].purchase_date : arr[j].time;
+                    var times = arr[j+1].purchase_date ? arr[j+1].purchase_date : arr[j+1].time;
+                    if (time > times) {
+                        var temp = arr[j+1];
+                        arr[j+1] = arr[j];
+                        arr[j] = temp;
+                    }
+                }
+            }
+            return arr;
+        }
+        
+        function lessTime(times) { // 把時間弄得好看一點
+            if (times == null || times == undefined) // 如果還沒有時間
+                return '無';
+            var new_time = '';
+            for (let i = 0;i < 10;i++) { // 只要前10個字元
+                if (times[i] == 'T') { // 把 T 換掉
+                    new_time += '\n';
+                    continue;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
     </script>
 </html>

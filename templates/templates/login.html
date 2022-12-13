@@ -1,0 +1,46 @@
+<html>
+    <head>
+        <title>
+            診所登入頁面
+        </title>
+        <h1>
+            診所登入頁面
+        </h1>
+    </head>
+    <body>
+        <form method = 'post' id = 'login' onsubmit="return false;">
+            帳號：<input type = 'text' name = 'account' id = 'account'/>
+            密碼：<input type = 'text' name = 'pass' id = 'pass'/>
+            <input type = 'submit' id = 'sub'/>
+        </form>
+    </body>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+        function getId(id) {
+            return document.getElementById(id);
+        }
+
+        getId('login').addEventListener('submit', async(e) => {
+			e.preventDefault();
+			const data = {
+				account : getId('account').value,
+				pass : getId('pass').value
+			};
+			//await axios.post('/login/token');
+			const checked_data = await axios.post('/login/check', data);
+			if (checked_data.data.error != null) // 輸入為錯誤
+				alert(checked_data.data.error);
+			if (checked_data.data.aId != undefined) {
+				//alert(checked_data.data.token);
+				if (checked_data.data.title == 'doc') {
+					window.location.href = '/docMain';
+				}
+				else {
+					window.location.href = '/viewPa';
+				};
+			};
+        });
+    </script>
+</html>
+
+

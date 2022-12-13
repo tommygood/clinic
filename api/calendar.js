@@ -6,6 +6,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 var db = require('mariadb');
 var jwt = require('jsonwebtoken');
 const pool = db.createPool({
+    trace : true,
     host : 'localhost',
     user : 'wang',
     password : 'wang313',
@@ -118,6 +119,7 @@ router.get('/getMain', async function(req, res) {
 		console.log(e);
 		aId = false;
 	}
+    conn.release();
 	res.json({aId : aId});
 	res.end;
 	return;

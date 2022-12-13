@@ -1,0 +1,72 @@
+<html>
+    <head>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous"></link>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
+        <title>
+            欠卡紀錄
+        </title>
+        <h1>
+            欠卡紀錄
+        </h1>
+    </head>
+    <body>
+		<div class="dropdown">
+  			<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+				其他選項
+  			</button>
+  			<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+    			<li><a class="dropdown-item" href="/viewPa">看診明細</a></li>
+				<li><a class="dropdown-item" href="/addPa">新增病人</a></li>
+				<li><a class="dropdown-item" href="/ckVac">疫苗紀錄</a></li>
+  			</ul>
+		</div>
+        <table id = 'tab' border = '2' align = center>
+            <tr>
+                <td>編號</td>
+                <td>時間</td>
+                <td>病單號</td>
+                <td>狀態</td>
+            </tr>
+        </table>
+    </body>
+	<style>
+		 table {
+			position : absolute;
+		}
+        
+        td {
+            text-align : center;
+        }
+	</style>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+		function getId(id) {
+			return document.getElementById(id);
+		}
+
+        (async() => {
+            var {data : no_card} = await axios.get('/no_card');
+			no_card = no_card.no_card;
+            for (let i = 0;i < no_card.length;i++) {
+				tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + no_card[i].no + 
+				"<td>" + lessTime(no_card[i].time) + "</td>" +
+				"<td>" + no_card[i].rId + "</td>" +
+				"<td>" + `${no_card[i].status ? "已歸還" : "<b>未歸還</b>"}` + "</td></tr>"
+			}
+        })();
+        
+        function lessTime(times) { // 把時間弄得好看一點
+            if (times == null) // 如果還沒有時間
+                return null;
+            var new_time = '';
+            for (let i = 0;i < times.length-5;i++) { // 不要後面五個字元
+                if (times[i] == 'T') { // 把 T 換掉
+                    new_time += '\n';
+                    continue;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
+    </script>
+</html>

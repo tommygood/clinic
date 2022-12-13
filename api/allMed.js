@@ -18,21 +18,28 @@ router.get('/', async function(req, res) {
 	}
 	catch(e) {
 		console.log(e);
-		return res.json({error:'未登入'});
+        res.redirect('/login');
 		res.end();
 		return;
 	};
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
-    if (user.data.aId && user.data.title == 'nur') { // 登入中
-    	let conn = await pool.getConnection();
-		await conn.query('insert into look_medicines_inventory(`aId`) values(?)', user.data.aId);
-		conn.release();
-        res.sendFile(root + 'templates/allMed.html');  //回應靜態文件
-        return;
+    try {
+        if (user.data.aId) { // 登入中
+            let conn = await pool.getConnection();
+            await conn.query('insert into look_medicines_inventory(`aId`) values(?)', user.data.aId);
+            conn.release();
+            res.sendFile(root + 'templates/allMed.html');  //回應靜態文件
+            return;
+        }
+        else {
+            res.redirect('/login');
+            res.end();
+            return;
+        }
     }
-    else {
-        res.statusCode = 302;
-        res.setHeader("Location", "http://localhost:8080/login");
+    catch(e) {
+        console.log(e);
+        res.redirect('/login');
         res.end();
         return;
     }

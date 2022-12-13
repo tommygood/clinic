@@ -12,20 +12,33 @@
 		<b><span id = 'total_money'></span></b>
 		<br/>
 		<br/>
-        <table id = 'tab' border = '2' align = center>
+        <table id = 'tab' border = '2'>
             <tr>
                 <td>編號</td>
                 <td>時間</td>
                 <td>負責人員</td>
                 <td>理由</td>
+                <td>理由對應編號</td>
                 <td>金額</td>
             </tr>
         </table>
+        <!-- table page -->
+        <nav aria-label="Page navigation example" class = "position-fixed bottom-0 end-50" id = "page_top">
+        </nav>
     </body>
 	<style>
 		 table {
 			position : absolute;
 		}
+        
+        td {
+            text-align : center;
+        }
+        
+        #tab {
+            position : absolute;
+            align : center;
+        }
 	</style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
@@ -40,11 +53,22 @@
 				tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + financial[i].no + 
 				"<td>" + financial[i].times + "</td>" +
 				"<td>" + financial[i].aId + "</td>" +
-				"<td>" + financial[i].reason + "</td>" +
+				"<td>" + reasonText(financial[i].reason) + "</td>" +
+                "<td>" + reasonId(financial[i].reason) + "</td>" +
 				"<td>" + financial[i].money + "</td></tr>";
 				total_money += financial[i].money;
 			}
 			getId('total_money').innerHTML = "$ " + total_money;
         })();
+        
+        function reasonText(reason) {
+            text_part = reason.split(',')[0];
+            return text_part;
+        }
+        
+        function reasonId(reason) {
+            text_part = reason.split(',')[1];
+            return text_part;
+        }
     </script>
 </html>

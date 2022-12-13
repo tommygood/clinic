@@ -3,5 +3,6 @@ create table vac_re(
 `apply` int(1) default 0,
 `time` datetime default current_timestamp,
 `pId` int(11),
-`vId` int(11)
+`vId` int(11),
+`rId` int(11)
 )

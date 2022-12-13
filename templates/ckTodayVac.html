@@ -11,6 +11,7 @@
         <table id = 'tab' border = '2' align = center>
             <tr>
                 <td>編號</td>
+                <td>病歷號</td>
                 <td>報</td>
                 <td>注射日期</td>
                 <td>姓名</td>
@@ -35,6 +36,7 @@
                         for (let k = 0;k < vac.length;k++) { // 找疫苗
                             if (vac_re[i].vId == vac[k].vId) { // 找到疫苗
 								tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + vac_re[i].vrId + 
+                                "<td>" + vac_re[i].rId + "</td>" +
 								"<td>" + vac_re[i].apply + "</td>" +
 								"<td>" + vac_re[i].time + "</td>" +
 								"<td>" + pat[j].name + "</td>" +

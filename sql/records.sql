@@ -11,5 +11,6 @@ create table records(
 `deposit` int(4),
 `dId` int(11),
 `in` int(1),
-`real_start` datetime
+`real_start` datetime,
+`paid`(1)
 )

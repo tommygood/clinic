@@ -1,0 +1,96 @@
+<html>
+    <head>
+        <title>
+            新增單筆藥品
+        </title>
+        <h1>
+            新增單筆藥品
+        </h1>
+		<h2><span id = 'aId'></span><span> 號護士</span></h2>
+    </head>
+    <body>
+        <form onsubmit = "return false;" method = 'post' id = 'addMed'>
+			理由：
+			<select name = 'reason' id = 'reason'>
+				<option value = '---'>---</option>
+				<option value = '購入'>購入</option>
+				<option value = '賣出'>賣出</option>
+				<option value = '借出'>借出</option>
+				<option value = '借入'>借入</option>
+				<option value = '被還'>被還</option>
+				<option value = '還出'>還出</option>
+				<option value = '遺失'>遺失</option>
+				<option value = '找回'>找回</option>
+			</select>
+			<br/>
+			藥碼：<input type = 'text' name = 'code' id = 'code'/><br/>
+			數量：<input type = 'text' name = 'quantity' id = 'quantity'/>
+			<span id = 'expire_text' style = 'display:none'><br/>使用期限：</span>
+			<input style = 'display:none' type = 'text' name = 'expire' id = 'expire'/>
+			<span id = 'expense_text' style = 'display:none'><br/>價錢：</span>
+			<input style = 'display:none' type = 'text' name = 'expense' id = 'expense'/><br/>
+            註記：<input type = 'text' name = 'mark' id = 'mark'/>
+            <input type = 'submit' id = 'sub'/>
+		</form>
+    </body>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+        function getId(id) {
+            return document.getElementById(id);
+        }
+
+        (async() => { // 查詢 nId
+			const {data : user} = await axios.get('/viewPa/nId');
+			getId('aId').innerHTML = user.nId;
+        })();
+
+        getId('addMed').addEventListener('submit', async(e) => {
+			e.preventDefault();
+			const data = {
+				code : getId('code').value,
+				expire : getId('expire').value,
+				aId : getId('aId').innerHTML,
+				quantity : getId('quantity').value,
+				reason : getId('reason').value,
+				mark : getId('mark').value,
+				expense : getId('expense').value
+			};
+			const checked_data = await axios.post('/addMed/check', data);
+			if (checked_data.data.error != null) { // 輸入為錯誤
+				alert(checked_data.data.error);
+				return;
+			}
+			alert('新增成功');
+			window.location.href = '/viewPa';
+		});
+
+		getId('reason').addEventListener('change', async(e) => {
+			var plus = ['購入', '借入', '被還']; // 增加的動作
+			var need_expense = ['購入', '賣出']; // 需要費用的動作
+			is_plus = false;
+			for (let i = 0;i < plus.length;i++) {
+				if (getId('reason').value == plus[i]) { // 增加的動作
+					getId('expire').style.display = 'inline'; // 要顯示過期
+					getId('expire_text').style.display = 'inline'; 
+					is_plus = true;
+				}
+			}
+			if (!is_plus) { // 不是進貨的
+				getId('expire').style.display = 'none';
+				getId('expire_text').style.display = 'none';
+			}
+			is_expense = false;
+			for (let i = 0;i < need_expense.length;i++) {
+				if (getId('reason').value == need_expense[i]) {
+					getId('expense').style.display = 'inline';
+					getId('expense_text').style.display = 'inline';
+					is_expense = true;
+				}
+			}
+			if (!is_expense) { // 不是進貨的
+				getId('expense').style.display = 'none';
+				getId('expense_text').style.display = 'none';
+			}
+		})
+    </script>
+</html>

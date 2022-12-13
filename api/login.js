@@ -6,6 +6,7 @@ var fs = require('fs');
 var jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const pool = db.createPool({
+    trace : true,
     host : 'localhost',
     user : 'wang',
     password : 'wang313',
@@ -38,54 +39,6 @@ router.get('/', function(req, res) {
 	return;
 })
 
-/*router.post('/', async function(req, res) {
-    let conn = await pool.getConnection();
-    try { // 登入
-        if (req.body.account != null) {
-            var login_suc = false;
-            if (func.empty(req, res))
-                return res.json('不能為空白');
-            //let n_user = await conn.query('select nId, pass from nurses');
-            //let d_user = await conn.query('select dId, pass from doctors');
-            let user = await conn.query('select aId, pass, title from accounts');
-            var account = req.body.account.trim();
-            var pass = req.body.pass.trim();
-            for (let i = 0;i < user.length;i++) {
-                if (account == user[i].aId && pass == user[i].pass) { // 護士, 密碼正確
-                    req.session.auth = user[i].title;
-                    req.session.user = account;
-					//const payload = {a :1}
-					//const token = jwt.sign({ payload, exp: Math.floor(Date.now() / 1000) + (60 * 15) }, 'my_secret_key');
-					//req.token = token
-                    if (req.session.auth == 'nur') { // 護士
-						const data = {title : 'nur', aId : account}
-						const token = jwt.sign({ data, exp: Math.floor(Date.now() / 1000) + (60 * 15) }, 'my_secret_key');
-						res.cookie('token', token,  { httpOnly: false, secure: false, maxAge: 3600000 });
-                        res.sendFile('/home/wang/nodejs/templates/viewPa.html');  //回應靜態文件
-						res.end();
-						return;
-                    }
-                    else {
-                        //res.sendFile('/home/wang/nodejs/templates/docMain.html');  //回應靜態文件
-                        res.statusCode = 302;
-                        res.setHeader("Location", "http://localhost:8080/docMain");
-                        res.end();
-						var string = encodeURIComponent('1');
-						return res.redirect('/docMain?user='+string);
-                    }
-                    login_suc = true; // 登入成功
-                }
-            }
-            if (!login_suc) { // 登入失敗
-                res.json({ error: `格式錯誤` });
-            }
-            return;
-        }
-    } catch(error) {
-        console.log(error);
-    }
-});*/
-
 router.post('/check', async function(req, res) {
 	const {account, pass} = req.body;
 	if (account.length == 0 || pass.length == 0) {
@@ -95,6 +48,7 @@ router.post('/check', async function(req, res) {
 	try {
 		var fail_counts = await conn.query('select count(*) from login_log where `ip` = ? and `aId` is null and `times` >= current_timestamp - interval 5 minute', req.ip); // 五分鐘內相同 ip 的登入失敗次數
 		if (fail_counts[0]['count(*)'] >= 3) { // 在五分鐘內登入失敗超過三次
+            conn.release();
 			return res.json({error : '在五分鐘內登入失敗超過三次，請稍候再試'});
 		}
 	}
@@ -115,14 +69,16 @@ router.post('/check', async function(req, res) {
 						console.log(e);
 					}
                     if (user[i].title == 'nur') { // 護士
+                        conn.release();
 						const data = {title : 'nur', aId : account}
-						const token = jwt.sign({ data, exp: Math.floor(Date.now() / 1000) + (60 * 15) }, 'my_secret_key');
+						const token = jwt.sign({ data, exp: Math.floor(Date.now() / 1000) + (6000 * 15) }, 'my_secret_key');
 						res.cookie('token', token,  { httpOnly: false, secure: false, maxAge: 3600000 });
 						return res.json({'title' : 'nur', 'aId' : account});
                     }
                     else {
+                        conn.release();
 						const data = {title : 'doc', aId : account}
-						const token = jwt.sign({ data, exp: Math.floor(Date.now() / 1000) + (600 * 15) }, 'my_secret_key');
+						const token = jwt.sign({ data, exp: Math.floor(Date.now() / 1000) + (6000 * 15) }, 'my_secret_key');
 						res.cookie('token', token,  { httpOnly: false, secure: false, maxAge: 3600000 });
 						return res.json({'title' : 'doc', 'aId' : account});
                     }
@@ -136,12 +92,14 @@ router.post('/check', async function(req, res) {
 				catch(e) {
 					console.log(e);
 				}
+                conn.release();
                 return res.json({ error: `帳號密碼錯誤` });
             }
 		}
 		catch(e) {
 			console.log(e);
 		}
+    conn.release();
 	return res.json({error:null, token:token});
 	res.end();
 });

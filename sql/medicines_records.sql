@@ -5,5 +5,6 @@ create table medicines_records(
 `day_num` float(5),
 `days` int(2),
 `rule` varchar(5),
-`mark` varchar(5)
+`mark` varchar(5),
+`prescript` varchar(300)
 )

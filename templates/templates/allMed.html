@@ -1,0 +1,58 @@
+<html>
+    <head>
+        <title>
+            藥品庫存紀錄
+        </title>
+        <h1>
+            藥品庫存紀錄
+        </h1>
+    </head>
+    <body>
+        <table id = 'tab' border = '2' align = center>
+            <tr>
+                <td>編號</td>
+                <td>藥碼</td>
+                <td>中文名稱</td>
+				<td>數量</td>
+            </tr>
+        </table>
+    </body>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+        (async() => {
+            const {data : med_inventory_each} = await axios.get('/med_inventory_each');
+            const {data : medicines} = await axios.get('/medicines_normal');
+			var combine_inventory = mkCombine(med_inventory_each); // 把重複的藥的數量加起來
+            for (let i = 0;i < combine_inventory.length;i++) {
+				for (let k = 0;k < medicines.length;k++) {
+					if (combine_inventory[i].code == medicines[k].code) { // 藥碼相同  
+						console.log(medicines[k].price);
+						tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + combine_inventory[i].no + 
+						"<td>" + combine_inventory[i].code + "</td>" +
+						"<td>" + medicines[k].medi_mand + "</td>" +
+						"<td>" + combine_inventory[i].quantity + "</td></tr>"
+						break;
+					}
+				}
+			}
+        })();
+		
+		function mkCombine(med_inventory_each) {
+			var combine_inventory = [];
+            for (let i = 0;i < med_inventory_each.length;i++) {
+				var is_new = true; // 先假設為不是重複的藥
+				for (let j = 0;j < combine_inventory.length;j++) {
+					if (med_inventory_each[i].code == combine_inventory[j].code) { // 重複的藥
+						combine_inventory[j].quantity += med_inventory_each[i].quantity // 新增數量
+						is_new = false; // 不是新的藥
+					}
+				}
+				if (is_new) { // 新的藥
+					combine_inventory.push(med_inventory_each[i]);
+				}
+			}
+			return combine_inventory;
+		}
+
+    </script>
+</html>

@@ -1,0 +1,385 @@
+<html>
+    <head>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
+        <title>
+            掛號
+        </title>
+        <h1>
+            掛號
+        </h1>
+        <h2><span id = 'nId'></span><span> 號護士</span></h2>
+    </head>
+    <body>
+        搜尋
+        <input type = 'text' id = 'search'/>
+        <form class = 'position-absolute top-0 end-0' id = 'form' action = '/viewPa' method = 'post'>
+            <table id = 'tab' border = '0' align = center>
+            <tr><td>
+            <span id = 'paid_text'>已付款：</span>
+            <input type = 'checkbox' name = 'paid' id = 'paid' checked/>
+            <br/>
+            <span id = 'card_text'>未帶健保卡：</span>
+            <input type = 'checkbox' name = 'card' id = 'card' value = 'off'/>
+            <br/>
+            </td></tr><tr><td>
+            打疫苗：<input type = 'checkbox' name = 'vac' id = 'vac' value = 'off'/>
+            <input type = 'text' name = 'vId' id = 'vId' style = 'visibility:hidden'/>
+            <br/>
+            </td></tr><tr><td>
+            不在場：<input type = 'checkbox' name = 'in' id = 'in'/>
+            <input type = 'text' name = 'in' id = 'in' style = 'visibility:hidden'/>
+            <br/>
+            </td></tr><tr id = 'dId_row'><td>
+            <span id = 'dId_text'>醫生代號：</span>
+            <input type = 'text' name = 'dId' id = 'dId'/>
+            <br/>
+            </td></tr><tr id = 'name_row'><td>
+            <span id = 'name_text'>姓名：</span>
+            <input type = 'text' name = 'name' id = 'name'/>
+            <br/>
+            </td></tr><tr id = 'id_row'><td>
+            <span id = 'id_text'>身份證號：</span>
+            <input type = 'text' name = 'id' id = 'id'/>
+            <br/>
+            </td></tr><tr id = 'sex_row'><td>
+            <span id = 'sex_text'>性別：</span>
+            <input type = 'text' name = 'sex' id = 'sex'/>
+            <br/>
+            </td></tr><tr id = 'birth_row'><td>
+            <span id = 'birth_text'>生日：</span>
+            <input type = 'text' name = 'birth' id = 'birth'/>
+            <br/>
+            </td></tr><tr id = 'identity_row'><td>
+            <span id = 'identity_text'>身份：</span>
+            <select id = 'identity'>
+                <option>學生</option>
+                <option>上班族</option>
+            </select>
+            <br/>
+            </td></tr><tr id = 'tel1_row'><td>
+            <span id = 'tel1_text'>電話1：</span>
+            <input type = 'text' name = 'tel1' id = 'tel1'/>
+            <br/>
+            </td></tr><tr id = 'tel2_row'><td>
+            <span id = 'tel2_text'>電話2：</span>
+            <input type = 'text' name = 'tel2' id = 'tel2'/>
+            <br/>
+            </td></tr><tr id = 'mom_row'><td>
+            <span id = 'mom_text'>母身份證：</span>
+            <input type = 'text' name = 'mom_id' id = 'mom'/>
+            <br/>
+            </td></tr><tr id = 'parity_row'><td>
+            <span id = 'parity_text'>胎次：</span>
+            <input type = 'text' name = 'parity' id = 'parity'/>
+            <br/>
+            </td></tr><tr id = 'address_row'><td>
+            <span id = 'address_text'>地址：</span>
+            <input type = 'text' name = 'address' id = 'address'/>
+            <br/>
+            </td></tr><tr id = 'can_row'><td>
+            <span id = 'can_text'>可用次數：</span>
+            <input type = 'text' name = 'can_used' id = 'can'/>
+            <br/>
+            </td></tr><tr id = 'pass_row'><td>
+            <span id = 'pass_text'>過去病史：</span>
+            <input type = 'text' name = 'pass' id = 'pass'/>
+            <br/>
+            </td></tr><tr id = 'allergy_row'><td>
+            <span id = 'allergy_text'>過敏：</span>
+            <input type = 'text' name = 'allergy' id = 'allergy'/>
+            <br/>
+            </td></tr><tr id = 'hate_row'><td>
+            <span id = 'hate_text'>不喜：</span>
+            <input type = 'text' name = 'hate' id = 'hate'/>
+            <br/>
+            </td></tr><tr id = 'mark_row'><td>
+            <span id = 'mark_text'>註記：</span>
+            <input type = 'text' name = 'mark' id = 'mark'/>
+            <br/>
+            </td></tr><tr id = 'deposit_row'><td>
+            <span id = 'deposit_text'>押金：</span>
+            <input type = 'text' name = 'deposit' id = 'deposit' value = '0'/>
+            <br/>
+            </td></tr><tr id = 'regist_row'><td>
+            <span id = 'regist_text'>掛號費：</span>
+            <input type = 'text' name = 'regist' id = 'regist' value = '150'/>
+            <br/>
+            </td></tr><tr id = 'part_self_row'><td>
+            <span id = 'part_self_text'>部份負擔：</span>
+            <input type = 'text' name = 'part_self' id = 'part_self' value = '0'/>
+            <br/>
+            </td></tr><tr id = 'all_self_row'><td>
+            <span id = 'all_self_text'>自費：</span>
+            <input type = 'text' name = 'all_self' id = 'all_self' value = '0'/>
+            <br/>
+            <input type = 'submit'></input>
+            </table>
+        </form>
+        <table class = 'position-absolute bottom-50 end-50' border = '2' id = 'result' align = 'center'>
+        </table>
+    </body>
+    <style>
+        form {
+            display : inline;
+        }
+    </style>
+    <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+    <script>
+        
+        function getId(id) {
+            return document.getElementById(id);
+        }
+        
+        function getName(name) {
+            return document.getElementsByName(name);
+        }
+
+        (async() => { // 查詢 nId
+            const {data : user} = await axios.get('/viewPa/nId');
+            getId('nId').innerHTML = user.nId;
+        })();
+
+        // 提交表單
+        getId('form').addEventListener('submit', async(e) => {
+            e.preventDefault();
+            var data;
+            // turn paid from on and off to 1 and 0
+            var paid_value = (getId('paid').checked) ? 1 : 0;
+            if (getId('card').value == "off") { // 有帶卡
+                data = {paid : paid_value, nId : getId('nId').innerHTML, card : getId('card').value, vac : getId('vac').value, vId : getId('vId').value, in : getId('in').value, dId : getId('dId').value, name : getId('name').value, id : getId('id').value, sex : getId('sex').value, birth : getId('birth').value, identity : getId('identity').value, tel1 : getId('tel1').value, tel2 : getId('tel2').value, mom_id : getId('mom').value, parity : getId('parity').value, address : getId('address').value, can_used : getId('can').value, pass : getId('pass').value, allergy : getId('allergy').value, hate : getId('hate').value, mark : getId('mark').value, deposit : getId('deposit').value, regist : getId('regist').value, part_self : getId('part_self').value, all_self : getId('all_self').value} 
+            }
+            else {
+                data = {paid : paid_value, nId : getId('nId').innerHTML, card : getId('card').value, vac : getId('vac').value, vId : getId('vId').value, in : getId('in').value, dId : getId('dId').value, mark : getId('mark').value, deposit : getId('deposit').value, regist : getId('regist').value, part_self : getId('part_self').value, all_self : getId('all_self').value} 
+            }
+            const suc = await axios.post('/viewPa', data);
+            if (suc.data.suc) {
+                alert('新增成功！');
+                window.location.href = '/viewPa';
+            }
+            else {
+                var sql_error_text = Object.values(suc.data.error)[1];
+                console.log(suc.data.error);
+                alert(`新增失敗, ${sql_error_text}`);
+            }
+        })
+
+        var all_index = [];
+        var all_name = [];
+        var all_chart = [];
+        var all_id = [];
+        var all_sex = [];
+        var all_birth = [];
+        var all_identity = [];
+        var all_tel1 = [];
+        var all_tel2 = [];
+        var all_mom = [];
+        var all_parity = [];
+        var all_address = [];
+        var all_can = [];
+        var all_pass = [];
+        var all_allergy = [];
+        var all_hate = [];
+        var all_mark = [];
+        var all_regist = [];
+        var all_part = [];
+        var all_depo = [];
+        var all_all = [];
+        var all_dId = [];
+
+        getId('card').addEventListener('change', hideInput); // 沒帶卡就不用輸入資料
+
+        var element = ['name', 'id', 'sex', 'birth', 'identity', 'tel1', 'tel2', 'mom', 'parity', 'address', 'can', 'pass', 'allergy', 'hate', 'mark'] // 全部的元素
+
+        function hideInput() { // 隱藏資料
+            if (this.checked) { // 句選沒帶卡
+                getId('card').value = 'on';
+                for (let i = 0;i < element.length;i++) {
+                    getId(element[i]).style.display = 'none';
+                    getId(element[i]+"_text").style.display = 'none';
+                    getId(element[i]+"_row").style.display = 'none';
+                }
+            }
+            else { // 沒句選沒帶卡
+                getId('card').value = 'off';
+                for (let i = 0;i < element.length;i++) {
+                    getId(element[i]).style.display = 'inline';
+                    getId(element[i]+"_text").style.display = 'inline';
+                    getId(element[i]+"_row").style.display = 'block';
+                }
+            }
+        }
+
+        function alertLog(response) { // 登入
+            for (let i = 0;i < response.data[response.data.length-1].length;i++) {
+                if (response.data[response.data.length-1][i].status)
+                    return;
+             }
+            var name = prompt("請輸入您的帳號", ""); //將輸入的內容賦給變數 name ，
+            var pass = prompt("請輸入您的密碼", ""); //將輸入的內容賦給變數 name ，
+            var log_suc = 0;
+            for (let i = 0;i < response.data[response.data.length-1].length;i++) {
+                if (response.data[response.data.length-1][i].nId==name && response.data[response.data.length-1][i].pass==pass) {
+                    getId('nId').value = name;
+                    alert('登入成功');
+                    log_suc = 1;
+
+                }
+            }
+            if (log_suc == 0) {
+                alert('登入失敗');
+                location.reload();
+            }
+        }    
+        axios.get('/data').then(function(response) {
+            //alertLog(response);
+            for (let i = 0;i < response.data.length;i++) {
+                all_index.push(response.data[i].pId);
+                all_name.push(response.data[i].name);
+                all_chart.push(response.data[i].chart_num);
+                all_id.push(response.data[i].id);
+                all_sex.push(response.data[i].sex);
+                all_birth.push(response.data[i].birth);
+                all_identity.push(response.data[i].identity);
+                all_tel1.push(response.data[i].tel1);
+                all_tel2.push(response.data[i].tel2);
+                all_mom.push(response.data[i].mom_id);
+                all_parity.push(response.data[i].parity);
+                all_address.push(response.data[i].address);
+                all_can.push(response.data[i].can_used);
+                all_pass.push(response.data[i].pass);
+                all_allergy.push(response.data[i].allergy);
+                all_hate.push(response.data[i].hate);
+                all_mark.push(response.data[i].mark);
+                all_regist.push(response.data[i].regist);
+                all_part.push(response.data[i].part_self);
+                all_depo.push(response.data[i].deposit);
+                all_all.push(response.data[i].all_self);
+                all_dId.push(response.data[i].dId);
+            }
+            getId("search").addEventListener('change', checkSearch); // 當搜尋內容有改變
+        })
+
+        function form(obj) { // 把多餘的符號去掉
+            var n_obj = '';
+            //return obj+'a';
+            while (obj.includes('o')) {
+                obj = obj.replace('o','');
+            }
+            console.log(obj);
+            return obj;
+        }
+
+        function inText(num) { // 填入代號的資料
+            getId('name').value = '';
+            for (i in all_index) {
+                if (num == i) { 
+                    getId('name').value = all_name[i];
+                    getId('id').value = all_id[i];
+                    getId('sex').value = all_sex[i];
+                    getId('birth').value = all_birth[i];
+                    getId('identity').value = all_identity[i];
+                    getId('tel1').value = all_tel1[i];
+                    getId('tel2').value = all_tel2[i];
+                    getId('mom').value = all_mom[i];
+                    getId('parity').value = all_parity[i];
+                    getId('address').value = all_address[i];
+                    getId('can').value = all_can[i];
+                    getId('pass').value = all_pass[i];
+                    getId('allergy').value = all_allergy[i];
+                    getId('hate').value = all_hate[i];
+                    getId('mark').value = all_mark[i];
+                }
+            }
+        }
+
+        checkSearch = function() {
+            // 先清空 table
+            result.innerHTML = '';
+            // 搜尋條件是否為空的
+            if (getId('search').value == "" || getId('search').value == " ") 
+                return; // 沒有輸入條件
+            // 表頭
+            var is_put = []; // 已經放進去的
+            if (getId('search').value != ' ' && getId('search').value != '')  
+                getId('result').innerHTML = 
+                "<tr><td style='text-align:center;' colspan = '6'><b>搜尋列表</b></td></tr>" + 
+                "<tr><td>代號</td><td>姓名</td><td>生日</td><td>電話1</td><td>電話2</td></tr>";
+            // 條件一 : 姓名
+            for (i in all_name) {
+                // 有符合的字串
+                if (all_name[i].includes(getId('search').value) && getId('search').value != ' ' && getId('search').value != '') { 
+                    is_put.push(i);
+                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[2]);
+                }
+            }
+            // 條件二 : 生日
+            for (i in all_birth) {
+                // 還沒放過且有符合的字串
+                if (!(i in is_put) && all_birth[i].includes(getId('search').value) && getId('search').value != ' ' && getId('search').value != '') { 
+                    is_put.push(i);
+                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[2]);
+                }
+            }
+            // 條件三 : 電話1
+            for (i in all_tel1) {
+                // 還沒放過且有符合的字串
+                if (!(i in is_put) && all_tel1[i].includes(getId('search').value) && getId('search').value != ' ' && getId('search').value != '') { 
+                    is_put.push(i);
+                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[2]);
+                }
+            }
+            // 條件四 : 電話2
+            for (i in all_tel2) {
+                // 還沒放過且有符合的字串
+                if (!(i in is_put) && all_tel2[i].includes(getId('search').value) && getId('search').value != ' ' && getId('search').value != '') { 
+                    is_put.push(i);
+                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[2]);
+                }
+            }
+            // check search per second
+            setTimeout(checkSearch, 1000);
+        }
+
+        function btListener(total_len) {
+            for (let i = 0;i < total_len;i++) {
+                getId('put_'+i).addEventListener('click', inText);
+            }
+        }
+
+        function putData(i, index, name , birth, tel1, tel2) {
+             getId('result').innerHTML += 
+             "<tr id = 'log_row" + i + "'/><td/>" + index + 
+             "<td>" + name + "</td>" +
+             "<td>" + birth + "</td>" +
+             "<td>" + tel1 + "</td>" +
+             "<td>" + tel2 + "</td>" +
+             "<td><button onclick = 'inText(" + i + ")' id = 'put_" + "'>放入</button></td></tr>";
+        }
+
+        document.querySelector('#vac').addEventListener('change', function() {
+            if (this.checked) {
+                getId('vac').value = 'on';
+                getId('vId').style.visibility = 'visible';
+            } 
+            else {
+                getId('vac').value = 'off';
+                getId('vId').style.visibility = 'hidden';
+            }
+        });
+        
+        getId('card').addEventListener('click', setDeposit);
+        
+        function setDeposit() { 
+            // set deposit default value depend on have/no card
+            var default_deposit = 600;
+            if (getId('card').checked) { // no card
+                getId('deposit').value = default_deposit;
+            }
+            else { // have card
+                getId('deposit').value = 0;
+            }
+        }
+    </script>
+</html>
+

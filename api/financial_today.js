@@ -106,25 +106,34 @@ router.post('/settle', async function(req, res) { // the nurse settle the financ
 		res.json({suc : false});
 		res.end;
 		return;
-	};
+    };
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
 	const aId = req.body.aId; // nId
 	var error = [] // error msg
     if (user.data.aId == aId && user.data.title == 'nur') { // 登入中
-    	let conn = await pool.getConnection();
-        //var insert_suc = await conn.query("insert into done_financial(`money`, `origin_aId`, `origin_log`) values(?, ?, ?)",);
-		//var del_suc = await conn.query('truncate financial_today;'); // reset the financial today
-		del_suc = true;
-        console.log(del_suc);
         console.log(req.body);
-		//console.log(del_suc.affectedRows);
-		if (!del_suc) { // delete failed
-			error.push('delete failed !');
+    	let conn = await pool.getConnection();
+        // 找出所有當班的收支紀錄
+        var origin_num = await conn.query('select `fId` from financial_today;');
+        var all_settle_no = allSettleNo(origin_num).toString(); // now's all financial_today no
+        // insert into done_financial
+        var insert_suc = await conn.query("insert into done_financial(`money`, `details`, `origin_aId`, `origin_log`) values(?, ?, ?, ?)", [req.body.total_money, all_settle_no, req.body.aId, req.body.origin_log]);
+		if (!insert_suc) { // insert failed
+            error.push('insert into done_financial failed !');
 			suc = false;
 		}
-		else {
-			suc = true;
-		}
+        else { // only when insert successful can truncate financial_today
+            var del_suc = await conn.query('truncate financial_today;'); // reset the financial today
+            //console.log(del_suc.affectedRows);
+            if (!del_suc) { // delete failed
+                error.push('truncate financial_today failed !');
+                suc = false;
+            }
+            else {
+                suc = true;
+            }
+        }
+        conn.release();
 		res.json({suc : suc, error : error});
 		res.end;
 		return;
@@ -136,5 +145,12 @@ router.post('/settle', async function(req, res) { // the nurse settle the financ
 		return;
 	}
 })
+
+function allSettleNo(origin_num) { // make an array have all settle no
+    var all_settle_no = []; // all settle no array
+    for (let i = 0;i < origin_num.length;i++)
+        all_settle_no.push(origin_num[i].fId);
+    return all_settle_no;
+}
 
 module.exports = router;

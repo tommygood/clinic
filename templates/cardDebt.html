@@ -1,7 +1,7 @@
 <html>
     <head>
-		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous"></link>
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous"></link>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
         <title>
             欠卡紀錄
         </title>
@@ -10,45 +10,211 @@
         </h1>
     </head>
     <body>
-		<div class="dropdown">
-  			<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-				其他選項
-  			</button>
-  			<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-    			<li><a class="dropdown-item" href="/viewPa">看診明細</a></li>
-				<li><a class="dropdown-item" href="/addPa">新增病人</a></li>
-				<li><a class="dropdown-item" href="/ckVac">疫苗紀錄</a></li>
-  			</ul>
-		</div>
-        <table id = 'tab' border = '2' align = center>
-            <tr>
-                <td>編號</td>
-                <td>時間</td>
-                <td>病單號</td>
-                <td>狀態</td>
-            </tr>
-        </table>
+        <!-- page navbar -->
+        <nav class="navbar navbar-light bg-light col-md-10">
+            <form id = 'navbar' class="container-fluid justify-content-start">
+                <button id = 'view_today_pa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">今日看診明細</button>
+                <button id = 'view_history_pa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">歷史看診明細</button>
+                <button id = 'addPa' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">新增病人</button>
+                <button id = 'ckVac' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">歷史疫苗紀錄</button>
+                <button id = 'ckTodayVac' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">今日疫苗紀錄</button>
+                <button id = 'allMed' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">藥品庫存</button>
+                <button id = 'ckMed' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">單筆藥品</button>
+                <button id = 'addMed' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">新增藥品</button>
+                <button id = 'fullcalendar' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">主責帳號</button>
+                <button id = 'financial' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">總帳務表</button>
+                <button id = 'financial_today' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">今日帳務</button>
+                <button id = 'cardDebt' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">欠卡紀錄</button>
+                <button id = 'done_financial' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">已結算紀錄</button>
+                <button id = 'debt' class="btn btn-outline-dark me-3" type="button" style = "width:150px;height:50px">債務紀錄</button>
+            </form>
+        </nav>
+        <div class = 'position-absolute' id = 'tab_pos'>
+            <table class = 'position-relative' id = 'tab' border = '2'>
+                <tr>
+                    <td colspan = '4' >未還卡清單</td>
+                </tr>
+                <tr>
+                    <td>病單號</td>
+                    <td>姓名</td>
+                    <td>身分證字號</td>
+                    <td>掛號時間</td>
+                    <td>還卡</td>
+                </tr>
+            </table>
+        </div>
+        <div class = 'position-absolute' id = 'tab_return_pos'>
+            <table class = 'position-relative' id = 'tab_return' border = '2'>
+                <tr>
+                    <td colspan = '4' >已還卡清單</td>
+                </tr>
+                <tr>
+                    <td>病單號</td>
+                    <td>掛號時間</td>
+                </tr>
+            </table>
+        </div>
     </body>
-	<style>
-		 table {
-			position : absolute;
-		}
-	</style>
+    <style>
+        h1 {
+            text-align : center;
+        }
+        
+        #tab {
+            margin : 0px 0px 0px 0px;
+        }
+        
+        #tab_pos {
+            margin : 0px 0px 0px 0px;
+            width : 600px;
+            height: 500px; 
+            overflow-x : auto; 
+            overflow-y : auto; 
+        }
+        
+        #tab_return_pos {
+            margin : 0px 0px 0px 600px;
+            width : 600px;
+            height: 500px; 
+            overflow-x : auto; 
+            overflow-y : auto; 
+        }
+        
+        td,tr,th {
+            border:1px solid black;
+            border-collapse: collapse;
+            cursor:all-scroll;
+            width : 1%;
+            text-align : center;
+        }
+    </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
-		function getId(id) {
-			return document.getElementById(id);
-		}
+        function getId(id) {
+            return document.getElementById(id);
+        }
+        
+        // nav direct 
+        function directId(e) { // 導向網址
+            window.location.href = "/" + e.target.id;
+        }
+        
+        function navDirect() { // 導向 nav_bar 的 child 到該網址
+            var nav_bar = getId('navbar'); // 所有 nav bar 的 child
+            for (let i = 0;i < nav_bar.length;i++) { // 監聽所有的 child
+                getId(nav_bar[i].id).addEventListener('click', directId);
+            }
+        }
+        navDirect();
 
+        // total debt rId
+        var total_debt_rId = [];
+        // total debt index
+        var total_debt = [];
+        // put records
         (async() => {
             var {data : no_card} = await axios.get('/no_card');
-			no_card = no_card.no_card;
+            no_card = no_card.no_card;
             for (let i = 0;i < no_card.length;i++) {
-				tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + no_card[i].no + 
-				"<td>" + no_card[i].time + "</td>" +
-				"<td>" + no_card[i].rId + "</td>" +
-				"<td>" + `${no_card[i].status ? "已歸還" : "<b>未歸還</b>"}` + "</td></tr>"
-			}
+                // had returned card
+                if (no_card[i].status) {
+                    putReturn(no_card[i], i);
+                }
+                // not return yet
+                else {
+                    total_debt.push(i);
+                    total_debt_rId.push(no_card[i].rId);
+                    await putDebt(no_card[i], i); // 要等找病患資訊
+                }
+            }
+            // listen to return button
+            btListener(total_debt);
         })();
+        
+        // listen to returned button 
+        async function btListener(total_debt) {
+            for (let i = 0;i < total_debt.length;i++) {
+                getId('return_'+total_debt[i]).addEventListener('click', returnCard);
+            }
+        }
+        
+        // return card
+        async function returnCard(e) {
+            // get button real id 
+            var bt_id = Number(getBtId(e.target.id));
+            // coresponded record index
+            var record_index = total_debt.indexOf(bt_id);
+            // coresponded rId
+            var rId = total_debt_rId[record_index];
+            // set rId cookie
+            var is_confirm = confirm(`歸還卡片，病單號 ${rId}`);
+            // not confirm
+            if (!is_confirm)
+                return;
+            const {data : user} = await axios.get('/viewPa/nId');
+            const {data : result} = await axios.post('/viewPa/submitUpdatePa', {rId : rId, aId : user.nId});
+            if (result.suc) { // 是否還卡成功
+                location.reload();
+            }
+            else {
+                alert('還卡失敗');
+                location.reload();
+            }
+        }
+        
+        function getBtId(id) { // get real id from button id
+            var only_id = '';
+            // start add real id 
+            var start_add = false;
+            for (let i = 0;i < id.length;i++) {
+                if (start_add) {
+                    only_id += id[i];
+                }
+                // start to add 
+                if (id[i] == "_") {
+                    start_add = true;
+                }
+            }
+            return only_id;
+        }
+        
+        // put debt records element
+        async function putDebt(record, i) {
+            var {data : patients} = await axios.get('/data');
+            var name = '無';
+            var id = '無';
+            for (let i = 0;i < patients.length;i++) {
+                if (record.pId == patients[i].pId) {
+                    name = patients[i].name;
+                    id = patients[i].id;
+                    break;
+                }
+            }
+            tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + record.rId + 
+                "<td>" + name + "</td>" +
+                "<td>" + id + "</td>" +
+                "<td>" + lessTime(record.time) + "</td>" +
+                "<td><button id = 'return_" + i + "'>還卡</button></td></tr>";
+        }
+        
+        // put returned records element
+        function putReturn(record, i) {
+            tab_return.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + record.rId + 
+                "<td>" + lessTime(record.time) + "</td></tr>";
+        }
+        
+        function lessTime(times) { // 把時間弄得好看一點
+            if (times == null) // 如果還沒有時間
+                return null;
+            var new_time = '';
+            for (let i = 0;i < times.length-5;i++) { // 不要後面五個字元
+                if (times[i] == 'T') { // 把 T 換掉
+                    new_time += '\n';
+                    continue;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
     </script>
 </html>

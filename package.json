@@ -13,9 +13,11 @@
     "http": "^0.0.1-security",
     "jade": "^1.11.0",
     "jsonwebtoken": "^8.5.1",
+    "localstorage": "^1.0.1",
     "mariadb": "^3.0.1",
     "morgan": "^1.10.0",
     "mssql": "^8.1.2",
+    "node-localstorage": "^2.2.1",
     "socket.io": "^4.5.3",
     "ws": "^8.10.0"
   }

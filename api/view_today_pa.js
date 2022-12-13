@@ -19,8 +19,7 @@ router.get('/', function(req, res) {
 		const user = jwt.verify(req.cookies.token, 'my_secret_key');
 	}
 	catch(e) { //
-        res.statusCode = 302;
-        res.setHeader("Location", "http://localhost:8080/login");
+        res.redirect('/login');
         res.end();
 		console.log(e);
 		return;
@@ -32,8 +31,7 @@ router.get('/', function(req, res) {
         return;
     }
     else {
-        res.statusCode = 302;
-        res.setHeader("Location", "http://localhost:8080/login");
+        res.redirect('/login');
         res.end();
         return;
     }

@@ -1,0 +1,22 @@
+create table backup_patients(
+`no` INT PRIMARY KEY AUTO_INCREMENT,
+`times` datetime default current_timestamp,
+`pId` int(11),
+`name` varchar(50),
+`id` varchar(10),
+`sex` varchar(1),
+`birth` varchar(10),
+`identity` varchar(30),
+`tel1` varchar(10),
+`tel2` varchar(10),
+`mom_id` varchar(10),
+`parity` int(2),
+`address` varchar(40),
+`can_used` int(5),
+`pass` varchar(20),
+`allergy` varchar(20),
+`hate` varchar(20),
+`mark` varchar(40),
+`origin_times` datetime,
+`aId` int(11)
+)
