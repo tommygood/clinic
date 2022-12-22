@@ -81,7 +81,7 @@
             // submit
             const {data : user} = await axios.get('/viewPa/nId');
             if (is_sure) {
-                var {data : turned} = await axios.post('/debt/turned', {no : no, aId : user.nId, money : money, reason : reason});
+                var {data : turned} = await axios.post('/debt/turned', {reason : reason, no : no, aId : user.nId, money : money, reason : reason});
                 if (turned.suc) { // return successfully
                     alert('歸還成功');
                     window.location.reload();

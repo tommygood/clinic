@@ -105,6 +105,12 @@
                 </td></tr><tr id = 'mark_row'><td>
                 <span id = 'mark_text'>註記：</span>
                 <input type = 'text' name = 'mark' id = 'mark'/>
+                </td></tr><tr id = 'mark_row'><td>
+                <span id = 'weight_text'>體重：</span>
+                <input type = 'text' name = 'weight' id = 'weight'/>
+                </td></tr><tr id = 'mark_row'><td>
+                <span id = 'height_text'>身高：</span>
+                <input type = 'text' name = 'height' id = 'height'/>
                 <!--
                 <br/>
                 </td></tr><tr id = 'deposit_row'><td>
@@ -288,6 +294,8 @@
         var all_depo = [];
         var all_all = [];
         var all_dId = [];
+        var all_weight = [];
+        var all_height = [];
 
         //getId('card').addEventListener('change', hideInput); // 沒帶卡就不用輸入資料
 
@@ -362,6 +370,8 @@
                 all_depo.push(response.data[i].deposit);
                 all_all.push(response.data[i].all_self);
                 all_dId.push(response.data[i].dId);
+                all_weight.push(response.data[i].weight);
+                all_height.push(response.data[i].height);
             }
             //getId("search").addEventListener('change', checkSearch); // 當搜尋內容有改變
         })
@@ -455,6 +465,43 @@
             }
         }
 
+        function findPatient(num) { // 用當前排序
+            for (i in all_index) {
+                if (num == i) { 
+                    return [all_index[i], all_name[i]];
+                }
+            }
+            return false;
+        }
+
+        async function returnCard(num) {
+            patient_info = findPatient(num);
+            var pId = patient_info[0];
+            var patient_name = patient_info[1];
+            if (!pId) {
+                alert('查無此病患');
+                return;
+            }
+            var is_confirm = confirm(`還單，病人姓名 : ${patient_name}\n確認無誤？`);
+            // not confirm
+            if (!is_confirm)
+                return;
+            const {data : user} = await axios.get('/viewPa/nId');
+            const {data : result} = await axios.post('/viewPa/submitUpdatePa', {pId : pId, aId : user.nId});
+            if (result.suc && result.had_this_patient > 0) { // 沒有 error 且 有此病患
+                // 提醒總共還了幾筆欠單紀錄
+                alert(`還單成功！\n病患-${patient_name}，總共還清 ${result.had_this_patient} 筆欠單紀錄`);
+            }
+            else { // 還單失敗
+                if (result.had_this_patient == 0) { // affectrows = 0，無此病患
+                    alert('還單失敗，查無此病患有欠卡紀錄！');
+                }
+                else { // 有 error
+                    alert('還單失敗！');
+                }
+            }
+        }
+
         getId('search').addEventListener('change', checkSearch);
         function checkSearch() {
             // 先清空 table
@@ -467,11 +514,11 @@
             // 先放表頭
             if (getId('search').value != ' ' && getId('search').value != '') {
                 getId('result').innerHTML = 
-                "<tr><td colspan = '15'><b>病人資訊</b></td><td colspan = '2'><b>狀態</b></td><td colspan = '4'><b>費用</b></td><td colspan = '4'><b>看診選項</b></td></tr>" + 
+                "<tr><td colspan = '17'><b>病人資訊</b></td><td colspan = '2'><b>狀態</b></td><td colspan = '4'><b>費用</b></td><td colspan = '5'><b>看診選項</b></td></tr>" + 
                 "<tr><td>代號</td><td>身分證字號</td><td id = 'name_col'>姓名</td><td>生日</td><td>身分</td><td>電話1</td><td>電話2</td><td>母身分證</td>" + 
-                "<td>胎次</td><td>地址</td><td>病史</td><td>過敏</td><td>不喜</td><td>註記</td><td>編輯</td><td>付款</td>" +
+                "<td>胎次</td><td>地址</td><td>病史</td><td>過敏</td><td>不喜</td><td>註記</td><td>體重</td><td>身高</td><td>編輯</td><td>付款</td>" +
                 "<td>在場</td><td>押金</td><td>掛號費</td><td>部分負擔</td><td>自費</td>" +
-                "<td>健保</td><td>押單</td><td>打疫苗</td><td>自費</td></tr>";
+                "<td>健保</td><td>押單</td><td>打疫苗</td><td>自費</td><td>還單</td></tr>";
             }
             // 條件一 : 姓名
             for (i in all_name) {
@@ -532,6 +579,8 @@
              "<td>" + all_allergy[i] + "</td>" +
              "<td>" + all_hate[i] + "</td>" +
              "<td>" + all_mark[i] + "</td>" +
+             "<td>" + all_weight[i] + "</td>" +
+             "<td>" + all_height[i] + "</td>" +
              "<td><button onclick = 'editPatients(" + i + ")' id = 'edit_" + "'>編輯</button></td>" +
              "<td><input type = 'checkbox' id = 'is_paid" + i + "' checked></input></td>" +
              "<td><input type = 'checkbox' id = 'is_in" + i + "' checked></input></td>" +
@@ -542,7 +591,8 @@
              "<td><button onclick = 'inText(" + i + ", 0)' id = 'put_" + "'>健保</button></td>" +
              "<td><button onclick = 'inText(" + i + ", 1)' id = 'card_" + "'>押單</button></td>" + 
              "<td><button onclick = 'inText(" + i + ", 2)' class = 'vac' id = 'vac_" + "'>疫苗</button></td>" + 
-             "<td><button onclick = 'inText(" + i + ", 3)' id = 'self_" + "'>自費</button></td></tr>";
+             "<td><button onclick = 'inText(" + i + ", 3)' id = 'self_" + "'>自費</button></td>" + 
+             "<td><button onclick = 'returnCard(" + i + ")' id = 'return_" + "'>還單</button></td></tr>";
         }
 
         async function editPatients(i) { // 編輯病人
@@ -572,7 +622,7 @@
 
         async function sendEdit(e) { // 送出編輯資料
             e.preventDefault();
-            data = {nId : nId, name : getId('name').value, id : getId('id').value, sex : getId('sex').value, birth : getId('birth').value, identity : getId('identity').value, tel1 : getId('tel1').value, tel2 : getId('tel2').value, mom_id : getId('mom').value, parity : getId('parity').value, address : getId('address').value, can_used : getId('can').value, pass : getId('pass').value, allergy : getId('allergy').value, hate : getId('hate').value, mark : getId('mark').value} 
+            data = {height : getId('height').value, weight : getId('weight').value, nId : nId, name : getId('name').value, id : getId('id').value, sex : getId('sex').value, birth : getId('birth').value, identity : getId('identity').value, tel1 : getId('tel1').value, tel2 : getId('tel2').value, mom_id : getId('mom').value, parity : getId('parity').value, address : getId('address').value, can_used : getId('can').value, pass : getId('pass').value, allergy : getId('allergy').value, hate : getId('hate').value, mark : getId('mark').value} 
             const {data : suc} = await axios.post('/viewPa/editPatients', data);
             if (suc.suc) { // 新增成功
                 alert('編輯成功！');
@@ -599,6 +649,8 @@
             getId('allergy').value = all_allergy[i];
             getId('hate').value = all_hate[i];
             getId('mark').value = all_mark[i];
+            getId('weight').value = all_weight[i];
+            getId('height').value = all_height[i];
         }
 
         /*document.querySelector('#vac').addEventListener('change', function() {
@@ -648,7 +700,7 @@
         
         async function sendAppend(e) {
             e.preventDefault();
-            data = {nId : nId, name : getId('name').value, id : getId('id').value, sex : getId('sex').value, birth : getId('birth').value, identity : getId('identity').value, tel1 : getId('tel1').value, tel2 : getId('tel2').value, mom_id : getId('mom').value, parity : getId('parity').value, address : getId('address').value, can_used : getId('can').value, pass : getId('pass').value, allergy : getId('allergy').value, hate : getId('hate').value, mark : getId('mark').value} 
+            data = {height : getId('height').value, weight : getId('weight').value, nId : nId, name : getId('name').value, id : getId('id').value, sex : getId('sex').value, birth : getId('birth').value, identity : getId('identity').value, tel1 : getId('tel1').value, tel2 : getId('tel2').value, mom_id : getId('mom').value, parity : getId('parity').value, address : getId('address').value, can_used : getId('can').value, pass : getId('pass').value, allergy : getId('allergy').value, hate : getId('hate').value, mark : getId('mark').value} 
             const {data : suc} = await axios.post('/viewPa/addPatients', data);
             if (suc.suc) { // 新增成功
                 alert('新增成功！');
@@ -676,11 +728,13 @@
             fade.style.display='none';
             const {data : all_vac} = await axios.get('/viewPa/allVac');
             var vId; // 疫苗代號
+            var total_vId = []; // 全部要打的疫苗
             var had_vac = false; // 是否有勾選一筆疫苗
             for (let i = 0;i < all_vac.all_vac.length;i++) {
                 if (getId('vac_input'+i).checked) {
                     had_vac = true;
                     vId = all_vac.all_vac[i].vId;
+                    total_vId.push(vId);
                 }
             }
             if (!had_vac) { // 一筆疫苗都沒勾選
@@ -690,7 +744,7 @@
             var paid_value = (getId('is_paid'+vac_num).checked) ? 1 : 0; // 是否付款，換成 0,1
             var in_value = (getId('is_in'+vac_num).checked) ? 1 : 0; // 是否在場，換成 0,1
             // 要送出的資料
-            var data = {mark : null, id : all_id[vac_num], vac : 'on', vId : vId, paid : paid_value, nId : nId, card : false, in : in_value, dId : vac_dId, regist : getId('regist_'+vac_num).value, deposit : 0, part_self : getId('part_'+vac_num).value, all_self : 0} 
+            var data = {total_vId : total_vId, mark : null, id : all_id[vac_num], vac : 'on', vId : vId, paid : paid_value, nId : nId, card : false, in : in_value, dId : vac_dId, regist : getId('regist_'+vac_num).value, deposit : 0, part_self : getId('part_'+vac_num).value, all_self : 0} 
             // 總收費
             var total_expense = parseInt(getId('regist_'+vac_num).value) + parseInt(getId('part_'+vac_num).value);
             // 要印出的文字
@@ -717,9 +771,13 @@
         
         async function addVacElement() { // 製作勾選疫苗的畫面
             const {data : all_vac} = await axios.get('/viewPa/allVac');
+            all_vac.all_vac.sort(function(a,b){ // 順序一開始要倒過來，因為新增元素會往下新增
+                return b.vId - a.vId;
+            });
             // 全部的疫苗種類
             for (let i = 0;i < all_vac.all_vac.length;i++) {
-                var vac_text = document.createElement("span");
+                // 新增每筆疫苗元素
+                var vac_text = document.createElement("div");
                 vac_text.innerHTML = '疫苗編號：' + all_vac.all_vac[i].vId +'，疫苗別：' + all_vac.all_vac[i].a_code + "。";
                 var vac = document.createElement("input");
                 vac.id = 'vac_input' + i;

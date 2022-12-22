@@ -56,6 +56,7 @@
                 <button class = 'position-absolute start-50' id = 'next_records' type = 'button'>下次病歷</button>
                 <button class = 'position-absolute start-50' type = 'button' id = 'copy_bt'>複製</button>
                 <button class = 'position-absolute start-50' type = 'button' id = 'paste_bt'>貼上</button>
+                <button class = 'position-absolute start-50' type = 'button' id = 'add_num'>新增欄位</button>
             </div>
             <textarea class = 'copy' id = 'main_sue' name = 'main_sue' cols = '155' rows = '5'></textarea>
             
@@ -159,6 +160,11 @@
             width : 50px;
             margin : 0px 0px 0px 390px;
         }
+        
+        #add_num {
+            width : 100px;
+            margin : 0px 0px 0px 470px;
+        }
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -167,7 +173,7 @@
         var rId;
         var pId;
         var is_submit = false; // 離開網頁是否是完診
-        const medicine_input_num = 10; // total medicines row number
+        var medicine_input_num = 10; // total medicines row number
         mkInput();
         (async() => {
             const {data : rec} = await axios.get('/records');
@@ -358,39 +364,62 @@
                 }
             }
         });
-
         
-        getId('submit_bt').addEventListener('click', async(e) => { // 送出表單
-            is_submit = true; // 是送出
-            getId('diagnose_code_pass').value = getId('diagnose_code').value; // 放入 value
-            // 要回傳的資料
-            const data = {
-                dId : getId('dId').innerHTML,
-                all_self : getId('all_self').value, 
-                self_part : getId('self_part').value, 
-                regist : getId('regist').value, 
-                rId : getId('rId').value, 
-                diagnose_code_pass : getId('diagnose_code_pass').value, 
-                main_sue : getId('main_sue').value, 
+        function listenSubmit() {
+            getId('submit_bt').addEventListener('click', async(e) => { // 送出表單
+                is_submit = true; // 是送出
+                getId('diagnose_code_pass').value = getId('diagnose_code').value; // 放入 value
+                // 要回傳的資料
+                const data = {
+                    dId : getId('dId').innerHTML,
+                    all_self : getId('all_self').value, 
+                    self_part : getId('self_part').value, 
+                    regist : getId('regist').value, 
+                    rId : getId('rId').value, 
+                    diagnose_code_pass : getId('diagnose_code_pass').value, 
+                    main_sue : getId('main_sue').value, 
+                }
+                // 把開的藥放進去
+                for (let i = 0;i < medicine_input_num*2;i++) {
+                    if (!checkFloat(getId('medi_amount'+i).value)) { // 檢查浮點數是否小數點後超過兩個數字
+                        return; // 結束
+                    }
+                    data['medicines'+i] = {medicines : getId('medicines'+i).value, medi_amount : getId('medi_amount'+i).value, day : getId('day'+i).value, method : getId('method'+i).value, medi_mark : getId('medi_mark'+i).value};
+                }
+                const ck_diagnose = await axios.post('/ckPatients', data);
+                if (ck_diagnose.data.suc) { // 沒有回傳錯誤
+                    alert("看診成功！" + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
+                    // send finish message on chat room
+                    sendFinishMsg(getId('rId').value, (getId('patient_name') ? getId('patient_name').innerHTML : null));
+                    printPdf(); // 印出 pdf
+                }
+                else { // 印出錯誤
+                    console.log(ck_diagnose.data.suc);
+                    alert('看診失敗' + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
+                    //var error_mes = "text :[" + ck_diagnose.data.error.text + "]。 sql : [" + ck_diagnose.data.error.sql + "]";
+                    is_submit = false; // 送出錯誤，把是送出改回 fasle
+                };
+            });
+        }
+        listenSubmit();
+
+        function checkFloat(num) { // 檢查浮點數是否小數點後超過兩個數字
+            if (!num) {
+                return true;
             }
-            // 把開的藥放進去
-            for (let i = 0;i < medicine_input_num*2;i++) {
-                data['medicines'+i] = {medicines : getId('medicines'+i).value, medi_amount : getId('medi_amount'+i).value, day : getId('day'+i).value, method : getId('method'+i).value, medi_mark : getId('medi_mark'+i).value};
+            for (let i = 0;i < num.length;i++) {
+                if (num[i] == ".") { // 到小數點，開始檢查
+                    var start_index = i;
+                }
             }
-            const ck_diagnose = await axios.post('/ckPatients', data);
-            if (ck_diagnose.data.suc) { // 沒有回傳錯誤
-                alert("看診成功！" + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
-                // send finish message on chat room
-                sendFinishMsg(getId('rId').value, (getId('patient_name') ? getId('patient_name').innerHTML : null));
-                printPdf(); // 印出 pdf
+            if (num.length - (start_index+1) > 2) {
+                alert('小數點後最多只能兩個數字！');
+                return false;
             }
-            else { // 印出錯誤
-                console.log(ck_diagnose.data.suc);
-                alert('看診失敗' + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
-                //var error_mes = "text :[" + ck_diagnose.data.error.text + "]。 sql : [" + ck_diagnose.data.error.sql + "]";
-                is_submit = false; // 送出錯誤，把是送出改回 fasle
-            };
-        });
+            else {
+                return true;
+            }
+        }
 
         function printPdf() { // 印出 pdf 檔
             if (confirm('是否印出？')) {
@@ -530,22 +559,16 @@
             // each row's element
             const all_elements = ['medicines', 'medi_amount', 'day', 'method', 'medi_mark'];
             const all_elements_width = [230, 90, 50, 80, 40]; // input width
+            // 第一行
             for (let i = 0;i < medicine_input_num;i++) { // total input num
-                // break
-                //var br_element = document.createElement("div");
-                //br_element.innerHTML = "<br/>";
-                //records_form.appendChild(br_element);
                 var tr_element = document.createElement("tr");
                 records_form.appendChild(tr_element);
                 for (let j = 0;j < all_elements.length;j++) { // all input of a row
                     realPutIn(all_elements[j], tr_element, i, all_elements_width[j]);
                 }
             }
+            // 第二行
             for (let i = 0;i < medicine_input_num;i++) { // total input num
-                // break
-                //var br_element = document.createElement("div");
-                //br_element.innerHTML = "<br/>";
-                //records_form.appendChild(br_element);
                 var tr_element = document.createElement("tr");
                 records_form1.appendChild(tr_element);
                 for (let j = 0;j < all_elements.length;j++) { // all input of a row
@@ -817,19 +840,39 @@
             }
         }
         
-        /*const btn = document.getElementById("button");
-btn.addEventListener("click", function(){
-    //btn.style.display = 'none';
-    btn.remove();
-    var element = document.getElementById('body');
-    var opt = { margin: [8, 8, 8, 8],
-        filename: 'test',
-        image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2 , scrollY:0},
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-          pagebreak: { after: '.page-break' }
-    }
-    html2pdf(element, opt);
-    btn.style.display = 'block';*/
+        getId('add_num').addEventListener('click', (e) => { 
+            console.log(medicine_input_num);
+            mkAddInput();
+            medicine_input_num += 1;
+        });
+        
+        function mkAddInput() { // make the input with format
+            var records_form = getId("records_form");
+            var records_form1 = getId("records_form1");
+            // each row's element
+            const all_elements = ['medicines', 'medi_amount', 'day', 'method', 'medi_mark'];
+            const all_elements_width = [230, 90, 50, 80, 40]; // input width
+            // 第一行
+            var tr_element = document.createElement("tr");
+            records_form.appendChild(tr_element);
+            for (let j = 0;j < all_elements.length;j++) { // all input of a row
+                realPutIn(all_elements[j], tr_element, medicine_input_num*2, all_elements_width[j]);
+            }
+            // 第二行
+            var tr_element = document.createElement("tr");
+            records_form1.appendChild(tr_element);
+            for (let j = 0;j < all_elements.length;j++) { // all input of a row
+                realPutIn(all_elements[j], tr_element, medicine_input_num*2 + 1, all_elements_width[j]);
+            }
+            outSymptoms(); // 印出症狀
+            getId('submit_bt').remove(); // 先把送出按鈕刪除
+            var submit_element = document.createElement("button");
+            submit_element.innerHTML = '送出';
+            submit_element.type = 'button';
+            submit_element.id = 'submit_bt';
+            submit_element.className = 'position-absolute end-50';
+            records_form1.appendChild(submit_element);
+            listenSubmit(); // listen to submit button
+        }
     </script>
 </html>

@@ -75,6 +75,9 @@ router.post('/turned', async function(req, res) {
     var suc = true;
     var error = null;
     try {
+        // update record's paid to 1
+        const rId = req.body.reason.split(',')[1];
+        await conn.query('update records set paid = 1 where `no` = ?', rId);
         // update turned = 1 
         var update_debt = await conn.query('update debt set `turned` = 1 where `no` = ?;', req.body.no);
         // insert into financial

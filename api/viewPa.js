@@ -195,7 +195,10 @@ router.post('/', async function(req, res) {
     //await conn.query('insert into expense(`aId`, `rId`, `emId`, `cost`, `sort`, `mark`) values(?, ?, ?, ?, ?, ?);', r
     if (req.body.vac == 'on') { // 打疫苗
         try { // 寫入疫苗紀錄
-            await conn.query('insert into vac_re(`pId`, `vId`, `rId`) values(?, ?, ?);', [pa_id[0].pId, req.body.vId, rId]);
+            const total_vId = req.body.total_vId;
+            for (let i = 0;i < total_vId.length;i++) {
+                await conn.query('insert into vac_re(`pId`, `vId`, `rId`) values(?, ?, ?);', [pa_id[0].pId, total_vId[i], rId]);
+            }
         }
         catch(e) {
             conn.release();
@@ -310,14 +313,26 @@ router.post('/submitUpdatePa', async function(req, res) { // 送出還卡
     };
     let conn = await pool.getConnection();
     try {
-        // 更新狀態為已還卡，並記錄負責還卡人
-        await conn.query('update no_card set `status` = 1, `aId` = ? where `rId` = ?', [req.body.aId, req.body.rId]);
+        if (!req.body.rId && req.body.pId) { // 沒有 rId, 有病人 id, 去找此病患有沒有欠卡
+            var all_this_patient = await conn.query('update no_card set `status` = 1 where `status` = 0 and `pId` = ?;', req.body.pId);
+        }
+        else {
+            // 更新狀態為已還卡，並記錄負責還卡人
+            await conn.query('update no_card set `status` = 1, `aId` = ? where `rId` = ?', [req.body.aId, req.body.rId]);
+        }
     }
     catch(e) {
         console.log(e);
     }
     conn.release();
-    res.json({suc : true});
+    // 避免不是從掛號頁面還卡出錯
+    try {
+        had_this_patient = all_this_patient.affectedRows;
+    }
+    catch(e) {
+        had_this_patient = 0;
+    }
+    res.json({suc : true, had_this_patient : had_this_patient});
     return res.end;
 });
 
@@ -419,8 +434,8 @@ router.post('/addPatients', async function(req, res) {
         var ck_per = await conn.query(sql_ck_same, req.body.id);
         var e_text;
         if (ck_per[0] == null) { // 新的病患, 新增到病患 table
-            var sql_pat = 'insert into patients(name, id, sex, birth, identity, tel1, tel2, mom_id, parity, address, can_used, pass, allergy, hate, mark) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
-            let up = await conn.query(sql_pat, [req.body.name, req.body.id, req.body.sex, req.body.birth, req.body.identity, req.body.tel1, req.body.tel2, req.body.mom_id, req.body.parity, req.body.address, req.body.can_used, req.body.pass, req.body.allergy, req.body.hate, req.body.mark]) 
+            var sql_pat = 'insert into patients(weight, height, name, id, sex, birth, identity, tel1, tel2, mom_id, parity, address, can_used, pass, allergy, hate, mark) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'
+            let up = await conn.query(sql_pat, [req.body.weight, req.body.height, req.body.name, req.body.id, req.body.sex, req.body.birth, req.body.identity, req.body.tel1, req.body.tel2, req.body.mom_id, req.body.parity, req.body.address, req.body.can_used, req.body.pass, req.body.allergy, req.body.hate, req.body.mark]) 
         }
         else { // 此病患已經在資料庫了
             suc = false;
@@ -456,10 +471,12 @@ router.post('/editPatients', async function(req, res) {
         var ck_per = await conn.query(sql_ck_same, req.body.id);
         var e_text;
         if (ck_per[0] != null) { // 是有在資料庫的舊病患
-            await conn.query("insert into backup_patients(`pId`, `name`, `id`, `sex`, `birth`, `identity`, `tel1`, `tel2`, `mom_id`, `parity`, `address`, `can_used`, `pass`, `allergy`, `hate`, `mark`, `origin_times`, `aId`) select *, ? from patients where `pId` = ?;", [req.body.nId, ck_per[0].pId]);
-            var sql_pat = 'update patients set name=?, id=?, sex=?, birth=?, identity=?, tel1=?, tel2=?, mom_id=?, parity=?, address=?, can_used=?, pass=?, allergy=?, hate=?, mark=? where id = ?;'
-            let up = await conn.query(sql_pat, [req.body.name, req.body.id, req.body.sex, req.body.birth, req.body.identity, req.body.tel1, req.body.tel2, req.body.mom_id, req.body.parity, req.body.address, req.body.can_used, req.body.pass, req.body.allergy, req.body.hate, req.body.mark, req.body.id]) 
-            console.log(up);
+            // 備份舊資料
+            await conn.query("insert into backup_patients(`pId`, `name`, `id`, `sex`, `birth`, `identity`, `tel1`, `tel2`, `mom_id`, `parity`, `address`, `can_used`, `pass`, `allergy`, `hate`, `mark`, `origin_times`, `weight`, `height`, `aId`) select *, ? from patients where `pId` = ?;", [req.body.nId, ck_per[0].pId]);
+            // 更新主要資料
+            var sql_pat = 'update patients set weight=?, height=?, name=?, id=?, sex=?, birth=?, identity=?, tel1=?, tel2=?, mom_id=?, parity=?, address=?, can_used=?, pass=?, allergy=?, hate=?, mark=? where id = ?;'
+            let up = await conn.query(sql_pat, [req.body.weight, req.body.height, req.body.name, req.body.id, req.body.sex, req.body.birth, req.body.identity, req.body.tel1, req.body.tel2, req.body.mom_id, req.body.parity, req.body.address, req.body.can_used, req.body.pass, req.body.allergy, req.body.hate, req.body.mark, req.body.id]) 
+            //console.log(up);
         }
         else { // 此病患沒在資料庫
             suc = false;

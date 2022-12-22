@@ -86,7 +86,7 @@ router.post('/', async function(req, res) {
                     await conn.query("insert into medicines_normal(`mId`, `new_mark`, `oral_tablet`, `single_two`, `code`, `price`, `price_date`, `price_fin_date`, `medi_eng`, `medi_amount`, `medi_unit`, `ingre`, `ingre_amount`, `ingre_unit`, `dose_form`, `medi_producer`, `medi_sort`, `quality_code`, `medi_mand`, `sort_group`, `fir_ingre`, `fir_medi_amount`, `fir_medi_unit`, `sec_ingre`, `sec_medi_amount`, `sec_medi_unit`, `thi_ingre`, `thi_medi_amount`, `thi_medi_unit`, `four_ingre`, `four_medi_amount`, `four_medi_unit`, `fift_ingre`, `fift_medi_amount`, `fift_medi_unit`, `producer`, `atc_code`, `no_input`) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?)", [true_code.index, true_code.new_mark, true_code.oral_tablet, true_code.single_two, true_code.code, true_code.price, true_code.price_date, true_code.price_fin_date, true_code.medi_eng, true_code.medi_amount, true_code.medi_unit, true_code.ingre, true_code.ingre_amount, true_code.ingre_unit, true_code.dose_form, true_code.medi_producer, true_code.medi_sort, true_code.quality_code, true_code.medi_mand, true_code.sort_group, true_code.fir_ingre, true_code.fir_medi_amount, true_code.fir_medi_unit, true_code.sec_ingre, true_code.sec_medi_amount, true_code.sec_medi_unit, true_code.thi_ingre, true_code.thi_medi_amount, true_code.thi_medi_unit, true_code.four_ingre, true_code.four_medi_amount, true_code.four_medi_unit, true_code.fift_ingre, true_code.fift_medi_amount, true_code.fift_medi_unit, true_code.producer, true_code.atc_code, true_code.no_input]); 
                 }
                 // 計算花了多少藥品
-                let num = parseInt(Object.values(req.body[all_keys[i]])[1] * Object.values(req.body[all_keys[i]])[2], 10) * -1;
+                let num = parseFloat(Object.values(req.body[all_keys[i]])[1] * Object.values(req.body[all_keys[i]])[2], 10) * -1.0;
                 // 新增到全部開的藥，第一次新增要先設值
                 if (!Object.keys(all_used_medicines).includes(true_code.code)) { // 第一次新增
                     all_used_medicines[true_code.code] = num;
@@ -100,11 +100,11 @@ router.post('/', async function(req, res) {
         for (let i = 0;i < Object.keys(all_used_medicines).length;i++) { // 檢查藥品剩餘量是否 > 需求量
             var sql = "select sum(now_quantity) from med_inventory_each where `code` = ? group by `code`;";
             const remain_quantity = await conn.query(sql, Object.keys(all_used_medicines)[i]);
-            if (JSON.stringify(parseInt(Object.values(remain_quantity[0])[0])) <= Object.values(all_used_medicines)[i]*-1) {
+            if (JSON.stringify(parseFloat(Object.values(remain_quantity[0])[0])) < Object.values(all_used_medicines)[i]*-1.0) {
                 // 找出該藥品名字
                 sql = "select medi_eng from medicines where `code` = ? order by `index` desc limit 1;"
                 const medi_eng = await conn.query(sql, Object.keys(all_used_medicines)[i]);
-                return_text = '藥品庫存不足。\n' + '藥名：' + medi_eng[0].medi_eng + '。編號：' + Object.keys(all_used_medicines)[i] + '。\n需求：' + Object.values(all_used_medicines)[i]*-1 + '。\n剩餘：' + JSON.stringify(parseInt(Object.values(remain_quantity[0])[0])) + '。';
+                return_text = '藥品庫存不足。\n' + '藥名：' + medi_eng[0].medi_eng + '。編號：' + Object.keys(all_used_medicines)[i] + '。\n需求：' + Object.values(all_used_medicines)[i]*-1.0 + '。\n剩餘：' + JSON.stringify(parseFloat(Object.values(remain_quantity[0])[0])) + '。';
                 over_required = true;
                 suc = false;
                 console.log(return_text);
@@ -139,7 +139,7 @@ router.post('/', async function(req, res) {
                     await conn.query("insert into medicines_normal(`mId`, `new_mark`, `oral_tablet`, `single_two`, `code`, `price`, `price_date`, `price_fin_date`, `medi_eng`, `medi_amount`, `medi_unit`, `ingre`, `ingre_amount`, `ingre_unit`, `dose_form`, `medi_producer`, `medi_sort`, `quality_code`, `medi_mand`, `sort_group`, `fir_ingre`, `fir_medi_amount`, `fir_medi_unit`, `sec_ingre`, `sec_medi_amount`, `sec_medi_unit`, `thi_ingre`, `thi_medi_amount`, `thi_medi_unit`, `four_ingre`, `four_medi_amount`, `four_medi_unit`, `fift_ingre`, `fift_medi_amount`, `fift_medi_unit`, `producer`, `atc_code`, `no_input`) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?)", [true_code.index, true_code.new_mark, true_code.oral_tablet, true_code.single_two, true_code.code, true_code.price, true_code.price_date, true_code.price_fin_date, true_code.medi_eng, true_code.medi_amount, true_code.medi_unit, true_code.ingre, true_code.ingre_amount, true_code.ingre_unit, true_code.dose_form, true_code.medi_producer, true_code.medi_sort, true_code.quality_code, true_code.medi_mand, true_code.sort_group, true_code.fir_ingre, true_code.fir_medi_amount, true_code.fir_medi_unit, true_code.sec_ingre, true_code.sec_medi_amount, true_code.sec_medi_unit, true_code.thi_ingre, true_code.thi_medi_amount, true_code.thi_medi_unit, true_code.four_ingre, true_code.four_medi_amount, true_code.four_medi_unit, true_code.fift_ingre, true_code.fift_medi_amount, true_code.fift_medi_unit, true_code.producer, true_code.atc_code, true_code.no_input]); 
                 }
                 // 計算花了多少藥品
-                var num = parseInt(Object.values(req.body[all_keys[i]])[1] * Object.values(req.body[all_keys[i]])[2], 10) * -1;
+                var num = parseFloat(Object.values(req.body[all_keys[i]])[1] * Object.values(req.body[all_keys[i]])[2], 10) * -1.0;
                 // 新增到全部開的藥
                 all_used_medicines[true_code] += num;
                 // 記錄一筆藥品使用紀錄
@@ -154,9 +154,11 @@ router.post('/', async function(req, res) {
                         num += the_medicine_id[i].now_quantity // 需求量 -= 減掉這個批次開了的藥
                     }
                     else { // 藥品剩餘量 >= 需求量，這個批次的庫存足夠。
+                        console.log(the_medicine_id[i].now_quantity);
+                        console.log(num);
                         await conn.query('insert into each_use_medicines(`aId`, `quantity`, `reason`, `mark`, `emId`) values(?, ?, ?, ?, ?);', [req.body.dId, num, req.body.dId + "醫生看診", req.body.rId + " 號病歷號", the_medicine_id[0].no]);
                         // 更新被使用的藥的現在數量
-                        await conn.query('update med_inventory_each set `now_quantity` = ? where `no` = ?', [the_medicine_id[i].now_quantity + num, the_medicine_id[i].no]);
+                        await conn.query('update med_inventory_each set `now_quantity` = ? where `no` = ?', [parseFloat(the_medicine_id[i].now_quantity) + num, the_medicine_id[i].no]);
                         break;
                     }
                 }

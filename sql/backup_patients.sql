@@ -18,5 +18,7 @@ create table backup_patients(
 `hate` varchar(20),
 `mark` varchar(40),
 `origin_times` datetime,
+`weight` int(4),
+`height` int(4),
 `aId` int(11)
 )
