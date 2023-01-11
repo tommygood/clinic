@@ -61,10 +61,17 @@ router.post('/', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
+    var had_changed_pay;
     sql : try {
         var return_text = ''; // 要回傳的文字
         var suc = true;
-        await conn.query('update records set `regist` = ?, `self_part` = ?, `all_self` = ? where `no` = ?', [req.body.regist, req.body.self_part, req.body.all_self, req.body.rId]);
+        // 檢查醫生有沒有更動患者的收費
+        had_changed_pay = await checkUpdateMoney(conn, req.body.regist, req.body.self_part, req.body.all_self, req.body.rId, req.body.dId);
+        //console.log("有變更，" + had_changed_pay);
+        if (had_changed_pay) { // 有更動
+            // 更新 record
+            await conn.query('update records set `regist` = ?, `self_part` = ?, `all_self` = ? where `no` = ?', [req.body.regist, req.body.self_part, req.body.all_self, req.body.rId]);
+        }
         var all_keys = Object.keys(req.body);
         var all_used_medicines = {}; // 全部醫生開的藥的各個種類及其數量
         for (let i = 0;i < all_keys.length;i++) { // 找每一種藥需要的數量，如果是同一種藥分多次開也會加在一起
@@ -148,7 +155,7 @@ router.post('/', async function(req, res) {
                 // 檢查是否有同時用到多個批次的藥
                 for (let i = 0;i < the_medicine_id.length;i++) {
                     if (the_medicine_id[i].now_quantity < num * -1) { // 如果藥品剩餘量 < 需求量，先用完這批藥品，再去找下一批藥
-                        await conn.query('insert into each_use_medicines(`aId`, `quantity`, `reason`, `mark`, `emId`) values(?, ?, ?, ?, ?);', [req.body.dId, the_medicine_id[i].now_quantity * -1, req.body.dId + "醫生看診", req.body.rId + " 號病歷號", the_medicine_id[i].no]);
+                        await conn.query('insert into each_use_medicines(`aId`, `quantity`, `reason`, `mark`, `emId`, `code`) values(?, ?, ?, ?, ?, ?);', [req.body.dId, the_medicine_id[i].now_quantity * -1, req.body.dId + "醫生看診", req.body.rId + " 號病歷號", the_medicine_id[i].no, true_code.code]);
                         // 更新被使用的藥的現在數量
                         await conn.query('update med_inventory_each set `now_quantity` = ? where `no` = ?', [0, the_medicine_id[i].no]);
                         num += the_medicine_id[i].now_quantity // 需求量 -= 減掉這個批次開了的藥
@@ -156,7 +163,7 @@ router.post('/', async function(req, res) {
                     else { // 藥品剩餘量 >= 需求量，這個批次的庫存足夠。
                         console.log(the_medicine_id[i].now_quantity);
                         console.log(num);
-                        await conn.query('insert into each_use_medicines(`aId`, `quantity`, `reason`, `mark`, `emId`) values(?, ?, ?, ?, ?);', [req.body.dId, num, req.body.dId + "醫生看診", req.body.rId + " 號病歷號", the_medicine_id[0].no]);
+                        await conn.query('insert into each_use_medicines(`aId`, `quantity`, `reason`, `mark`, `emId`, `code`) values(?, ?, ?, ?, ?, ?);', [req.body.dId, num, req.body.dId + "醫生看診", req.body.rId + " 號病歷號", the_medicine_id[0].no, true_code.code]);
                         // 更新被使用的藥的現在數量
                         await conn.query('update med_inventory_each set `now_quantity` = ? where `no` = ?', [parseFloat(the_medicine_id[i].now_quantity) + num, the_medicine_id[i].no]);
                         break;
@@ -184,10 +191,54 @@ router.post('/', async function(req, res) {
         return;
     }
     conn.release();
-    res.json({suc: suc, return_text : return_text});
+    res.json({suc: suc, return_text : return_text, had_changed_pay : had_changed_pay});
     res.end;
     return;
 });
+
+async function checkUpdateMoney(conn, regist, self_part, all_self, rId, dId) { // 檢查醫生有沒有更動患者的收費
+    // 先查患者原本的收費
+    var origin_record_pay = await conn.query("select `regist`, `self_part`, `all_self` from records where `no` = ?", rId);
+    var origin_regist = origin_record_pay[0].regist;
+    var origin_self_part = origin_record_pay[0].self_part;
+    var origin_all_self = origin_record_pay[0].all_self;
+    var changed = ""; // 是否有被醫生更動
+    var changed_num; // 更動多少
+    // 其中有一個不一樣就是有更動
+    if (regist != origin_regist) { // 掛號費有更動
+        changed_num = parseInt(regist) - parseInt(origin_regist);
+        //console.log("regist " + changed_num);
+        // 記錄到帳務紀錄
+        updateFinancialRecord(conn, dId, rId, changed_num, '醫生更動。掛號費');
+        changed += "醫生更動。掛號費：" + changed_num + "\n";
+    }
+    if (self_part != origin_self_part) { // 部分負擔有更動
+        changed_num = parseInt(self_part) - parseInt(origin_self_part);
+        //console.log("self part " + changed_num);
+        // 記錄到帳務紀錄
+        updateFinancialRecord(conn, dId, rId, changed_num, '醫生更動。部分負擔');
+        changed += "醫生更動。部分負擔：" + changed_num + "\n";
+    }
+    if (all_self != origin_all_self) { // 自費有更動
+        changed_num = parseInt(all_self) - parseInt(origin_all_self);
+        //console.log("all self " + changed_num);
+        // 記錄到帳務紀錄
+        updateFinancialRecord(conn, dId, rId, changed_num, '醫生更動。自費');
+        changed += "醫生更動。自費：" + changed_num + "\n";
+    }
+    return changed;
+}
+
+async function updateFinancialRecord(conn, aId, rId, money, reason) { // 記錄到帳務紀錄
+    reason += "," + rId; // 帳務理由
+    try { // 記錄到總帳務及今日帳務
+        var fId = await conn.query('insert into financial(`aId`, `reason`, `money`) values(?, ?, ?);', [aId, reason, money]); // 新增到總帳務
+        await conn.query('insert into financial_today(`aId`, `reason`, `money`, `fId`) values(?, ?, ?, ?);', [aId, reason, money, fId.insertId]); // 新增到今日帳務
+    }
+    catch(e) {
+        console.log(e);
+    }
+}
 
 router.post('/backup', async function(req, res) {
     try {
@@ -405,6 +456,67 @@ router.post('/updatePaid', async function(req, res) { // 更新是否在場
     }
     conn.release();
     res.json({suc:true});
+    res.end();
+    return;
+})  
+
+router.post('/updateIn', async function(req, res) { // 更新是否在場
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        res.json({suc:false});
+        res.end();
+        return;
+    };
+    let conn = await pool.getConnection();
+    try {
+        var total_rId = req.body.total_rId;
+        var total_in = req.body.total_in;
+        for (let i = 0;i < total_rId.length;i++) { // 更新全部的紀錄的看診號
+            console.log(total_in[i]);
+            if (total_in[i]) 
+                console.log(await conn.query('update records set `in` = ? where `no` = ?;', [1, total_rId[i]]));
+            else 
+                console.log(await conn.query('update records set `in` = ? where `no` = ?;', [0, total_rId[i]]));
+        }
+    }
+    catch(e) {
+        console.log(e);
+        conn.release();
+    }
+    conn.release();
+    res.json({suc:true});
+    res.end();
+    return;
+})  
+
+router.post('/checkVac', async function(req, res) { // 更新是否在場
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        res.json({suc:false});
+        res.end();
+        return;
+    };
+    let conn = await pool.getConnection();
+    suc = true;
+    try {
+        const rId = req.body.rId;
+        console.log(rId);
+        sql = 'select vId from vac_re where `rId` = ?;'
+        all_vId = await conn.query(sql, rId);
+        console.log(all_vId);
+    }
+    catch(e) {
+        suc = false;
+        console.log(e);
+    }
+    conn.release();
+    res.json({suc:suc, all_vId : all_vId});
     res.end();
     return;
 })  

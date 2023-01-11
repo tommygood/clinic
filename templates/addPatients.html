@@ -2,6 +2,7 @@
     <head>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
+        <script src="https://code.essoduke.org/js/twzipcode/twzipcode.js"></script>
         <title>
             掛號
         </title>
@@ -11,6 +12,7 @@
         <h2><span class = 'position-absolute top-0 end-0' id = 'nId'></span></h2>
     </head>
     <body>
+        <div class="twzipcode"></div>
         <div id = 'search_pos'>
             搜尋
             <input type = 'text' id = 'search'/>
@@ -40,11 +42,11 @@
                 </tr>
                 <tr id = 'name_row'><td>
                 <span id = 'name_text'>姓名：</span>
-                <input type = 'text' name = 'name' id = 'name' required/>
+                <input type = 'text' name = 'name' id = 'name' autocomplete="nope" required/>
                 <br/>
                 </td></tr><tr id = 'id_row'><td>
                 <span id = 'id_text'>身份證號：</span>
-                <input type = 'text' name = 'id' id = 'id' required/>
+                <input type = 'text' name = 'id' id = 'id' autocomplete="nope" required/>
                 <br/>
                 </td></tr><tr id = 'sex_row'><td>
                 <span id = 'sex_text'>性別：</span>
@@ -68,7 +70,7 @@
                 <br/>
                 </td></tr><tr id = 'tel1_row'><td>
                 <span id = 'tel1_text'>電話1：</span>
-                <input type = 'text' name = 'tel1' id = 'tel1'/>
+                <input type = 'text' name = 'tel1' id = 'tel1' autocomplete="nope"/>
                 <br/>
                 </td></tr><tr id = 'tel2_row'><td>
                 <span id = 'tel2_text'>電話2：</span>
@@ -84,7 +86,8 @@
                 <br/>
                 </td></tr><tr id = 'address_row'><td>
                 <span id = 'address_text'>地址：</span>
-                <input type = 'text' name = 'address' id = 'address' required/>
+                <input list = 'address_list' type = 'text' name = 'address' id = 'address' autocomplete="nope" required/>
+                <datalist id = 'address_list'></datalist>
                 <br/>
                 </td></tr><tr id = 'can_row'><td>
                 <span id = 'can_text'>可用次數：</span>
@@ -388,6 +391,7 @@
 
         var vac_dId; // 暫存打疫苗的醫生
         var vac_num; // 暫存打疫苗的病患的 index
+        var record_mark; // 暫存打疫苗的病患的註解
         async function inText(num, status) { // 一般看診，找出對應患者的資料
             //getId('name').value = '';
             for (i in all_index) {
@@ -411,18 +415,24 @@
             }
             var paid_value = (getId('is_paid'+num).checked) ? 1 : 0; // 是否付款，換成 0,1
             var in_value = (getId('is_in'+num).checked) ? 1 : 0; // 是否在場，換成 0,1
+            // 此病人的註解
+            record_mark = prompt('此病人的註解');
+            if (!record_mark) {
+                alert('掛號取消！');
+                return;
+            }
             var doc_num = prompt("請輸入醫生代碼"); // 輸入醫生代碼
             if (!doc_num) { // 取消輸入醫生代碼
                 alert('掛號取消！');
                 return;
             }
             if (status == 0) { // 健保，只要收掛號費和部分負擔
-                data = {paid : paid_value, nId : nId, card : true, in : in_value, dId : doc_num, name : name, id : id, sex : sex, birth : birth, identity : identity, tel1 : tel1, tel2 : tel2, mom_id : mom, parity : parity, address : address, can_used : can, pass : pass, allergy : allergy, hate : hate, mark : mark, deposit : 0, regist : getId('regist_'+num).value, part_self : getId('part_'+num).value, all_self : 0} 
+                data = {paid : paid_value, nId : nId, card : true, in : in_value, dId : doc_num, name : name, id : id, sex : sex, birth : birth, identity : identity, tel1 : tel1, tel2 : tel2, mom_id : mom, parity : parity, address : address, can_used : can, pass : pass, allergy : allergy, hate : hate, mark : record_mark, deposit : 0, regist : getId('regist_'+num).value, part_self : getId('part_'+num).value, all_self : 0} 
                 var total_expense = parseInt(getId('regist_'+num).value) + parseInt(getId('part_'+num).value);
             }
             else if (status == 1) { // 押單，只要收押金和掛號費和部分負擔
                 //setDeposit(i); // 設定預設押金
-                data = {paid : paid_value, nId : nId, card : false, in : in_value, dId : doc_num, name : name, id : id, sex : sex, birth : birth, identity : identity, tel1 : tel1, tel2 : tel2, mom_id : mom, parity : parity, address : address, can_used : can, pass : pass, allergy : allergy, hate : hate, mark : mark, deposit : getId('deposit_'+num).value, regist : getId('regist_'+num).value, part_self : getId('part_'+num).value, all_self : 0} 
+                data = {paid : paid_value, nId : nId, card : false, in : in_value, dId : doc_num, name : name, id : id, sex : sex, birth : birth, identity : identity, tel1 : tel1, tel2 : tel2, mom_id : mom, parity : parity, address : address, can_used : can, pass : pass, allergy : allergy, hate : hate, mark : record_mark, deposit : getId('deposit_'+num).value, regist : getId('regist_'+num).value, part_self : getId('part_'+num).value, all_self : 0} 
                 var total_expense = parseInt(getId('deposit_'+num).value) + parseInt(getId('regist_'+num).value) + parseInt(getId('part_'+num).value);
             }
             else if (status == 2) { // 打疫苗
@@ -440,7 +450,7 @@
                 //var total_expense = parseInt(getId('regist_'+num).value) + parseInt(getId('part_'+num).value);
             }
             else if (status == 3) { // 自費
-                data = {vac : 'on', vId : vId, paid : paid_value, nId : nId, card : false, in : in_value, dId : doc_num, name : name, id : id, sex : sex, birth : birth, identity : identity, tel1 : tel1, tel2 : tel2, mom_id : mom, parity : parity, address : address, can_used : can, pass : pass, allergy : allergy, hate : hate, mark : mark, deposit : 0, regist : 0, part_self : 0, all_self : getId('all_'+num)} 
+                data = {vac : 'on', vId : vId, paid : paid_value, nId : nId, card : false, in : in_value, dId : doc_num, name : name, id : id, sex : sex, birth : birth, identity : identity, tel1 : tel1, tel2 : tel2, mom_id : mom, parity : parity, address : address, can_used : can, pass : pass, allergy : allergy, hate : hate, mark : record_mark, deposit : 0, regist : 0, part_self : 0, all_self : getId('all_'+num)} 
                 var total_expense = parseInt(getId('all_'+num).value);
             }
             var is_paid_text = (getId('is_paid'+num).checked) ? '已' : '未';
@@ -493,7 +503,10 @@
                 alert(`還單成功！\n病患-${patient_name}，總共還清 ${result.had_this_patient} 筆欠單紀錄`);
             }
             else { // 還單失敗
-                if (result.had_this_patient == 0) { // affectrows = 0，無此病患
+                if (result.e_text != "") {
+                    alert('還單失敗！' + result.e_text);
+                }
+                else if (result.had_this_patient == 0) { // affectrows = 0，無此病患
                     alert('還單失敗，查無此病患有欠卡紀錄！');
                 }
                 else { // 有 error
@@ -514,9 +527,9 @@
             // 先放表頭
             if (getId('search').value != ' ' && getId('search').value != '') {
                 getId('result').innerHTML = 
-                "<tr><td colspan = '17'><b>病人資訊</b></td><td colspan = '2'><b>狀態</b></td><td colspan = '4'><b>費用</b></td><td colspan = '5'><b>看診選項</b></td></tr>" + 
+                "<tr><td colspan = '18'><b>病人資訊</b></td><td colspan = '2'><b>狀態</b></td><td colspan = '4'><b>費用</b></td><td colspan = '5'><b>看診選項</b></td></tr>" + 
                 "<tr><td>代號</td><td>身分證字號</td><td id = 'name_col'>姓名</td><td>生日</td><td>身分</td><td>電話1</td><td>電話2</td><td>母身分證</td>" + 
-                "<td>胎次</td><td>地址</td><td>病史</td><td>過敏</td><td>不喜</td><td>註記</td><td>體重</td><td>身高</td><td>編輯</td><td>付款</td>" +
+                "<td>胎次</td><td>地址</td><td>病史</td><td>過敏</td><td>不喜</td><td>註記</td><td>體重</td><td>身高</td><td>編輯</td><td>尋親</td><td>付款</td>" +
                 "<td>在場</td><td>押金</td><td>掛號費</td><td>部分負擔</td><td>自費</td>" +
                 "<td>健保</td><td>押單</td><td>打疫苗</td><td>自費</td><td>還單</td></tr>";
             }
@@ -525,7 +538,7 @@
                 // 有符合的字串
                 if (all_name[i].includes(getId('search').value) && getId('search').value != ' ' && getId('search').value != '') { 
                     is_put.push(i);
-                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[2]);
+                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
                 }
             }
             // 條件二 : 生日
@@ -533,7 +546,7 @@
                 // 還沒放過且有符合的字串
                 if (!(is_put.includes(i)) && all_birth[i].includes(getId('search').value) && getId('search').value != ' ' && getId('search').value != '') { 
                     is_put.push(i);
-                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[2]);
+                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
                 }
             }
             // 條件三 : 電話1
@@ -541,7 +554,7 @@
                 // 還沒放過且有符合的字串
                 if (!(is_put.includes(i)) && all_tel1[i].includes(getId('search').value) && getId('search').value != ' ' && getId('search').value != '') { 
                     is_put.push(i);
-                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[2]);
+                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
                 }
             }
             // 條件四 : 電話2
@@ -549,7 +562,7 @@
                 // 還沒放過且有符合的字串
                 if (!(is_put.includes(i)) && all_tel2[i].includes(getId('search').value) && getId('search').value != ' ' && getId('search').value != '') { 
                     is_put.push(i);
-                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[2]);
+                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
                 }
             }
             setExpense(all_identity[i], is_put);
@@ -561,7 +574,7 @@
             }
         }
 
-        function putData(i, index, name , birth, tel1, tel2) {
+        function putData(i, index, name , birth, tel1, tel2) { // 放入病患資訊
              getId('result').style.display = '';
              getId('form').style.display = 'none';
              getId('result').innerHTML += 
@@ -582,6 +595,7 @@
              "<td>" + all_weight[i] + "</td>" +
              "<td>" + all_height[i] + "</td>" +
              "<td><button onclick = 'editPatients(" + i + ")' id = 'edit_" + "'>編輯</button></td>" +
+             "<td><button onclick = 'findFamily(" + i + ")' id = 'find_" + "'>尋親</button></td>" +
              "<td><input type = 'checkbox' id = 'is_paid" + i + "' checked></input></td>" +
              "<td><input type = 'checkbox' id = 'is_in" + i + "' checked></input></td>" +
              "<td><input type = 'text' class = 'expense' name = 'deposit' id = 'deposit_" + i + "' value = '0' required/></td>" +
@@ -593,6 +607,69 @@
              "<td><button onclick = 'inText(" + i + ", 2)' class = 'vac' id = 'vac_" + "'>疫苗</button></td>" + 
              "<td><button onclick = 'inText(" + i + ", 3)' id = 'self_" + "'>自費</button></td>" + 
              "<td><button onclick = 'returnCard(" + i + ")' id = 'return_" + "'>還單</button></td></tr>";
+        }
+
+        function findFamily(i) { // 尋找家屬
+            all_family = [i]; // 家庭裡的成員，先放自己
+            if (!all_id[i] == "") {
+                // 用自己身分證找
+                for (let j = 0;j < all_mom.length;j++) {
+                    if (all_id[i] == all_mom[j]) { // 母親身份證字號和自己相同，自己是他媽
+                        //console.log(all_name[j] + " 自己是他媽");
+                        all_family.push(j);
+                    }
+                }
+            }
+            if (!all_mom[i] == "") {
+                // 用母親身分證找
+                for (let j = 0;j < all_id.length;j++) {
+                    if (!all_family.includes(j) && all_mom[i] == all_id[j]) { // 母親身份證字號和自己相同，是他媽
+                        //console.log(all_name[j] + " 是他媽");
+                        all_family.push(j);
+                    }
+                }
+            }
+            // 用電話1找
+            if (!all_tel1[i] == "") {
+                for (let j = 0;j < all_tel1.length;j++) {
+                    if (!all_family.includes(j) && all_tel1[i] == all_tel1[j]) { 
+                        //console.log(all_name[j] + " 電話1");
+                        all_family.push(j);
+                    }
+                }
+            }
+            // 用電話2找
+            if (!all_tel2[i] == "") {
+                for (let j = 0;j < all_tel2.length;j++) {
+                    if (!all_family.includes(j) && all_tel2[i] == all_tel2[j]) {
+                        //console.log(all_name[j] + " 電話2");
+                        all_family.push(j);
+                    }
+                }
+            }
+            putFoundPatients(all_family); // 把找到的家人放進去
+        }
+        
+        function putFoundPatients(all_family) { // 把找到的家人放進去
+            // 先清空 table
+            result.innerHTML = '';
+            putHeader(); // 放標頭
+            var i;
+            for (index in all_family) { // 把家屬放進去 
+                i = all_family[index];
+                putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
+            }
+        }
+
+        function putHeader() { // table 標頭
+            if (getId('search').value != ' ' && getId('search').value != '') {
+                getId('result').innerHTML = 
+                "<tr><td colspan = '18'><b>病人資訊</b></td><td colspan = '2'><b>狀態</b></td><td colspan = '4'><b>費用</b></td><td colspan = '5'><b>看診選項</b></td></tr>" + 
+                "<tr><td>代號</td><td>身分證字號</td><td id = 'name_col'>姓名</td><td>生日</td><td>身分</td><td>電話1</td><td>電話2</td><td>母身分證</td>" + 
+                "<td>胎次</td><td>地址</td><td>病史</td><td>過敏</td><td>不喜</td><td>註記</td><td>體重</td><td>身高</td><td>編輯</td><td>尋親</td><td>付款</td>" +
+                "<td>在場</td><td>押金</td><td>掛號費</td><td>部分負擔</td><td>自費</td>" +
+                "<td>健保</td><td>押單</td><td>打疫苗</td><td>自費</td><td>還單</td></tr>";
+            }
         }
 
         async function editPatients(i) { // 編輯病人
@@ -744,7 +821,7 @@
             var paid_value = (getId('is_paid'+vac_num).checked) ? 1 : 0; // 是否付款，換成 0,1
             var in_value = (getId('is_in'+vac_num).checked) ? 1 : 0; // 是否在場，換成 0,1
             // 要送出的資料
-            var data = {total_vId : total_vId, mark : null, id : all_id[vac_num], vac : 'on', vId : vId, paid : paid_value, nId : nId, card : false, in : in_value, dId : vac_dId, regist : getId('regist_'+vac_num).value, deposit : 0, part_self : getId('part_'+vac_num).value, all_self : 0} 
+            var data = {total_vId : total_vId, mark : record_mark, id : all_id[vac_num], vac : 'on', vId : vId, paid : paid_value, nId : nId, card : false, in : in_value, dId : vac_dId, regist : getId('regist_'+vac_num).value, deposit : 0, part_self : getId('part_'+vac_num).value, all_self : 0} 
             // 總收費
             var total_expense = parseInt(getId('regist_'+vac_num).value) + parseInt(getId('part_'+vac_num).value);
             // 要印出的文字
@@ -787,6 +864,117 @@
             }
         }
         addVacElement();
+        
+        // 地址索引
+        
+        const twzipcode = new TWzipcode('.twzipcode');
+        // 當輸入地址，就去檢查有沒有符合的索引
+        getId('address').addEventListener('input', checkAddress); // 若地址輸入框更動，檢查地址輸入框有沒有符合資料庫裡的地址
+        
+        async function roadFile() { // 路名的 json。key = 區名，value = [全部路名]
+            const road = await axios.get('/viewPa/roadFile');
+            all_road = road.data.data.replaceAll("'", '"');
+            all_road = JSON.parse(all_road); // 轉 string to json
+            //console.log(all_road);
+        }
+        roadFile();
+
+        var all_county = []; // 所有的縣市
+        function mkAddress() { // 製作包含縣市名稱 + (縣市名稱+區名) 的 array
+            var all_address_list = Object.keys(twzipcode.database);
+            for (let i = 0;i < Object.keys(twzipcode.database).length;i++) {
+                all_county.push(Object.keys(twzipcode.database)[i]);
+                for (let j = 0;j < Object.keys(Object.values(twzipcode.database)[i]).length;j++) {
+                    all_address_list.push(Object.keys(twzipcode.database)[i] + Object.keys(Object.values(twzipcode.database)[i])[j]);
+                }
+            }
+            putRoad(all_county); // 一開始先放入全部的縣市
+            return all_address_list;
+        }
+        const all_address_list = mkAddress(); // 製作包含縣市名稱 + (縣市名稱+區名) 的 array
+        //console.log(all_address_list);
+        
+        function checkAddress() { // 檢查地址輸入框有沒有符合資料庫裡的地址
+            getId('address_list').innerHTML = '';
+            // 把輸入的台轉成臺
+            getId('address').value = getId('address').value.replaceAll('台', '臺');
+            const now_address = getId('address').value;
+            // 在城市的索引
+            const all_index_in_city = indexInCity(now_address);
+            if (now_address ===  "") { // 輸入框是空的
+                putRoad(all_county); // 放入全部的縣市
+                return;
+            }
+            if (all_index_in_city.length == 0) { // 沒有符合的地址
+                const in_road = findInRoad(now_address); // 就再去找路名
+                if (in_road.length > 0) { // 有相符的路名。ex. 新北市新莊區中
+                    putRoad(in_road);
+                }
+                else { // 沒有任何匹配的路名
+                    return;
+                }
+            }
+            if (typeof(all_index_in_city) == 'string') { // 輸入為區，顯示路名。ex. 新北市新莊區
+                putRoad(all_road[all_index_in_city]);
+                return;
+            }
+            for (let i = 0;i < all_index_in_city.length;i++) { // 可能會有多個符合
+                var index_in_city = all_index_in_city[i]; // 一個一個拿出來
+                if (index_in_city < Object.keys(twzipcode.database).length) { // 是縣市，列出全部區
+                    for (let i = 0;i < Object.keys(Object.values(twzipcode.database)[index_in_city]).length;i++) {
+                        // 縣市名 + 區名
+                        var city_add_section_name = Object.keys(twzipcode.database)[index_in_city] + Object.keys(Object.values(twzipcode.database)[index_in_city])[i]
+                        var option = document.createElement('option');
+                        option.value = city_add_section_name;
+                        getId('address_list').appendChild(option);
+                    }
+                }
+                else { // 單一區，非縣市。ex. 輸入 新北市新 ，就要出現新北市新莊區、新北市新店區
+                    var option = document.createElement('option');
+                    option.value = all_address_list[index_in_city];
+                    getId('address_list').appendChild(option);
+                }
+            }
+        }
+        
+        function findInRoad(now_address) { // 找是否有在路名裡
+            all_matched = []; // 所有符合的路
+            for (let i = 0;i < Object.keys(all_road).length;i++) { // 所有的區
+                this_array = Object.values(all_road[Object.keys(all_road)[i]]);
+                for (let j = 0;j < this_array.length;j++) { // 該區所有的路
+                    if (this_array[j].includes(now_address)) { // 有包含在此路
+                        all_matched.push(this_array[j]);
+                    }
+                }
+            }
+            return all_matched;
+        }
+        
+        function putRoad(all_this_road) { // 把路名放進框框
+            for (let i = 0;i < all_this_road.length;i++) {
+                var option = document.createElement('option');
+                option.value = all_this_road[i];
+                getId('address_list').appendChild(option);
+            }
+        }
+        
+        function indexInCity(now_address) { // 回傳所有符合的地址的 index 的 array
+            if (all_address_list.indexOf(now_address) >= 0 && all_address_list.indexOf(now_address) <= Object.keys(twzipcode.database).length) { // 單一縣市
+                return [all_address_list.indexOf(now_address)];
+            }
+            else if (all_address_list.indexOf(now_address) >= 0 && all_address_list.indexOf(now_address) > Object.keys(twzipcode.database).length) { // 完整區
+                return now_address;
+            }
+            else { // 不是單一縣市，檢查是否是在 縣市+區
+                all_matched = []; // 可能會有多個區符合
+                for (let i = Object.keys(twzipcode.database).length;i < all_address_list.length;i++) {
+                    if (all_address_list[i].includes(now_address)) {
+                        all_matched.push(i);
+                    }
+                }
+            }
+            return all_matched;
+        }
     </script>
 </html>
 

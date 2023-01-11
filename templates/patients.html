@@ -252,6 +252,7 @@
                     //document.getElementById('r_num').value = this_doc[pa_num.pa_num].r_num;
                         //document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
                     //document.getElementById('nrId').value = this_doc[pa_num.pa_num].nrId;
+                        checkVac(rId);
                         tab.innerHTML += "<tr" + j + "/><td/>"+ rId  + 
                         "<td id = 'patient_name'>" + info[j].name + "</td>" +
                         "<td>" + info[j].birth + "</td>" +
@@ -388,6 +389,10 @@
                 }
                 const ck_diagnose = await axios.post('/ckPatients', data);
                 if (ck_diagnose.data.suc) { // 沒有回傳錯誤
+                    // 若醫生有改收費，就廣播到聊天室
+                    if (ck_diagnose.data.had_changed_pay != "") {
+                        socket.emit("docMsg", ck_diagnose.data.had_changed_pay);
+                    }
                     alert("看診成功！" + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
                     // send finish message on chat room
                     sendFinishMsg(getId('rId').value, (getId('patient_name') ? getId('patient_name').innerHTML : null));
@@ -873,6 +878,19 @@
             submit_element.className = 'position-absolute end-50';
             records_form1.appendChild(submit_element);
             listenSubmit(); // listen to submit button
+        }
+        
+        // check if vaccine
+        async function checkVac(rId) { // 檢查是否是打疫苗，若是就印出打哪種
+            const ck_vac = await axios.post('/ckPatients/checkVac', {rId : rId});
+            if (ck_vac.data.suc) {
+                for (let i = 0;i < ck_vac.data.all_vId.length;i++) { // 可能有多種疫苗
+                    getId('main_sue').value += "施打疫苗: " + ck_vac.data.all_vId[i].vId + "\n";
+                }
+            }
+            else {
+                console.log('查看是否為施打疫苗錯誤');
+            }
         }
     </script>
 </html>

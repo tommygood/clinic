@@ -14,6 +14,8 @@ const pool = db.createPool({
 });
 var config = require("config"); // 設定檔
 var root = config.get('server.root'); // 根目錄位置
+var fs = require('fs'); 
+
 
 router.get('/', function(req, res) {
     try { // 驗證 token
@@ -312,9 +314,20 @@ router.post('/submitUpdatePa', async function(req, res) { // 送出還卡
         return;
     };
     let conn = await pool.getConnection();
+    suc = true;
+    e_text = ''; // error text;
     try {
         if (!req.body.rId && req.body.pId) { // 沒有 rId, 有病人 id, 去找此病患有沒有欠卡
-            var all_this_patient = await conn.query('update no_card set `status` = 1 where `status` = 0 and `pId` = ?;', req.body.pId);
+            // 還單一次只能還一筆(一天只能還一次)，所以會檢查當天是否有掛過號、還過卡
+            var today_return_record = await conn.query("select count(*) from no_card WHERE `pId` = ? and (DATE(`time`) = CURDATE() or DATE(`return_time`) = CURDATE() or `pId` in (select `pId` from records where DATE(`start`) = CURDATE()));", req.body.pId);
+            if (today_return_record[0]['count(*)'] > 0) { // 今天已有掛押單或還單紀錄
+                suc = false;
+                e_text = '病人一天只能掛一次號！';
+            }
+            if (suc) { // 如果有錯就不能還卡
+                // 還卡，更新狀態為還卡、設還卡時間。
+                var all_this_patient = await conn.query('update no_card set `status` = 1, `return_time` = ? where `status` = 0 and `pId` = ? limit 1;', [new Date(), req.body.pId]);
+            }
         }
         else {
             // 更新狀態為已還卡，並記錄負責還卡人
@@ -332,7 +345,7 @@ router.post('/submitUpdatePa', async function(req, res) { // 送出還卡
     catch(e) {
         had_this_patient = 0;
     }
-    res.json({suc : true, had_this_patient : had_this_patient});
+    res.json({suc : suc, had_this_patient : had_this_patient, e_text : e_text});
     return res.end;
 });
 
@@ -519,7 +532,7 @@ router.get('/allVac', async function(req, res) {
     return;
 });
 
-router.post('/inNoCard', async function(req, res) { // 送出還卡
+router.post('/inNoCard', async function(req, res) { // 查看是否未還卡
     try {
         const user = jwt.verify(req.cookies.token, 'my_secret_key');
     }
@@ -531,7 +544,6 @@ router.post('/inNoCard', async function(req, res) { // 送出還卡
     };
     let conn = await pool.getConnection();
     try {
-        // 更新狀態為已還卡，並記錄負責還卡人
         var no_card_num = await conn.query('select count(*) from no_card where status = 0 and rId = ?', [req.body.rId]);
     }
     catch(e) {
@@ -539,6 +551,57 @@ router.post('/inNoCard', async function(req, res) { // 送出還卡
     }
     conn.release();
     res.json({no_card_num : no_card_num[0]['count(*)'].toString()});
+    return res.end;
+});
+
+router.get('/roadFile', async function(req, res) { // 路名檔
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        res.redirect('/login');
+        res.end();
+        return;
+    };
+    data = '';
+    // 記得要先去把 road.txt 轉成 utf-8
+    fs.readFile('road.txt', 'utf-8', function (err, data) {
+        if (err) throw err;
+        data = data.toString();
+        res.json({data : data});
+    });
+    res.end;
+    return;
+});
+
+router.post('/canDeleted', async function(req, res) { // 查詢是否可以被刪除
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        res.json({suc : false});
+        res.end();
+        return;
+    };
+    let conn = await pool.getConnection();
+    try {
+        var can_deleted; // 是否可被刪除，只要是押金(rId 有在還卡清單中)就可以
+        var in_no_card = await conn.query('select count(*) from no_card where rId = ?', [req.body.rId]);
+        in_no_card = in_no_card[0]['count(*)'];
+        if (in_no_card) {
+            can_deleted = true;
+        }
+        else {
+            can_deleted = false;
+        }
+    }
+    catch(e) {
+        console.log(e);
+    }
+    conn.release();
+    res.json({can_deleted : can_deleted});
     return res.end;
 });
 

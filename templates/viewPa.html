@@ -443,6 +443,11 @@
         }
         
         async function callPat(pa_num, rId) { // 按下刪除
+            can_deleted = await canDeleted(rId);
+            if (!can_deleted) {
+                alert('此病患已取得序號，不能刪除！');
+                return;
+            }
             var row_id;
             var value_id;
             var value_index;
@@ -457,6 +462,11 @@
                 alert('刪除失敗');
                 location.reload();
             }
+        }
+
+        async function canDeleted(rId) {
+            const {data : can_del} = await axios.post('/viewPa/canDeleted', {rId : rId}); // 刪除
+            return can_del.can_deleted;
         }
 
         function reSort(rId) { // 重新排序看診號

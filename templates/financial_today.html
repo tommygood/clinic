@@ -6,184 +6,298 @@
         <h1>
             今日帳務紀錄
         </h1>
-		<h2><span id = 'nId'></span><span> 號護士</span></h2>
+        <h2><span id = 'nId'></span><span> 號護士</span></h2>
     </head>
     <body>
-		<span>總金額：</span>
-		<b><span id = 'total_money'></span></b>
-		<br/>
-		<br/>
-		<button id = 'changed_bt' type = 'button'>保存更改</button>
-		<button id = 'settle_bt' type = 'button'>結算當班金額</button>
+        <span>總金額：</span>
+        <b><span id = 'total_money'></span></b>
+        <br/>
+        <br/>
+        <button id = 'changed_bt' type = 'button'>保存更改</button>
+        <button id = 'settle_bt' type = 'button'>結算當班金額</button>
+        <!--
         結算提醒事項<textarea id = 'origin_log'></textarea>
-        <table id = 'tab' border = '2' align = center>
+        -->
+        <table class="position-absolute top-0 start-0" id = 'tab' border = '2' align = 'center'>
+            <tr>
+                <td colspan = '8'>今日帳務記錄</td>
+            </tr>
             <tr>
                 <td>編號</td>
                 <td>時間</td>
                 <td>負責人員</td>
                 <td>理由</td>
                 <td>金額</td>
-				<td>備註</td>
-				<td>更改理由</td>
+                <td>備註</td>
+                <td>更改理由</td>
+            </tr>
+        </table>
+        <table class="position-absolute top-0 start-50" id = 'add_tab' border = '2' align = 'right'>
+            <tr>
+                <td colspan = '8'>新增帳務記錄</td>
+            </tr>
+            <tr>
+                <td>編號</td>
+                <td>理由</td>
+                <td>金額</td>
+                <td>備註</td>
             </tr>
         </table>
     </body>
-	<style>
-		 table {
-			position : absolute;
-		}
+    <style>
+        table {
+            position : absolute;
+        }
 
-		td {
-			text-align : center;
-		}
-	</style>
+        td {
+            text-align : center;
+        }
+        
+        #add_tab {
+            margin : 180px 0px 0px 0px;
+        }
+        
+        #tab {
+            margin : 180px 0px 0px 0px;
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
-		function getId(id) {
-			return document.getElementById(id);
-		}
+        const total_row = 8; // 新增帳務 table 的 row
+        function getId(id) {
+            return document.getElementById(id);
+        }
 
         var total_money = 0; // sum of total money
-        (async() => {
+        
+        (async() => { // 查詢 nId
+            const {data : user} = await axios.get('/viewPa/nId');
+            getId('nId').innerHTML = user.nId;
+        })();
+        
+        function moneyChange(total_len) { // 監聽更改錢、理由
+            //getId("money_"+0).addEventListener('change', changed_list); // 監聽錢
+            for (let i = 0;i < total_len;i++) {
+                getId("money_"+i).addEventListener('change', changed_list); // 監聽錢
+                getId('changed_reason_'+i).addEventListener('change', changed_list); // 監聽更改理由
+            }
+        }
+
+        var changed_money_list = []; // 有更改的錢
+        var changed_reason_list = []; // 有更改的更改理由
+        var all_change = [];
+
+        function test() {
+            alert(1);
+        }
+
+        async function changed_list(e) { // 更改金額或更改理由
+            log_row = e.path[2].getElementsByTagName('td');
+            var key_id = log_row[0].innerHTML;
+            var in_all = false; // 是否放過
+            var log_id = e.path[2].id;
+            for (let i = 0;i < all_change.length;i++) {
+                if (all_change[i] == log_id) {
+                    in_all = true;
+                    break;
+                }
+            }
+            if (!in_all)
+                all_change.push(log_id);
+            if (e.target.id.includes('money')) { // 錢
+                log_row[6].getElementsByTagName('input')[0].style.visibility = 'initial' ;
+                var money = log_row[4].getElementsByTagName('input')[0].value; // 取得錢
+                var in_money = false; // 先假設還沒算過這筆資料的錢
+                // 找出是否有改過這筆
+                for (let i = 0;i < Object.keys(changed_money_list).length;i++) { 
+                    if (key_id == Object.keys(changed_money_list[i])) { // 有改過
+                        changed_money_list[i][key_id][0] = money; // 只要改內容就好
+                        in_money = true;
+                    }
+                }
+                if (!in_money) // 還沒換過這筆資料的錢, 要新增
+                    changed_money_list.push({[key_id] : [money]});
+            }
+            else { // 更改理由
+                var reason = log_row[6].getElementsByTagName('input')[0].value;
+                var in_reason = false; // 先假設還沒算過這筆資料的錢
+                // 找出是否有改過這筆
+                for (let i = 0;i < Object.keys(changed_reason_list).length;i++) { 
+                    if (key_id == Object.keys(changed_reason_list[i])) { // 有改過
+                        changed_reason_list[i][key_id] = reason; // 只要改內容就好
+                        in_reason = true;
+                    }
+                }
+                if (!in_reason) // 還沒換過這筆資料的錢, 要新增
+                    changed_reason_list.push({[key_id] : reason});
+            }
+        }
+
+        getId('changed_bt').addEventListener('click', submitChange); // 監聽更改理由
+
+        async function submitChange() {
+            var final_all = {};
+            for (let i = 0;i < all_change.length;i++) {
+                log_row = getId(all_change[i]).getElementsByTagName('td');
+                var money = log_row[4].getElementsByTagName('input')[0].value; // 取得錢
+                var reason = log_row[6].getElementsByTagName('input')[0].value; // 取得理由
+                if (reason == "") { // 檢查是否必填欄位為空值
+                    alert("理由欄位為必填");
+                    return;
+                }
+                else if (money == "") {
+                    alert("金額欄位為必填");
+                    return;
+                }
+                else { // 不是空值, 就加入準備傳送的集合
+                    final_all[onlyNum(all_change[i])+1] = [money, reason]; // db index start from 1
+                }
+            }
+            const {data : update_financial} = await axios.post('/financial_today', {final_all : final_all, aId :  getId('nId').innerHTML});
+            if (update_financial["suc"] == false) { // update succsessful, no need to alert the error msg
+                for (let i = 0;i < update_financial["error"].length;i++) {
+                    alert(update_financial["error"][i]);
+                }
+            }
+            else { // update successfully
+                alert('更改成功');
+                window.location.reload();
+            }
+        }
+
+        function onlyNum(log_id) { // 把 log_row 拿掉
+            var new_id = '';
+            for (let i = 0;i < log_id.length;i++) {
+                if (isNum(log_id[i])) // 是數字
+                    new_id += log_id[i];
+            }
+            return parseInt(new_id);
+        }
+
+        function isNum(n) { // 是不是數字
+            return !isNaN(parseFloat(n)) && isFinite(n);
+        }
+
+        getId("settle_bt").addEventListener('click', settle); // 監聽錢
+
+        async function settle() { // settle all financial records on the duty of this nurse
+            // 詢問註解
+            var origin_log = prompt("結算當班金額的註解");
+            if (origin_log == null) { // 取消輸入
+                alert('結算取消！');
+                return;
+            }
+            // 詢問要剩下金額
+            var last_money = prompt("要留給下一個班的金額");
+            if (last_money == null) { // 取消輸入
+                alert('結算取消');
+                return;
+            }
+            else {
+                if (!isNum(last_money)) { // 若不是數字，就設0
+                    last_money = 0;
+                }
+                if (last_money > total_money) { // 檢查是否剩餘金額 > 目前金額
+                    alert('剩餘金額不可大於目前總金額，結算取消！');
+                    return;
+                }
+            }
+            // 送出結算記錄
+            const {data : settle} = await axios.post("/financial_today/settle", {last_money : last_money, aId : getId('nId').innerHTML, total_money : total_money, origin_log : origin_log});
+            if (settle["suc"]) { // settle successfully
+                alert('結算成功!');
+                window.location.reload();
+            }
+            else {
+                for (let i = 0;i < settle["error"].length;i++) {
+                    alert(settle["error"][i]);
+                }
+                window.location.reload();
+            }
+        }
+        
+        function mkAddTableRow() { // 製作新增帳務 table 的欄位
+            var add_tab = getId('add_tab'); // 要新增的 table
+            for (let i = 0;i < total_row;i++) { // 總共幾個 row
+                var tr = document.createElement('tr'); // row
+                // 編號
+                var td_id = document.createElement('td'); // column
+                td_id.innerHTML = i+1; // 編號
+                tr.appendChild(td_id); // row append column
+                // reason column
+                var td_reason = document.createElement('td'); 
+                var td_reason_input = document.createElement('input');
+                td_reason_input.id = 'add_reason' + i;
+                td_reason.appendChild(td_reason_input);
+                tr.appendChild(td_reason); // row append column
+                // money column
+                var td_money = document.createElement('td'); 
+                var td_money_input = document.createElement('input');
+                td_money_input.id = 'add_money' + i;
+                td_money.appendChild(td_money_input);
+                tr.appendChild(td_money); // row append column
+                // mark column
+                var td_mark = document.createElement('td'); 
+                var td_mark_input = document.createElement('input');
+                td_mark_input.id = 'add_mark' + i;
+                td_mark.appendChild(td_mark_input);
+                tr.appendChild(td_mark); 
+                // row append column
+                add_tab.appendChild(tr); 
+            }
+            // submit button
+            var td_submit = document.createElement('button'); 
+            td_submit.id = 'submit_add';
+            td_submit.innerHTML = '送出';
+            add_tab.appendChild(td_submit);
+        }
+        mkAddTableRow();
+        
+        getId('submit_add').addEventListener('click', submitAdd);
+        
+        async function submitAdd() { // 送出新增帳務記錄 
+            var all_reason = [];
+            var all_money = [];
+            var all_mark = [];
+            for (let i = 0;i < total_row;i++) { // 可能一次新增多筆帳務
+                // 若理由不為空，且金額為數字就可以新增
+                if (getId('add_reason'+i).value != "" && Number.isInteger(parseInt(getId('add_money'+i).value))) {
+                    all_reason.push(getId('add_reason'+i).value);
+                    all_money.push(parseInt(getId('add_money'+i).value));
+                    all_mark.push(getId('add_mark'+i).value);
+                }
+            }
+            const {data : user} = await axios.get('/viewPa/nId');
+            data = {all_reason : all_reason, all_money : all_money, all_mark : all_mark, aId : user.nId};
+            const {data : result} = await axios.post('/financial_today/addFinancial', data);
+            if (result.suc) {
+                alert('新增成功！')
+            }
+            else {
+                alert('新增失敗' + result.error_txt);
+            }
+            // 不管成功或失敗都重整葉面
+            window.location.reload();
+        }
+        
+        (async() => { // 放入今日帳務金額
             const {data : financial} = await axios.get('/today_financial');
             for (let i = 0;i < financial.length;i++) {
-				tab.innerHTML += "<tr id = 'log_row" + i + "'/><td/>" + financial[i].no + 
-				"<td>" + financial[i].times + "</td>" +
-				"<td>" + financial[i].aId + "</td>" +
-				"<td>" + financial[i].reason + "</td>" +
-				`<td><input id = 'money_${i}' type = 'input' style = 'width:100px' value = '${financial[i].money}'></input></td>` +
-				"<td>" + financial[i].mark + "</td>" +
-				`<td><input id = 'changed_reason_${i}' type = 'input' style = 'width:100px;' ></input></td></tr>`;
-				total_money += financial[i].money;
-				//getId("money_"+i).addEventListener('change', changed_list); // 監聽錢
-				//getId('changed_reason_'+i).addEventListener('change', changed_list); // 監聽更改理由
-			}
-			getId('total_money').innerHTML = "$ " + total_money;
-			moneyChange(financial.length);
+                tab.innerHTML += "<tr id = 'log_row" + i + "'/><td/>" + financial[i].no + 
+                "<td>" + financial[i].times + "</td>" +
+                "<td>" + financial[i].aId + "</td>" +
+                "<td>" + financial[i].reason + "</td>" +
+                `<td><input id = 'money_${i}' type = 'input' style = 'width:100px' value = '${financial[i].money}'></input></td>` +
+                "<td>" + financial[i].mark + "</td>" +
+                `<td><input id = 'changed_reason_${i}' type = 'input' style = 'width:100px;' ></input></td></tr>`;
+                total_money += financial[i].money;
+                //getId("money_"+i).addEventListener('change', changed_list); // 監聽錢
+                //getId('changed_reason_'+i).addEventListener('change', changed_list); // 監聽更改理由
+            }
+            getId('total_money').innerHTML = "$ " + total_money;
+            moneyChange(financial.length);
         })();
-
-        (async() => { // 查詢 nId
-			const {data : user} = await axios.get('/viewPa/nId');
-			getId('nId').innerHTML = user.nId;
-        })();
-
-		function moneyChange(total_len) {
-			getId("money_"+0).addEventListener('change', changed_list); // 監聽錢
-			for (let i = 0;i < total_len;i++) {
-				getId("money_"+i).addEventListener('change', changed_list); // 監聽錢
-				getId('changed_reason_'+i).addEventListener('change', changed_list); // 監聽更改理由
-			}
-		}
-
-		var changed_money_list = []; // 有更改的錢
-		var changed_reason_list = []; // 有更改的更改理由
-		var all_change = [];
-
-		function test() {
-			alert(1);
-		}
-
-		async function changed_list(e) { // 更改金額或更改理由
-			log_row = e.path[2].getElementsByTagName('td');
-			var key_id = log_row[0].innerHTML;
-			var in_all = false; // 是否放過
-			var log_id = e.path[2].id;
-			for (let i = 0;i < all_change.length;i++) {
-				if (all_change[i] == log_id) {
-					in_all = true;
-					break;
-				}
-			}
-			if (!in_all)
-				all_change.push(log_id);
-			if (e.target.id.includes('money')) { // 錢
-				log_row[6].getElementsByTagName('input')[0].style.visibility = 'initial' ;
-				var money = log_row[4].getElementsByTagName('input')[0].value; // 取得錢
-				var in_money = false; // 先假設還沒算過這筆資料的錢
-				// 找出是否有改過這筆
-				for (let i = 0;i < Object.keys(changed_money_list).length;i++) { 
-					if (key_id == Object.keys(changed_money_list[i])) { // 有改過
-						changed_money_list[i][key_id][0] = money; // 只要改內容就好
-						in_money = true;
-					}
-				}
-				if (!in_money) // 還沒換過這筆資料的錢, 要新增
-					changed_money_list.push({[key_id] : [money]});
-			}
-			else { // 更改理由
-				var reason = log_row[6].getElementsByTagName('input')[0].value;
-				var in_reason = false; // 先假設還沒算過這筆資料的錢
-				// 找出是否有改過這筆
-				for (let i = 0;i < Object.keys(changed_reason_list).length;i++) { 
-					if (key_id == Object.keys(changed_reason_list[i])) { // 有改過
-						changed_reason_list[i][key_id] = reason; // 只要改內容就好
-						in_reason = true;
-					}
-				}
-				if (!in_reason) // 還沒換過這筆資料的錢, 要新增
-					changed_reason_list.push({[key_id] : reason});
-			}
-		}
-
-		getId('changed_bt').addEventListener('click', submitChange); // 監聽更改理由
-
-		async function submitChange() {
-			var final_all = {};
-			for (let i = 0;i < all_change.length;i++) {
-				log_row = getId(all_change[i]).getElementsByTagName('td');
-				var money = log_row[4].getElementsByTagName('input')[0].value; // 取得錢
-				var reason = log_row[6].getElementsByTagName('input')[0].value; // 取得理由
-				if (reason == "") { // 檢查是否必填欄位為空值
-					alert("理由欄位為必填");
-					return;
-				}
-				else if (money == "") {
-					alert("金額欄位為必填");
-					return;
-				}
-				else { // 不是空值, 就加入準備傳送的集合
-					final_all[onlyNum(all_change[i])+1] = [money, reason]; // db index start from 1
-				}
-			}
-			const {data : update_financial} = await axios.post('/financial_today', {final_all : final_all, aId :  getId('nId').innerHTML});
-			if (update_financial["suc"] == false) { // update succsessful, no need to alert the error msg
-				for (let i = 0;i < update_financial["error"].length;i++) {
-					alert(update_financial["error"][i]);
-				}
-			}
-			else { // update successfully
-				alert('更改成功');
-				window.location.reload();
-			}
-		}
-
-		function onlyNum(log_id) { // 把 log_row 拿掉
-			var new_id = '';
-			for (let i = 0;i < log_id.length;i++) {
-				if (isNum(log_id[i])) // 是數字
-					new_id += log_id[i];
-			}
-			return parseInt(new_id);
-		}		
-
-		function isNum(n) { // 是不是數字
-			return !isNaN(parseFloat(n)) && isFinite(n);
-		}
-
-		getId("settle_bt").addEventListener('click', settle); // 監聽錢
-
-		async function settle() { // settle all financial records on the duty of this nurse
-			const {data : settle} = await axios.post("/financial_today/settle", {aId : getId('nId').innerHTML, total_money : total_money, origin_log : getId('origin_log').value});
-			if (settle["suc"]) { // settle successfully
-				alert('結算成功!');
-				window.location.reload();
-			}
-			else {
-				for (let i = 0;i < settle["error"].length;i++) {
-					alert(settle["error"][i]);
-				}
-				window.location.reload();
-			}
-		}
     </script>
 </html>
