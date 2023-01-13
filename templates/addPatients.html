@@ -86,7 +86,7 @@
                 <br/>
                 </td></tr><tr id = 'address_row'><td>
                 <span id = 'address_text'>地址：</span>
-                <input list = 'address_list' type = 'text' name = 'address' id = 'address' autocomplete="nope" required/>
+                <input onkeydown="checkAddress()" onchange = "checkAddressChange()" list = 'address_list' type = 'text' name = 'address' id = 'address' autocomplete="nope" required/>
                 <datalist id = 'address_list'></datalist>
                 <br/>
                 </td></tr><tr id = 'can_row'><td>
@@ -868,8 +868,7 @@
         // 地址索引
         
         const twzipcode = new TWzipcode('.twzipcode');
-        // 當輸入地址，就去檢查有沒有符合的索引
-        getId('address').addEventListener('input', checkAddress); // 若地址輸入框更動，檢查地址輸入框有沒有符合資料庫裡的地址
+        getId('address').addEventListener('input', changeTai); // 若地址輸入框更動，把 "台" 取代成 "臺
         
         async function roadFile() { // 路名的 json。key = 區名，value = [全部路名]
             const road = await axios.get('/viewPa/roadFile');
@@ -894,10 +893,8 @@
         const all_address_list = mkAddress(); // 製作包含縣市名稱 + (縣市名稱+區名) 的 array
         //console.log(all_address_list);
         
-        function checkAddress() { // 檢查地址輸入框有沒有符合資料庫裡的地址
+        function checkAddress(e) { // 檢查地址輸入框有沒有符合資料庫裡的地址
             getId('address_list').innerHTML = '';
-            // 把輸入的台轉成臺
-            getId('address').value = getId('address').value.replaceAll('台', '臺');
             const now_address = getId('address').value;
             // 在城市的索引
             const all_index_in_city = indexInCity(now_address);
@@ -908,6 +905,7 @@
             if (all_index_in_city.length == 0) { // 沒有符合的地址
                 const in_road = findInRoad(now_address); // 就再去找路名
                 if (in_road.length > 0) { // 有相符的路名。ex. 新北市新莊區中
+                    console.log(in_road);
                     putRoad(in_road);
                 }
                 else { // 沒有任何匹配的路名
@@ -928,6 +926,7 @@
                         option.value = city_add_section_name;
                         getId('address_list').appendChild(option);
                     }
+                    console.log(getId('address_list').appendChild(option));
                 }
                 else { // 單一區，非縣市。ex. 輸入 新北市新 ，就要出現新北市新莊區、新北市新店區
                     var option = document.createElement('option');
@@ -974,6 +973,15 @@
                 }
             }
             return all_matched;
+        }
+        
+        function checkAddressChange() { // 當地址 onchange 觸發，就再檢查一次。因為只有 keydown 會偵測不到使用者按下 option 後改的 value
+            checkAddress();
+        }
+        
+        function changeTai() {
+            // 把 "台" 改成 "臺"
+            getId('address').value = getId('address').value.replaceAll('台', '臺');
         }
     </script>
 </html>
