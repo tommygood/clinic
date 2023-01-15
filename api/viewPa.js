@@ -605,4 +605,33 @@ router.post('/canDeleted', async function(req, res) { // 查詢是否可以被�
     return res.end;
 });
 
+router.post('/checkDoc', async function(req, res) { // 檢查帳號代碼對應的職位
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        res.redirect('/login');
+        res.end();
+        return;
+    };
+    let conn = await pool.getConnection();
+    var result;
+    var title;
+    try {
+        // 找該 aId
+        result = await conn.query('select `title` from accounts where `aId` = ?;', [req.body.dId]);
+        // 回傳他的 title
+        title = result[0].title;
+    }
+    catch(e) {
+        console.log(e);
+        // 沒有此 aId
+        title = null;
+    }
+    conn.release();
+    return res.json({title : title});
+    res.end();
+});
+
 module.exports = router;

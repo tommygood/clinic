@@ -279,7 +279,6 @@
                                 getId(tab_name).innerHTML += 
                                 "<tbody id = 'tbody'" + total_len + "'><tr" + " id = 'log_row" + total_len + "'/><td/>"+ response.data[j].no  +  
                                 "<td>" + response.data[j].dId + "</td>" + 
-                                "<td><input type = 'text' " + "class = 'tab" + response.data[j].dId + "' id = 'log_col" + j + "' style = 'width:50px' value = '" + response.data[j].num + "'></input></td>" +
                                 "<td>" + data.data[i]["name"] + "</td>" + 
                                 "<td>" + lessTime(response.data[j].start) + "</td>" +
                                 "<td>" + lessTime(response.data[j].end) + "</td>" +
@@ -309,7 +308,6 @@
                             getId(tab_name).innerHTML += 
                             "<tbody id = 'tbody'" + total_len + "'><tr" + " id = 'log_row" + total_len + "'/><td/>"+ response.data[j].no  +  
                             "<td>" + response.data[j].dId + "</td>" + 
-                            "<td><input type = 'text' " + "class = 'tab" + response.data[j].dId + "' id = 'log_col" + j + "' style = 'width:50px' value = '" + response.data[j].num + "'></input></td>" +
                             "<td>" + null + "</td>" + 
                             "<td>" + lessTime(response.data[j].start) + "</td>" +
                             "<td>" + lessTime(response.data[j].end) + "</td>" +
@@ -475,7 +473,6 @@
                 "<tr>" + 
                 "<td><span id = 'chart_num'>病歷號</span></td>" + 
                 "<td><span id = 'dId'>醫生代號</span><br/></td>" +
-                "<td><span id = 'num'>看診號</span></td>" + 
                 "<td><span id = 'pat_name'>姓名</span></td>" +
                 "<td><span id = 'time'>掛號時間</span></td>" +
                 "<td><span id = 'end_time'>完診時間</span></td>" +
@@ -620,7 +617,7 @@
         }
         
         function turnPage(e) { // 翻頁
-            if (e.path[0].innerHTML == "上一頁") {
+            if (e.target.innerHTML == "上一頁") {
                 // 不能讓上一頁到 -1
                 if (now_page < 1) {
                     now_page = 0;
@@ -629,19 +626,19 @@
                     now_page -= 1;
                 }
             }
-            else if (e.path[0].innerHTML == "下一頁") {
+            else if (e.target.innerHTML == "下一頁") {
                 if (now_page+1 < total_page_num) { // 下一頁不能超過最後一頁
                     now_page += 1;
                 }
             }
-            else if (e.path[0].innerHTML == "首頁") {
+            else if (e.target.innerHTML == "首頁") {
                 now_page = 0;
             }
-            else if (e.path[0].innerHTML == "尾頁") {
+            else if (e.target.innerHTML == "尾頁") {
                 now_page = total_page_num-1;
             }
             else { // 現在頁數 = 案的頁數-1
-                now_page = parseInt(e.path[0].innerHTML)-1;
+                now_page = parseInt(e.target.innerHTML)-1;
             }
             mkPageListener(total_page_num); // 重新製作頁面按鈕、監聽
             putRecord(now_table, now_page+1); // 把紀錄放進 table, 現在是第幾個 table, 第幾頁

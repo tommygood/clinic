@@ -27,6 +27,7 @@
                 <td>時間</td>
                 <td>負責人員</td>
                 <td>理由</td>
+                <td>理由對應病單號</td>
                 <td>金額</td>
                 <td>備註</td>
                 <td>更改理由</td>
@@ -282,13 +283,38 @@
             window.location.reload();
         }
         
+        function reasonText(reason) {
+            text_part = reason.split(',')[0];
+            return text_part;
+        }
+        
+        function reasonId(reason) {
+            text_part = reason.split(',')[1];
+            return text_part;
+        }
+        
+        function lessTime(times) { // 把時間弄得好看一點
+            if (times == null) // 如果還沒有時間
+                return null;
+            var new_time = '';
+            for (let i = 0;i < times.length-5;i++) { // 不要後面五個字元
+                if (times[i] == 'T') { // 把 T 換掉
+                    new_time += '\n';
+                    continue;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
+        
         (async() => { // 放入今日帳務金額
             const {data : financial} = await axios.get('/today_financial');
             for (let i = 0;i < financial.length;i++) {
                 tab.innerHTML += "<tr id = 'log_row" + i + "'/><td/>" + financial[i].no + 
-                "<td>" + financial[i].times + "</td>" +
+                "<td>" + lessTime(financial[i].times) + "</td>" +
                 "<td>" + financial[i].aId + "</td>" +
-                "<td>" + financial[i].reason + "</td>" +
+                "<td>" + reasonText(financial[i].reason) + "</td>" +
+                "<td>" + reasonId(financial[i].reason) + "</td>" +
                 `<td><input id = 'money_${i}' type = 'input' style = 'width:100px' value = '${financial[i].money}'></input></td>` +
                 "<td>" + financial[i].mark + "</td>" +
                 `<td><input id = 'changed_reason_${i}' type = 'input' style = 'width:100px;' ></input></td></tr>`;

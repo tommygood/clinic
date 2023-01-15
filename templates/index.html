@@ -208,7 +208,8 @@
         }
         
         function turnPage(e) { // 翻頁
-            putRecord(now_table, e.path[0].innerHTML); // 把紀錄放進 table, 現在是第幾個 table, 第幾頁
+            //putRecord(now_table, e.path[0].innerHTML); // 把紀錄放進 table, 現在是第幾個 table, 第幾頁
+            putRecord(now_table, e.target.innerHTML); // 把紀錄放進 table, 現在是第幾個 table, 第幾頁
         };
         
         function lessTime(times) { // 把時間弄得好看一點
