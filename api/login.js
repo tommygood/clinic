@@ -35,6 +35,10 @@ router.get('/', function(req, res) {
 		res.redirect('/viewPa');
 		res.end();
 	}
+    else if (user.data.aId && user.data.title == 'super'){
+        res.redirect('/regist');
+        res.end();
+    }
 	//res.end;
 	return;
 })
@@ -77,10 +81,10 @@ router.post('/check', async function(req, res) {
                     }
                     else {
                         conn.release();
-						const data = {title : 'doc', aId : account}
+						const data = {title : user[i].title, aId : account}
 						const token = jwt.sign({ data, exp: Math.floor(Date.now() / 1000) + (6000 * 15) }, 'my_secret_key');
 						res.cookie('token', token,  { httpOnly: false, secure: false, maxAge: 3600000 });
-						return res.json({'title' : 'doc', 'aId' : account});
+						return res.json({'title' : user[i].title, 'aId' : account});
                     }
                     login_suc = true; // 登入成功
                 }

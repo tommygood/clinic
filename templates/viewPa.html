@@ -129,17 +129,23 @@
         }
     </style>
     <script>
-        var all_tab = [1, 3]; // 全部的 table id 
+        //var all_tab = [1, 3]; // 全部的 table id 
         var now_table; // which doctor table is used
-        //var all_tab = []; // all doctor aId
+        var all_tab = []; // all doctor aId
+        var all_doc_name = []; // 全部醫生名字
 
-        async function mkDocArray() {
+        async function mkDocArray() { // 找所有是醫生的帳號的資訊
             var {data : all_account} = await axios.get("/get_account");
             for (let i = 0;i < all_account.records.length;i++) {
                 // is doctor
-                if (all_account.records[i].title == 'doc')
+                if (all_account.records[i].title == 'doc') {
                     all_tab.push(all_account.records[i].aId);
+                    all_doc_name.push(all_account.records[i].name);
+                }
             }
+            // 依照醫生數量製作醫生選單
+            docNav(); // make doctor nav bar
+            listenDocBt(); // listen to doc bt
             return all_tab;
         }
         
@@ -161,7 +167,7 @@
                 page_bt.className = "nav-link";
                 page_bt.setAttribute('id', ("doc" + all_tab[i]));
                 page_bt.role = "tab";
-                page_bt.innerHTML = "醫生" + all_tab[i];
+                page_bt.innerHTML = "醫生" + all_tab[i] + '- ' + all_doc_name[i];
                 // list append button
                 page_li.appendChild(page_bt);
                 // nav table append list
@@ -169,9 +175,6 @@
             }
         }
         
-        // make doctor nav bar
-        docNav();
-
         function jsonToString(json) {
             return Object.keys(json).map(function(key) {
                 return encodeURIComponent(key) + '=' + encodeURIComponent(json[key]);
@@ -696,8 +699,6 @@
                 getId('doc'+all_tab[i]).addEventListener('click', mkDoc); // 
             }
         }   
-
-        listenDocBt(); // listen to doc bt
         
         // chat room
         

@@ -10,7 +10,7 @@
     <body>
         <form method = 'post' id = 'login' onsubmit="return false;">
             帳號：<input type = 'text' name = 'account' id = 'account'/>
-            密碼：<input type = 'text' name = 'pass' id = 'pass'/>
+            密碼：<input type = 'password' name = 'pass' id = 'pass'/>
             <input type = 'submit' id = 'sub'/>
         </form>
     </body>
@@ -35,6 +35,9 @@
 				if (checked_data.data.title == 'doc') {
 					window.location.href = '/docMain';
 				}
+                else if (checked_data.data.title == 'super') {
+                    window.location.href = '/regist';
+                }
 				else {
 					window.location.href = '/viewPa';
 				};

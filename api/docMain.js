@@ -23,7 +23,7 @@ router.get('/', function(req, res) {
 		return;
 	}
 	const user = jwt.verify(req.cookies.token, 'my_secret_key');
-    if (user.data.aId && user.data.title == 'doc') { // 醫生登入成功
+    if (user.data.aId && (user.data.title == 'doc' || user.data.title == 'super')) { // 醫生登入成功
 		//console.log(user.data.aId);
         res.sendFile(root + 'templates/docMain.html')
         res.end;

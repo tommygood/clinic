@@ -34,6 +34,7 @@ app.use('/view_today_pa', require('./api/view_today_pa'));
 app.use('/view_history_pa', require('./api/view_history_pa'));
 app.use('/done_financial', require('./api/done_financial'));
 app.use('/debt', require('./api/debt'));
+app.use('/regist', require('./api/regist'));
 const db = require("mariadb");
 const pool = db.createPool({
     trace : true,
@@ -462,7 +463,7 @@ app.get('/medRec', async function(req, res) {
     return;
 });
 
-app.get('/get_account', async function(req, res) {
+app.get('/get_account', async function(req, res) { // 找帳號清單
     try {
         const user = jwt.verify(req.cookies.token, 'my_secret_key');
     }
@@ -475,7 +476,7 @@ app.get('/get_account', async function(req, res) {
     const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId) { // 登入中
         let conn = await pool.getConnection();
-        let records = await conn.query('select `aId`, `title` from accounts;'); // 找出沒有帶卡且不在被刪除的名單中的病歷號
+        let records = await conn.query('select `aId`, `title`, `name` from accounts;'); // 找帳號清單
         conn.release();
         res.json({records : records});
     }
