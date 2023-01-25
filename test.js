@@ -429,16 +429,28 @@ app.get('/no_card', async function(req, res) {
     return;
 });
 
-app.get('/getPageNum', async function(req, res) {
+app.get('/getPageNum', async function(req, res) { // 回傳需計算分頁的紀錄的數量
     let conn = await pool.getConnection();
+    var records_num;
     if (req.query["history"] && req.query["dId"]) // history records, not filter the done records
-        var records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from delete_records);', req.query["dId"]);
-    if (!req.query["history"] &&req.query["dId"]) // 候診清單, filter the done records
-        var records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from done_records) and `no` not in (select `rId` from delete_records);', req.query["dId"]);
-    if (req.query["today"] && req.query["dId"]) // today records, not filter the done records
-        var records_num = await conn.query('select count(*) from records where `dId` = ? and DATE(`start`) = CURDATE() and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+        records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+    else if (req.query["all_vac"]) // 全部疫苗
+        records_num = await conn.query('select count(*) from vac_re;');
+    else if (req.query["today_vac"]) // 今日疫苗
+        records_num = await conn.query('select count(*) from vac_re where date(`time`) = curdate();');
+    else if (!req.query["history"] &&req.query["dId"]) // 候診清單, filter the done records
+        records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from done_records) and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+    else if (req.query["today"] && req.query["dId"]) // today records, not filter the done records
+        records_num = await conn.query('select count(*) from records where `dId` = ? and DATE(`start`) = CURDATE() and `no` not in (select `rId` from delete_records);', req.query["dId"]);
     conn.release();
-    res.json({page_num : records_num[0]['count(*)'].toString()});
+    try {
+        page_num = records_num[0]['count(*)'].toString();
+    }
+    catch(e) {
+        page_num = null;
+        console.log(e);
+    }
+    res.json({page_num : page_num});
     res.end
 });
 

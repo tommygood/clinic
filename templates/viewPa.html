@@ -210,7 +210,8 @@
                 }
                 update_records.push(getId(value_id).value); // 放進要更新的資料
             }
-            const {data : suc} = await axios.post('/ckPatients/updateNum', {nId : getNid(getId('nId').innerHTML), change_num : change_num, update_records : update_records, update_index : update_index});
+            var nId = await getNid();
+            const {data : suc} = await axios.post('/ckPatients/updateNum', {nId : nId, change_num : change_num, update_records : update_records, update_index : update_index});
             var in_suc = updateIn(); // 更新是否在場
             //var paid_suc = updatePaid(); // 更新是否付款
             //if (suc.suc && in_suc && paid_suc) {
@@ -230,7 +231,7 @@
         var start_pos; // 拖曳起始的位置
         function start(){  
             start_tar = event.target;
-            start_pos = event.path; // 放入起始位置
+            start_pos = event.composedPath(); // 放入起始位置(依序的上層的元素)
         }
 
         function getId(id) {
@@ -260,7 +261,7 @@
             }
             e.preventDefault();
             e.stopPropagation();
-            var end_pos = e.path; // 放置的位置
+            var end_pos = e.composedPath(); // 放置的位置(依序的上層的元素)
             var end_tar = e.target;
             for (let i = 0;i < start_pos.length;i++) { // 起始的 table
                 if (typeof start_pos[i].id == "string") { // id 是字串型態
@@ -324,9 +325,10 @@
 
         (async() => { // 查詢是否為主責, 是就標示
             const {data : main_pos} = await axios.get('/fullcalendar/getMain'); // 主責帳號
-            console.log(main_pos);
+            //console.log(main_pos);
+            var nId = await getNid();
             for (let i = 0;i < main_pos.aId.length;i++) { // 所有時間相符的主責帳號
-                if (getNid(getId('nId').innerHTML) == main_pos.aId[i].aId) // 相符的帳號
+                if (nId == main_pos.aId[i].aId) // 相符的帳號
                     getId('nId').innerHTML += "（主責）"; 
             }
         })();
@@ -600,15 +602,17 @@
             return new_time;
         }
 
-        function getNid(nId) { // 從 innerHTML 挑出 nId
-            var only_nId = '' // 只要 nId
+        async function getNid() { // 從 innerHTML 挑出 nId
+            /*var only_nId = '' // 只要 nId
             for (let i = 0;i < nId.length;i++) {
                 if (nId[i] == " ") // 加完了
                     break;
                 else
                     only_nId += nId[i];
             }
-            return only_nId;
+            return only_nId;*/
+            const {data : user} = await axios.get('/viewPa/nId');
+            return user.nId;
         }
 
         // nav direct 
@@ -704,7 +708,7 @@
         
         getId("send_msg").addEventListener("click", sendMsg);
 
-        function sendMsg() { // send msg
+        async function sendMsg() { // send msg
             const msg_len = getId('msg').value.length;
             // keep message standard = **xxx**
             // if meet the keep message standard, pass to localStroage
@@ -714,7 +718,8 @@
             }
             else {
                 // send normal messages
-                var msg = getNid(getId('nId').innerHTML) + " 號護士: ";
+                var nId = await getNid();
+                var msg = nId + " 號護士: ";
                 msg += getId("msg").value;
                 socket.emit("docMsg", msg);
             }
@@ -729,8 +734,9 @@
             return new_mark;
         }
         
-        function sendKeepMsg(msg) { // send msg
-            var msg_title = getNid(getId('nId').innerHTML) + " 號護士: ";
+        async function sendKeepMsg(msg) { // send msg
+            var nId = await getNid();
+            var msg_title = nId + " 號護士: ";
             var final_msg = msg_title + msg;
             socket.emit("saveKeepMsg", final_msg);
         }
@@ -840,7 +846,8 @@
             if (!is_sure) // not sure, back. 
                 return;
             // delete the keep message with kmId
-            const {data : del_keep_msg} = await axios.post('/viewPa/delKeepMsg', {del_id : all_keep_msg_id[i], aId : getNid(getId('nId').innerHTML)});
+            var nId = await getNid();
+            const {data : del_keep_msg} = await axios.post('/viewPa/delKeepMsg', {del_id : all_keep_msg_id[i], aId : nId});
             if (del_keep_msg.suc) {
                 alert('刪除重要紀錄成功!');
             }

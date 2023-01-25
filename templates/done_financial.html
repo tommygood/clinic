@@ -8,39 +8,60 @@
         <h1 style = 'text-align:center;'>已結算紀錄</h1>
     </head>
     <body>
-        <table id = 'uncheck_table' border = '2' align = center>
-            <tr>
-            <td style = 'text-align:center;' colspan = 7>尚未核對紀錄</td>
-            </tr>
-            <tr>
-                <td>編號</td>
-                <td>時間</td>
-                <td>總金額</td>
-                <td>負責人員</td>
-                <td>備註</td>
-                <td>查詢細項</td>
-                <td>核對正確</td>
-            </tr>
-        </table>
-        <button id = "show_checked_table" type = "button">顯示已核對紀錄</button>
-        <table id = 'show_details' border = '2' align = center>
-        <table style = "visibility:hidden" id = 'checked_table' border = '2' align = center>
-            <tr>
-            <td style = 'text-align:center;' colspan = 7>已核對紀錄</td>
-            </tr>
-            <tr>
-                <td>編號</td>
-                <td>時間</td>
-                <td>總金額</td>
-                <td>負責人員</td>
-                <td>核對人員</td>
-                <td>負責人備註</td>
-                <td>核對人備註</td>
-                <td>查詢細項</td>
-            </tr>
-        </table>
-        </table>
+        <button class = "position-absolute top-0" id = "show_checked_table" type = "button">顯示已核對紀錄</button>
+        <div class = 'position-absolute' id = 'scroll_div'>
+            <table class = "position-absolute" id = 'uncheck_table' border = '2'>
+                <tr>
+                <td style = 'text-align:center;' colspan = 7>尚未核對紀錄</td>
+                </tr>
+                <tr>
+                    <td>編號</td>
+                    <td>時間</td>
+                    <td>總金額</td>
+                    <td>負責人員</td>
+                    <td>備註</td>
+                    <td>查詢細項</td>
+                    <td>核對正確</td>
+                </tr>
+            </table>
+        </div>
+        <div class = 'position-absolute start-50' id = 'scroll_div'>
+            <table class = "position-absolute" id = 'show_details' border = '2'>
+            <table class = "position-absolute" style = "visibility:hidden" id = 'checked_table' border = '2'>
+                <tr>
+                <td style = 'text-align:center;' colspan = 7>已核對紀錄</td>
+                </tr>
+                <tr>
+                    <td>編號</td>
+                    <td>時間</td>
+                    <td>總金額</td>
+                    <td>負責人員</td>
+                    <td>核對人員</td>
+                    <td>負責人備註</td>
+                    <td>核對人備註</td>
+                    <td>查詢細項</td>
+                </tr>
+            </table>
+            </table>
+        </div>
     </body>
+    <style>
+            td {
+                text-align : center;
+                width : 200px;
+            }
+        
+            #scroll_div { // 第二種 div
+                position : absolute;
+                height : 90%;
+                width : 50%;
+                overflow-y : auto;
+            }
+
+            table { // table，讓拉霸距離正確
+                width : 100%;
+            }
+    </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
         function getId(id) {
@@ -54,7 +75,6 @@
             var checked_num = 0;
             var unchecked_total = []; // the i of uncheced
             var checked_total = []; // the if of checked
-            console.log(records);
             for (let i = 0;i < records.length;i++) {
                 if (records[i].is_true == null) { // the record not check yet
                     var unchecked_num = unchecked_num + 1;
@@ -74,7 +94,7 @@
         function insertChecked(records, i) {
             getId('checked_table').innerHTML += 
                 "<tr id = 'log_row" + i + "'/><td/>" + records[i].no + 
-                "<td>" + records[i].time + "</td>" +
+                "<td>" + lessTime(records[i].time) + "</td>" +
                 "<td>" + records[i].money + "</td>" +
                 "<td>" + records[i].origin_aId + "</td>" +
                 "<td>" + records[i].next_aId + "</td>" +
@@ -86,7 +106,7 @@
         function insertUnchecked(records, i) {
             getId('uncheck_table').innerHTML += 
                 "<tr id = 'log_row" + i + "'/><td/>" + records[i].no + 
-                "<td>" + records[i].time + "</td>" +
+                "<td>" + lessTime(records[i].time) + "</td>" +
                 "<td>" + records[i].money + "</td>" +
                 "<td>" + records[i].origin_aId + "</td>" +
                 "<td>" + records[i].origin_log + "</td>" + 
@@ -149,6 +169,7 @@
             records = records.records;
             bt_num = mkBtNum(e.target.id);
             detail_array = detailArray(records[bt_num].details); // make detai array
+            getId("checked_table").style.visibility = "hidden"; // 先把已核對紀錄隱藏，以防重疊
             putDetails(records[bt_num].no, detail_array); // put details array in 
         }
         
@@ -179,7 +200,7 @@
         function putInElements(record) { // put each detail financial record in table
             getId('show_details').innerHTML += 
             "<tr/><td/>" + record.no +
-            "<td>" + record.times + "</td>" +
+            "<td>" + lessTime(record.times) + "</td>" +
             "<td>" + record.reason + "</td>" +
             "<td>" + record.money + "</td>" +
             "<td>" + record.aId + "</td>" +
@@ -218,12 +239,28 @@
         getId("show_checked_table").addEventListener("click", () => 
         {
             // switch the visibility
-            
+
             // now is hidden, so turn to visible
-            if (getId("checked_table").style.visibility == 'hidden') 
+            if (getId("checked_table").style.visibility == 'hidden') {
+                getId('show_details').innerHTML = ""; // 先把顯示 detail 隱藏，防止重疊
                 getId("checked_table").style.visibility = "visible";
+            }
             else // now is visible, so turn to hidden
                 getId("checked_table").style.visibility = "hidden";
         });
+        
+        function lessTime(times) { // 把時間弄得好看一點
+            if (times == null) // 如果還沒有時間
+                return null;
+            var new_time = '';
+            for (let i = 0;i < times.length-5;i++) { // 不要後面五個字元
+                if (times[i] == 'T') { // 把 T 換掉
+                    new_time += '\n';
+                    continue;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
     </script>
 </html>

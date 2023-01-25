@@ -78,12 +78,10 @@
             text-align : center;
         }
     
-
         #logout {
             //position : absolute;
         }
         
-
         #save {
         }
 
@@ -515,7 +513,7 @@
         }
     
         let total_page_num;
-        async function mkDoc(e) {
+        async function mkDoc(e) { // 製作醫生 table
             now_page = 0;
             if (e == 'first') {
                 var tab_id = 1;
@@ -530,7 +528,7 @@
             page_num.then(function(result) { // make page
                 var page_num_result = {data : result}.data.data.page_num; // total records num
                 total_page_num = countPageNum(page_num_result); // total_page_num = all records/limit_records
-                mkPageListener(total_page_num); // make listener of page list 
+                mkPageListener(total_page_num); // make listener of page list
             });
         }
 

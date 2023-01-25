@@ -45,13 +45,13 @@
             const {data : medicines} = await axios.get('/medicines_normal');
             // 把各個批次的藥分開
             for (let i = 0;i < med_inventory_each.length;i++) {
-                    console.log(med_inventory_each[i]);
+                    //console.log(med_inventory_each[i]);
                 for (let k = 0;k < medicines.length;k++) {
-                    if (med_inventory_each[i].code == medicines[k].code) { // 藥碼相同  
+                    if (med_inventory_each[i].code == medicines[k].code) { // 藥碼相同，有此筆藥的資訊  
                         each_table.innerHTML += "<tr id = 'each_row'" + i + "/><td/>" + med_inventory_each[i].no + 
                         "<td>" + med_inventory_each[i].code + "</td>" +
                         "<td>" + medicines[k].medi_eng + "</td>" +
-                        "<td>" + med_inventory_each[i].now_quantity + "</td>" + 
+                        "<td>" + parseFloat(med_inventory_each[i].now_quantity) + "</td>" + 
                         "<td>" + med_inventory_each[i].expire + "</td>" +
                         "<td>" + med_inventory_each[i].aId + "</td></tr>";
                         break;
@@ -66,20 +66,21 @@
                         tab.innerHTML += "<tr id = 'log_row'" + i + "/><td/>" + combine_inventory[i].no + 
                         "<td>" + combine_inventory[i].code + "</td>" +
                         "<td>" + medicines[k].medi_mand + "</td>" +
-                        "<td>" + combine_inventory[i].now_quantity + "</td></tr>"
+                        "<td>" + parseFloat(combine_inventory[i].now_quantity) + "</td></tr>"
                         break;
                     }
                 }
             }
         })();
         
-        function mkCombine(med_inventory_each) {
+        function mkCombine(med_inventory_each) { // 把重複的藥(同個藥但不同時間進)加成同一種藥
             var combine_inventory = [];
             for (let i = 0;i < med_inventory_each.length;i++) {
                 var is_new = true; // 先假設為不是重複的藥
                 for (let j = 0;j < combine_inventory.length;j++) {
                     if (med_inventory_each[i].code == combine_inventory[j].code) { // 重複的藥
-                        combine_inventory[j].now_quantity += med_inventory_each[i].now_quantity // 新增數量
+                        combine_inventory[j].now_quantity += med_inventory_each[i].now_quantity; // 新增數量
+                        combine_inventory[j].now_quantity = parseFloat(combine_inventory[j].now_quantity); // 從字串變成小數點型態，才能和下一個相加
                         is_new = false; // 不是新的藥
                     }
                 }
