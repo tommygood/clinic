@@ -244,7 +244,13 @@ app.get('/med_inventory_each', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let records = await conn.query('select * from med_inventory_each;');
+    var records;
+    if (req.query['aId']) { // 只給該帳號人員負責的藥品
+        records = await conn.query('select * from med_inventory_each where `aId` = ?;', req.query['aId']);
+    }
+    else {
+        records = await conn.query('select * from med_inventory_each;');
+    }
     conn.release();
     res.json(records);
     res.end
@@ -438,6 +444,8 @@ app.get('/getPageNum', async function(req, res) { // 回傳需計算分頁的紀
         records_num = await conn.query('select count(*) from vac_re;');
     else if (req.query["today_vac"]) // 今日疫苗
         records_num = await conn.query('select count(*) from vac_re where date(`time`) = curdate();');
+    else if (req.query["all_med"]) // 該護士管理之藥品庫存
+        records_num = await conn.query('select count(*) from med_inventory_each where `aId` = ?;', req.query['aId']);
     else if (!req.query["history"] &&req.query["dId"]) // 候診清單, filter the done records
         records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from done_records) and `no` not in (select `rId` from delete_records);', req.query["dId"]);
     else if (req.query["today"] && req.query["dId"]) // today records, not filter the done records

@@ -664,7 +664,13 @@
         }
     
         async function mkDoc(e) {
-            var tab_id = getDid(e.target.id); // 取得 dId
+            if (e == 'first') {
+                var tab_id = 1;
+            }
+            else {
+                var tab_id = getDid(e.target.id); // 取得 dId
+            }
+            //var tab_id = getDid(e.target.id); // 取得 dId
             now_table = tab_id;
             mkTable(tab_id); // 製作該 id 的 table
             putRecord(tab_id, 1);
@@ -676,6 +682,9 @@
                 mkPageListener(total_page_num); // make listener of page list 
             });*/
         }
+
+        // 一開始先製作第一個醫生的看診明細
+        mkDoc('first');
 
         function countPageNum(page_num_result) { // count page num
             let page_num = Math.floor(page_num_result/limit_records); // without float
