@@ -293,7 +293,7 @@
                                 "<td>" + response.data[j].dId + "</td>" + 
                                 "<td>" + data.data[i]["name"] + "</td>" + 
                                 "<td>" + lessTime(response.data[j].start) + "</td>" +
-                                "<td>" + lessTime(response.data[j].end) + "</td>" +
+                                "<td>" + `${lessTime(response.data[j].end) ? lessTime(response.data[j].end) : '無'}` + "</td>" +
                                 "<td>" + data.data[i].id + "</td>" +
                                 "<td>" + data.data[i].sex + "</td>" +
                                 "<td>" + data.data[i].birth + "</td>" +
@@ -443,9 +443,15 @@
             if (times == null) // 如果還沒有時間
                 return null;
             var new_time = '';
+            var dash_is_breaked = false; // 只要把第一個 dash 換行，因為是年分
             for (let i = 0;i < times.length-5;i++) { // 不要後面五個字元
+                if (times[i] == '-' && !dash_is_breaked) {
+                    new_time += '<br/>';
+                    dash_is_breaked = true;
+                    continue;
+                }
                 if (times[i] == 'T') { // 把 T 換掉
-                    new_time += '\n';
+                    new_time += '<br/>';
                     continue;
                 }
                 new_time += times[i];

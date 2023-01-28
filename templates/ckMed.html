@@ -16,21 +16,23 @@
             <option value = "month">三十日內</option>
         </select>
         <button type = 'button' id = 'search_bt'>查詢</button>
-        <table id = 'tab' border = '2' align = center>
-            <tr>
-                <td>編號</td>
-                <td>理由</td>
-                <td>藥碼</td>
-                <td>中文名稱</td>
-                <td>英文名稱</td>
-                <td>進貨/開藥日期</td>
-                <td>過期日期</td>
-                <td>負責人</td>
-                <td>數量</td>
-                <td>費用</td>
-                <td>註記</td>
-            </tr>
-        </table>
+        <div id = 'tab_pos'>
+            <table id = 'tab' border = '2' align = center>
+                <tr>
+                    <td>編號</td>
+                    <td>理由</td>
+                    <td>藥碼</td>
+                    <td>中文名稱</td>
+                    <td>英文名稱</td>
+                    <td>進貨/開藥日期</td>
+                    <td>過期日期</td>
+                    <td>負責人</td>
+                    <td>數量</td>
+                    <td>費用</td>
+                    <td>註記</td>
+                </tr>
+            </table>
+        </div>
         <table id = 'tab1' border = '2' align = center>
             <tr>
                 <td>編號</td>
@@ -94,6 +96,14 @@
             text-align : center;
             width : 200px;
             height : 60px;
+        }
+        
+        #tab {
+            position : absolute;
+        }
+        
+        h1 {
+            text-align : center;
         }
     </style>
     <script>
@@ -215,10 +225,10 @@
                         "<td>" + medicines[k].medi_mand + "</td>" +
                         "<td>" + medicines[k].medi_eng + "</td>" +
                         "<td>" + lessTime(time) + "</td>" +
-                        "<td>" + lessTime(med_inventory_each[i].expire) + "</td>" +
+                        "<td>" + `${med_inventory_each[i].expire ? med_inventory_each[i].expire : '無'}` + "</td>" +
                         "<td>" + med_inventory_each[i].aId + "</td>" +
                         "<td>" + med_inventory_each[i].quantity + "</td>" +
-                        "<td>" + cost + "</td>" +
+                        "<td>" + `${cost ? cost : '無'}` + "</td>" +
                         "<td>" + med_inventory_each[i].mark + "</td></tr>" 
                         break;
                     }

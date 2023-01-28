@@ -314,7 +314,7 @@
                 "<td>" + lessTime(financial[i].times) + "</td>" +
                 "<td>" + financial[i].aId + "</td>" +
                 "<td>" + reasonText(financial[i].reason) + "</td>" +
-                "<td>" + reasonId(financial[i].reason) + "</td>" +
+                "<td>" + `${reasonId(financial[i].reason) ? reasonId(financial[i].reason) : '無'}` + "</td>" +
                 `<td><input id = 'money_${i}' type = 'input' style = 'width:100px' value = '${financial[i].money}'></input></td>` +
                 "<td>" + financial[i].mark + "</td>" +
                 `<td><input id = 'changed_reason_${i}' type = 'input' style = 'width:100px;' ></input></td></tr>`;
