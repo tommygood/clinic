@@ -18,21 +18,23 @@
         <!--
         結算提醒事項<textarea id = 'origin_log'></textarea>
         -->
-        <table class="position-absolute top-0 start-0" id = 'tab' border = '2' align = 'center'>
-            <tr>
-                <td colspan = '8'>今日帳務記錄</td>
-            </tr>
-            <tr>
-                <td>編號</td>
-                <td>時間</td>
-                <td>負責人員</td>
-                <td>理由</td>
-                <td>理由對應病單號</td>
-                <td>金額</td>
-                <td>備註</td>
-                <td>更改理由</td>
-            </tr>
-        </table>
+        <div class = 'position-absolute' id = 'scroll_div'>
+            <table class="position-absolute top-0 start-0" id = 'tab' border = '2' align = 'center'>
+                <tr>
+                    <td colspan = '8'>今日帳務記錄</td>
+                </tr>
+                <tr>
+                    <td>編號</td>
+                    <td>時間</td>
+                    <td>負責人員</td>
+                    <td>理由</td>
+                    <td>理由對應病單號</td>
+                    <td>金額</td>
+                    <td>備註</td>
+                    <td>更改理由</td>
+                </tr>
+            </table>
+        </div>
         <table class="position-absolute top-0 start-50" id = 'add_tab' border = '2' align = 'right'>
             <tr>
                 <td colspan = '8'>新增帳務記錄</td>
@@ -58,8 +60,15 @@
             margin : 180px 0px 0px 0px;
         }
         
-        #tab {
-            margin : 180px 0px 0px 0px;
+        #scroll_div { // 第二種 div，應該是這個才可
+            position : absolute;
+            height : 70%;
+            width : 50%;
+            overflow-y : auto;
+        }
+
+        #tab { // table，讓拉霸距離正確
+            width : 100%;
         }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
@@ -221,6 +230,7 @@
         
         function mkAddTableRow() { // 製作新增帳務 table 的欄位
             var add_tab = getId('add_tab'); // 要新增的 table
+            var td_reason_select = reasonSelect(); // 製作固定理由
             for (let i = 0;i < total_row;i++) { // 總共幾個 row
                 var tr = document.createElement('tr'); // row
                 // 編號
@@ -230,8 +240,10 @@
                 // reason column
                 var td_reason = document.createElement('td'); 
                 var td_reason_input = document.createElement('input');
+                td_reason_input.setAttribute('list', 'add_reason');
                 td_reason_input.id = 'add_reason' + i;
                 td_reason.appendChild(td_reason_input);
+                td_reason.appendChild(td_reason_select); // fixed reason
                 tr.appendChild(td_reason); // row append column
                 // money column
                 var td_money = document.createElement('td'); 
@@ -257,6 +269,19 @@
         mkAddTableRow();
         
         getId('submit_add').addEventListener('click', submitAdd);
+        
+        function reasonSelect() { // 製作固定理由
+            const fixed_reason = ['', '買食物', '買飲料', '其他'];
+            var td_reason_select = document.createElement('datalist');
+            for (let i = 0;i < fixed_reason.length;i++) {
+                let td_reason_option = document.createElement('option');
+                td_reason_option.value = fixed_reason[i];
+                td_reason_option.innerHTML = fixed_reason[i];
+                td_reason_select.appendChild(td_reason_option);
+            }
+            td_reason_select.id = 'add_reason';
+            return td_reason_select;
+        }
         
         async function submitAdd() { // 送出新增帳務記錄 
             var all_reason = [];

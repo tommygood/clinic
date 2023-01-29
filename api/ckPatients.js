@@ -107,6 +107,13 @@ router.post('/', async function(req, res) {
         for (let i = 0;i < Object.keys(all_used_medicines).length;i++) { // 檢查藥品剩餘量是否 > 需求量
             var sql = "select sum(now_quantity) from med_inventory_each where `code` = ? group by `code`;";
             const remain_quantity = await conn.query(sql, Object.keys(all_used_medicines)[i]);
+            if (remain_quantity[0] == undefined) { // 檢查是否有此筆藥物
+                suc = false;
+                return_text = '無此藥品。\n編號：' + Object.keys(all_used_medicines)[i] + '。';
+                console.log(return_text);
+                over_required = true;
+                break;
+            }
             if (JSON.stringify(parseFloat(Object.values(remain_quantity[0])[0])) < Object.values(all_used_medicines)[i]*-1.0) {
                 // 找出該藥品名字
                 sql = "select medi_eng from medicines where `code` = ? order by `index` desc limit 1;"

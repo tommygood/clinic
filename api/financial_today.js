@@ -212,7 +212,7 @@ router.post('/addFinancial', async function(req, res) { // 新增帳務記錄
         var mark;
         for (let i = 0;i < all_reason.length;i++) { // 可能一次新增多筆帳務
             reason = all_reason[i];
-            money = all_money[i];
+            money = minus(all_money[i]);
             mark = all_mark[i];
             var fId = await conn.query('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, reason, money, mark]); // 新增到總帳務
             await conn.query('insert into financial_today(`aId`, `reason`, `money`, `fId`, `mark`) values(?, ?, ?, ?, ?);', [aId, reason, money, fId.insertId, mark]); // 新增到今日帳務
@@ -228,6 +228,11 @@ router.post('/addFinancial', async function(req, res) { // 新增帳務記錄
     res.end;
     return;
 })
+
+function minus(money) { // 把錢變成負的
+    money = Math.abs(money); // 先變正的
+    return money * -1;
+}
 
 
 module.exports = router;

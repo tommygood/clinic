@@ -9,17 +9,6 @@
     </head>
     <body>
         <table id = 'tab' border = '2' align = center>
-            <tr>
-                <td colspan = '7'>單次批貨藥品紀錄</td>
-            </tr>
-            <tr>
-                <td>編號</td>
-                <td>藥碼</td>
-                <td>藥品名稱</td>
-                <td>數量</td>
-                <td>過期日期</td>
-                <td>負責人員</td>
-            </tr>
         </table>
         <!-- table page -->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -49,10 +38,6 @@
             width : 50%;
             overflow-y : auto;
         }
-
-        table { // table，讓拉霸距離正確
-            width : 100%;
-        }
         
         a {
             color : #f33;
@@ -80,6 +65,14 @@
         
         #page_top {
             left : 30%
+        }
+        
+        #tab {
+            width : 100%;
+        }
+        
+        #medi_name {
+            width : 500px;
         }
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
@@ -132,7 +125,8 @@
                     if (med_inventory_each[i].code == medicines[k].code) { // 藥碼相同，有此筆藥的資訊  
                         tab.innerHTML += "<tr id = 'each_row'" + i + "/><td/>" + med_inventory_each[i].no + 
                         "<td>" + med_inventory_each[i].code + "</td>" +
-                        "<td>" + medicines[k].medi_eng + "</td>" +
+                        "<td id = 'medi_name'>" + medicines[k].medi_eng + "</td>" +
+                        "<td>" + parseFloat(med_inventory_each[i].quantity) + "</td>" + 
                         "<td>" + parseFloat(med_inventory_each[i].now_quantity) + "</td>" + 
                         "<td>" + med_inventory_each[i].expire + "</td>" +
                         "<td>" + med_inventory_each[i].aId + "</td></tr>";
@@ -149,7 +143,7 @@
             const {data : user} = await axios.get('/viewPa/nId');
             getId('tab').innerHTML = 
             "<tr><td colspan = '7'>帳號：" + user.nId + "。單次批貨藥品紀錄</td>" + 
-            "</tr><tr><td>編號</td><td>藥碼</td><td>藥品名稱</td><td>數量</td><td>過期日期</td><td>負責人員</td>";
+            "</tr><tr><td>編號</td><td>藥碼</td><td>藥品名稱</td><td>原始數量</td><td>目前數量</td><td>過期日期</td><td>負責人員</td>";
         }
         
         function mkPage(page_num) { // make page with page_num

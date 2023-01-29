@@ -440,6 +440,8 @@ app.get('/getPageNum', async function(req, res) { // 回傳需計算分頁的紀
     var records_num;
     if (req.query["history"] && req.query["dId"]) // history records, not filter the done records
         records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+    else if (req.query["debt"]) // 全部疫苗
+        records_num = await conn.query('select count(*) from debt where `turned` = 0;');
     else if (req.query['all_financial'])
         records_num = await conn.query('select count(*) from financial;');
     else if (req.query["all_vac"]) // 全部疫苗

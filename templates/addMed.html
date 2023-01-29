@@ -86,10 +86,17 @@
 
         getId('addMed').addEventListener('submit', async(e) => {
             e.preventDefault();
+            const today = new Date();
+            const input_date = new Date(getId('expire').value);
+            if (today > input_date) { // 新增藥品的過期日期 < 今日
+                alert('過期日期請大於今日日期！');
+                return;
+            }
+            const {data : user} = await axios.get('/viewPa/nId');
             const data = {
                 code : getId('code').value,
                 expire : getId('expire').value,
-                aId : getId('aId').innerHTML,
+                aId : user.nId,
                 quantity : getId('quantity').value,
                 reason : getId('reason').value,
                 mark : getId('mark').value,
@@ -134,7 +141,7 @@
             }
         })
         
-        async function makeMedTable() {
+        async function makeMedTable() { // 把相同但是不同批次的藥加起來
             const {data : med_inventory_each} = await axios.get('/med_inventory_each');
             const {data : medicines} = await axios.get('/medicines_normal');
 
@@ -170,7 +177,7 @@
                 if (is_new) { // 新的藥
                     combine_inventory.push(med_inventory_each[i]);
                 }
-                console.log(med_inventory_each[i].now_quantity);
+                //console.log(med_inventory_each[i].now_quantity);
             }
             return combine_inventory;
         }
