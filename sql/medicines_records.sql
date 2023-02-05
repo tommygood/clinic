@@ -6,5 +6,6 @@ create table medicines_records(
 `days` int(2),
 `rule` varchar(5),
 `mark` varchar(5),
-`prescript` varchar(300)
+`prescript` varchar(300),
+`put_index` int(3)
 )

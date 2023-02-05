@@ -1,114 +1,208 @@
 <html>
     <head>
+        <script src = "/socket.io/socket.io.js"></script>
+        <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
+        
+        <script>
+            var socket = io();
+        </script>
+
         <title>
             醫生看診
         </title>
-        <h1>
-			<span id = 'dId'></span>
-            號醫生看診
-        </h1>
     </head>
-    <body>
-		<button id = 'last_records' type = 'button'>上次病歷</button>
-		<button id = 'next_records' type = 'button'>下次病歷</button>
+    <body id = 'body'>
+    <span id = 'content'>
         <table id = 'tab' border = '2' align = center>
             <tr>
+                <td colspan = '15'><span id = 'dId'></span>號醫生看診</td>
+            </tr>
+            <tr>
+                <td>病單號</td>
                 <td>姓名</td>
                 <td>生日</td>
                 <td>性別</td>
                 <td>年齡</td>
                 <td>押卡</td>
-				<td>病史</td>
-				<td>過敏</td>
-				<td>不喜</td>
-				<td>備註</td>
-				<td>掛號費</td>
-				<td>部份負擔</td>
-				<td>自費</td>
+                <td>病史</td>
+                <td>過敏</td>
+                <td>不喜</td>
+                <td>備註</td>
+                <td>體重</td>
+                <td>身高</td>
+                <td>掛號費</td>
+                <td>部份負擔</td>
+                <td>自費</td>
             </tr>
         </table>
-		<span id = 'symptoms'>
-		病碼：<input class = 'copy' id = 'diagnose_code' name = 'diagnose_code'></input>
-		&nbsp;&nbsp;&nbsp;&nbsp;診斷：<span id = 'diagnose' name = 'diagnose'></span>
-		</span>
-		<form id = 'records_form' action = '/ckPatients' method = 'post'>
-			<input type = 'hidden' id = 'r_num' name = 'r_num'/>
-			<input type = 'hidden' id = 'rId' name = 'rId'/>
-			<input type = 'hidden' id = 'nrId' name = 'nrId'/>
-			<input type = 'hidden' id = 'diagnose_code_pass' name = 'diagnose_code_pass'/>
-			<br/><br/>
-			主訴：
-			<textarea class = 'copy' id = 'main_sue' name = 'main_sue' cols = '80' rows = '5'></textarea>
-			<br/><br/>
-			理學：<textarea class = 'copy' id = 'science' name = 'science' cols = '80' rows = '5'></textarea>
-			<br/><br/><br/>
-			<span>藥====品====名====稱 &nbsp;&nbsp;&nbsp;每日量x天 &nbsp;&nbsp;用法 &nbsp;&nbsp;註</span>
-			<br/><br/>
-		</form>
-		<button type = 'button' id = 'copy_bt'>複製</button>
+        <div class = 'start-0' id = 'symptoms'>
+        病碼：<input class = 'copy' id = 'diagnose_code' name = 'diagnose_code' readonly></input>
+        &nbsp;&nbsp;&nbsp;&nbsp;診斷：<span id = 'diagnose' name = 'diagnose'></span>
+        </div>
+        <br/>
+                <!-- 開藥品 table -->
+        <table class = 'start-0' id = 'records_form'>
+            <input type = 'hidden' id = 'r_num' name = 'r_num'/>
+            <input type = 'hidden' id = 'rId' name = 'rId'/>
+            <input type = 'hidden' id = 'nrId' name = 'nrId'/>
+            <input type = 'hidden' id = 'diagnose_code_pass' name = 'diagnose_code_pass'/>
+            <br/>
+            <div class = 'position-relative top-0 start-0' id = 'main_sue_text'>
+                主訴&理學：
+                <!-- 在這裡用上下次病歷次序還要再調整，先確認有需求
+                <button class = 'position-absolute start-50' id = 'last_records' type = 'button'>上次病歷</button>
+                <button class = 'position-absolute start-50' id = 'next_records' type = 'button'>下次病歷</button>
+                -->
+                <button class = 'position-absolute start-50' type = 'button' id = 'copy_bt'>複製</button>
+            </div>
+            <textarea class = 'copy' id = 'main_sue' name = 'main_sue' cols = '155' rows = '5' readonly></textarea>
+            
+            <!--
+            <div class = 'position-relative'>藥====品====名====稱 &nbsp;&nbsp;&nbsp;每日量x天 &nbsp;&nbsp;用法 &nbsp;&nbsp;註</div>
+            -->
+            <tr>
+            <td>藥品名稱</td><td>每日量</td><td>天</td><td>用法</td><td>註</td>
+            </tr>
+        </table>
+        <table class = '' id = 'records_form1' action = '/ckPatients' method = 'post'>
+            <!--
+            <div class = 'position-relative'>藥====品====名====稱 &nbsp;&nbsp;&nbsp;每日量x天 &nbsp;&nbsp;用法 &nbsp;&nbsp;註</div>
+            -->
+            <tr>
+            <td>藥品名稱</td><td>每日<span>量</span></td><td>天</td><td>用法</td><td>註</td>
+            </tr>
+        </table>
+        </span>
+                <!-- chat room -->
+        <div class = 'position-absolute top-0 end-0' id = "chat_title">---------------------<br/>聊天室<br/></div>
+        <input class = "position-fixed bottom-0 end-0" style = "width:200px;" type = "input" id = 'msg'></div>
+        <button class = "position-fixed bottom-0 end-0" id = "send_msg">send</button>
     </body>
-	<style>
-		#symptoms {
-			position : absolute;	
-			margin : 20px 120px;
-		}
+    <style>
+        #symptoms {
+            position : absolute;    
+        }
 
-		#records_form {
-			position : absolute;	
-			margin : 40px 120px;	
-		}
-	
-		td {
-			width : 100px;
-			text-align : center;
-		}
-	</style>
+        #records_form {
+            position : absolute;    
+        }
+
+        #submit_bt {
+            padding : 5px;
+        }
+    
+        td {
+            text-align : center;
+        }
+        
+        form {
+            position : absolute;
+        }
+        
+        textarea {
+            margin : 20px 0px 0px 0px;
+        }
+        
+        input {
+        }
+        
+        #main_sue_text {
+            width : 100px;
+        }
+
+        /*main sue position need absolute, to place science textarea next to it*/
+        #main_sue {
+            position : relative;
+        }
+        
+        #records_form {
+            border-collapse:separate;
+            border-spacing:10px 10px;
+            border-collapse : initial;
+        }
+        
+        #records_form1 {
+            border-collapse:separate;
+            border-spacing:10px 10px;
+            margin : 0px 0px 0px 560px;
+        }
+        
+        #tab {
+            width : 90%;
+            margin : 0px 0px 0px 0px;
+        }
+        
+        #tab td {
+            border:1px solid black;
+            text-align : center;
+            text-align : center;
+        }
+        
+        #last_records {
+            width : 100px;
+            margin : 0px 0px 0px 50px;
+        }
+        
+        #next_records {
+            width : 100px;
+            margin : 0px 0px 0px 180px;
+        }
+        
+        #copy_bt {
+            width : 50px;
+            /*margin : 0px 0px 0px 310px;*/
+            margin : 0px 0px 0px 50px;
+        }
+    </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
-		var rId;                                                                      
-		var pId;
-        const medicine_input_num = 5; // total medicines row number
-         mkInput();
+        var rId;                                                                      
+        var pId;
+        const medicine_input_num = 10; // total medicines row number
         (async() => {
-			const {data : rec} = await axios.get('/records');
-			const {data : pa_num} = await axios.get('/ckPatients/rNum');
+            const {data : rec} = await axios.get('/records');
+            const {data : pa_num} = await axios.get('/ckPatients/rNum');
             const {data : info} = await axios.get('/data');
-			const {data : dId} = await axios.get('/docMain/dId');
-			const {data : done_records} = await axios.get('/done_records'); // done records
+            const {data : dId} = await axios.get('/docMain/dId');
+            const {data : done_records} = await axios.get('/done_records'); // done records
             getId('dId').innerHTML = Object.values(dId);
             for (let i = 0;i < done_records.length;i++) { // 先檢查這筆紀錄是否已經看完, 因有可能是醫生檢查已看診病歷
                 if (pa_num.rId == done_records[i].rId) { // 看完的
                     const {data : all_record} = await axios.post('/docMain/all_record', {rId : pa_num.rId, check_first : true});
-                    if (Object.values(all_record)[1] && Object.values(all_record)[2]) // whether both record not empty
+                    if (Object.values(all_record)[1] && Object.values(all_record)[2]) { // whether both record not empty
+                        await mkInput(Object.values(Object.values(all_record)[2]).length);
                         insertRecords(Object.values(all_record)[1], Object.values(all_record)[2]); // put the record in
+                    }
                     // put done record fee and the patient info in table
                     patientInfo(pa_num.rId);
                     return;
                 }
             }
-			
+            
             rec.sort(function(a,b){
                 return a.num - b.num;
             });
-			const this_doc = []; // only this doctor's records
-			var done = false; // whether the record is done
-			for (let i = 0;i < rec.length;i++) { // push records in array, which only have this doctor
-				done = false;
-				for (let j = 0;j < done_records.length;j++) {
-					if (rec[i].no == done_records[j].rId) { // this records had done
-						done = true;
-					}
-				}
-				if (rec[i].dId == dId.dId && !done) { // same doctor and not done yet
-					this_doc.push(rec[i]);
-				}
-			}
+            const this_doc = []; // only this doctor's records
+            var done = false; // whether the record is done
+            for (let i = 0;i < rec.length;i++) { // push records in array, which only have this doctor
+                done = false;
+                for (let j = 0;j < done_records.length;j++) {
+                    if (rec[i].no == done_records[j].rId) { // this records had done
+                        done = true;
+                    }
+                }
+                if (rec[i].dId == dId.dId && !done) { // same doctor and not done yet
+                    this_doc.push(rec[i]);
+                }
+            }
             rec.sort(function(a,b){
                 return a.num - b.num;
             });
-			document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
-			rId = this_doc[pa_num.pa_num].no; // rId
-			patientInfo(rId); // put the fee of the records and info of patient in
+            document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
+            rId = this_doc[pa_num.pa_num].no; // rId
+            patientInfo(rId); // put the fee of the records and info of patient in
             const {data : check_record} = await axios.post('/docMain/check_record', {rId : rId, aId : getId('dId').innerHTML, pId : pId});
         })();
 
@@ -119,220 +213,232 @@
             pId = getPId.pId[0].pId; // pId
             const fee = getFee.fee[0]; // three kinds of fee
             var not_null = true; // 是否沒有 pId
+            const {data : getDeposit} = await axios.get('/docMain/getDeposit', {params : {rId : rId}});
+            is_deposit = parseInt(getDeposit.is_depo);
             if (pId == null) { // 沒有 pId
-				not_null = false;
-                tab.innerHTML += "<tr/><td/>"+ null  + 
-				"<td>" + null + "</td>" +
-				"<td>" + null + "</td>" +
-				"<td>" + null + "</td>" +
-				"<td>" + null + "</td>" +
-				"<td>" + null + "</td>" +
-				"<td>" + null + "</td>" +
-				"<td>" + null + "</td>" +
-				"<td>" + null + "</td>" + 
-				"<td ><input type = 'text' id = 'regist' style = 'width:50px' value = '" + fee.regist + "'></input></td>" +
-				"<td><input type = 'text' id = 'self_part' style = 'width:50px' value = '" + fee.self_part + "'></input></td>" +
-				"<td><input type = 'text' id = 'all_self' style = 'width:50px' value = '" + fee.all_self + "'></input></td></tr>"
-			}
-			if (not_null) { // 有 pId
-				//pId = this_doc[pa_num.pa_num].pId;
-				for (let j = 0;j < info.length;j++) { // find the patient
-					if (pId == info[j].pId) { // same pId
-						in_patients = true;
-					//document.getElementById('r_num').value = this_doc[pa_num.pa_num].r_num;
-						//document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
-					//document.getElementById('nrId').value = this_doc[pa_num.pa_num].nrId;
-                    	tab.innerHTML += "<tr" + j + "/><td/>"+ info[j].name  + 
-						"<td>" + info[j].birth + "</td>" +
-						"<td>" + info[j].sex + "</td>" +
-						"<td>" + info[j].birth + "</td>" +
-						"<td>" + info[j].birth + "</td>" +
-						"<td>" + info[j].pass + "</td>" +
-						"<td>" + info[j].allergy + "</td>" +
-						"<td>" + info[j].hate + "</td>" +
-						"<td>" + info[j].mark + "</td>" + 
-						"<td ><input type = 'text' id = 'regist' style = 'width:50px' value = '" + fee.regist + "'></input></td>" +
-						"<td><input type = 'text' id = 'self_part' style = 'width:50px' value = '" + fee.self_part + "'></input></td>" +
-						"<td><input type = 'text' id = 'all_self' style = 'width:50px' value = '" + fee.all_self + "'></input></td></tr>"
-						break;
-					}
-				}
-			}
+                not_null = false;
+                tab.innerHTML += "<tr/><td/>"+ rId  + 
+                "<td>" + null + "</td>" +
+                "<td>" + null + "</td>" +
+                "<td>" + null + "</td>" +
+                "<td>" + null + "</td>" +
+                "<td>" + null + "</td>" +
+                "<td>" + null + "</td>" +
+                "<td>" + null + "</td>" +
+                "<td>" + null + "</td>" +
+                "<td>" + null + "</td>" + 
+                "<td>" + null + "</td>" +
+                "<td>" + null + "</td>" + 
+                "<td ><input type = 'text' id = 'regist' style = 'width:50px' value = '" + fee.regist + "'></input></td>" +
+                "<td><input type = 'text' id = 'self_part' style = 'width:50px' value = '" + fee.self_part + "'></input></td>" +
+                "<td><input type = 'text' id = 'all_self' style = 'width:50px' value = '" + fee.all_self + "'></input></td></tr>"
+            }
+            if (not_null) { // 有 pId
+                //pId = this_doc[pa_num.pa_num].pId;
+                for (let j = 0;j < info.length;j++) { // find the patient
+                    if (pId == info[j].pId) { // same pId
+                        in_patients = true;
+                    //document.getElementById('r_num').value = this_doc[pa_num.pa_num].r_num;
+                        //document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
+                    //document.getElementById('nrId').value = this_doc[pa_num.pa_num].nrId;
+                        //checkVac(rId);
+                        tab.innerHTML += "<tr" + j + "/><td/>"+ rId  + 
+                        "<td id = 'patient_name'>" + info[j].name + "</td>" +
+                        "<td>" + info[j].birth + "</td>" +
+                        "<td>" + info[j].sex + "</td>" +
+                        "<td>" + mkAge(info[j].birth) + "</td>" +
+                        "<td>" + `${is_deposit ? '有' : '無'}` + "</td>" +
+                        "<td>" + info[j].pass + "</td>" +
+                        "<td>" + info[j].allergy + "</td>" +
+                        "<td>" + info[j].hate + "</td>" +
+                        "<td>" + info[j].mark + "</td>" + 
+                        "<td>" + info[j].weight + "</td>" +
+                        "<td>" + info[j].height + "</td>" +
+                        "<td ><input type = 'text' id = 'regist' style = 'width:50px' value = '" + fee.regist + "' readonly></input></td>" +
+                        "<td><input type = 'text' id = 'self_part' style = 'width:50px' value = '" + fee.self_part + "' readonly></input></td>" +
+                        "<td><input type = 'text' id = 'all_self' style = 'width:50px' value = '" + fee.all_self + "' readonly></input></td></tr>"
+                        break;
+                    }
+                }
+            }
         }
 
-		function getId(id) {
-			return document.getElementById(id);
-		}
+        function getId(id) {
+            return document.getElementById(id);
+        }
         
         function getClass(id) {
-			return document.getElementsByClassName(id);
-		}
+            return document.getElementsByClassName(id);
+        }
 
         getId("diagnose_code").addEventListener('change', outSymptoms); // 當搜尋內容有改變
 
-		var symptoms = null; // 所有症狀，先設 null
+        var symptoms = null; // 所有症狀，先設 null
         async function outSymptoms() { // 印出症狀
-			if (symptoms == null) { // 第一次讀取症狀
-				const {data : symptoms_data} = await axios.get('/symptoms');
-				symptoms = symptoms_data // 放入檔案
-				for (let i = 0;i < symptoms.length;i++) { // 找出對應症狀
-					if (symptoms[i].index == getId('diagnose_code').value) {
-						getId('diagnose').innerHTML = symptoms[i].eng_name;
-					}
-				}
-			}
-			else {
-				for (let i = 0;i < symptoms.length;i++) {
-					if (symptoms[i].index == getId('diagnose_code').value) {
-						getId('diagnose').innerHTML = symptoms[i].eng_name;
-					}
-				}
-			}
+            if (symptoms == null) { // 第一次讀取症狀
+                const {data : symptoms_data} = await axios.get('/symptoms');
+                symptoms = symptoms_data // 放入檔案
+                for (let i = 0;i < symptoms.length;i++) { // 找出對應症狀
+                    if (symptoms[i].index == getId('diagnose_code').value) {
+                        getId('diagnose').innerHTML = symptoms[i].eng_name;
+                    }
+                }
+            }
+            else {
+                for (let i = 0;i < symptoms.length;i++) {
+                    if (symptoms[i].index == getId('diagnose_code').value) {
+                        getId('diagnose').innerHTML = symptoms[i].eng_name;
+                    }
+                }
+            }
         }
 
 
-		document.addEventListener("keyup", async(event) => {
+        document.addEventListener("keyup", async(event) => {
             // 總共需要檢查快捷的格
-			//var check_hot = ["main_sue", "science", "medicines0", "medicines1", "medicines2", "medicines3", "medicines4"]; 
-			var check_hot = ["main_sue", "science"]
-            for (let i = 0;i < medicine_input_num;i++) // append medicine in hot_key array with total medicine input num
+            var check_hot = ["main_sue"]
+            // append medicine in hot_key array with total medicine input num
+            for (let i = 0;i < medicine_input_num*2;i++) 
                 check_hot.push('medicines'+i);
             for (let num = 0;num < check_hot.length;num++) {
-				const {data : hot_key} = await axios.get('hot_key');
-				var main_sue = getId(check_hot[num]).value;
-				if (event.keyCode == 13 && main_sue.includes("/")) {
-					var relative = "";
-					var start_add = false;
-					var replace_pos = [];
-					for (let i = 0;i < main_sue.length;i++) {
-						if (start_add) {
-							if (main_sue[i] == " " || main_sue[i] == "\n") { // 遇到空白或換行就不要算之後的
-								start_add = false; // 停止繼續加
-							}
-							else { // 加上 / 後的值
-								relative += main_sue[i];
-								replace_pos.push(i);
-							}
-						}
-						if (main_sue[i] == "/") {
-							replace_pos.push(i);
-							start_add = true;
-						}
-					}
-					var replace_name;
-					for (let i = 0;i < hot_key.length;i++) {
-						if (hot_key[i].relative == relative) {
-							getId(check_hot[num]).value += hot_key[i].real_name;
-							replace_name = hot_key[i].real_name;
-						}
-					}
-					if (replace_name == undefined) { // 換短一點的比較好刪
-						replace_name = "null";
-					};
-					var in_replace = false; // 是否在要替換的位置
-					var new_mainsue = '';
-					var first_replace = false; // 是否是第一個要置換的
-					for (let i = 0;i < main_sue.length;i++) {
-						in_place = false;
-						first_replace = false;
-						if (i == replace_pos[0]) {
-							first_replace = true;
-						}
-						for (let j = 0;j < replace_pos.length;j++) {
-							if (i == replace_pos[j]) {
-								in_replace = true;
-							}
-						}
-						if (!in_replace) { // 不是要替換的
-							new_mainsue += main_sue[i];
-						}
-						if (first_replace) {
-							new_mainsue += replace_name;
-						}
-					}
-					console.log(new_mainsue);
-					getId(check_hot[num]).value = new_mainsue;
-				}
-			}
-		});
+                const {data : hot_key} = await axios.get('hot_key');
+                var main_sue = getId(check_hot[num]).value;
+                if (event.keyCode == 13 && main_sue.includes("/")) {
+                    var relative = "";
+                    var start_add = false;
+                    var replace_pos = [];
+                    for (let i = 0;i < main_sue.length;i++) {
+                        if (start_add) {
+                            if (main_sue[i] == " " || main_sue[i] == "\n") { // 遇到空白或換行就不要算之後的
+                                start_add = false; // 停止繼續加
+                            }
+                            else { // 加上 / 後的值
+                                relative += main_sue[i];
+                                replace_pos.push(i);
+                            }
+                        }
+                        if (main_sue[i] == "/") {
+                            replace_pos.push(i);
+                            start_add = true;
+                        }
+                    }
+                    var replace_name;
+                    for (let i = 0;i < hot_key.length;i++) {
+                        if (hot_key[i].relative == relative) {
+                            getId(check_hot[num]).value += hot_key[i].real_name;
+                            replace_name = hot_key[i].real_name;
+                        }
+                    }
+                    if (replace_name == undefined) { // 換短一點的比較好刪
+                        replace_name = "null";
+                    };
+                    var in_replace = false; // 是否在要替換的位置
+                    var new_mainsue = '';
+                    var first_replace = false; // 是否是第一個要置換的
+                    for (let i = 0;i < main_sue.length;i++) {
+                        in_place = false;
+                        first_replace = false;
+                        if (i == replace_pos[0]) {
+                            first_replace = true;
+                        }
+                        for (let j = 0;j < replace_pos.length;j++) {
+                            if (i == replace_pos[j]) {
+                                in_replace = true;
+                            }
+                        }
+                        if (!in_replace) { // 不是要替換的
+                            new_mainsue += main_sue[i];
+                        }
+                        if (first_replace) {
+                            new_mainsue += replace_name;
+                        }
+                    }
+                    //console.log(new_mainsue);
+                    getId(check_hot[num]).value = new_mainsue;
+                }
+            }
+        });
 
         // listen the next and last bt
-		getId('last_records').addEventListener('click', putRecord);
-		getId('next_records').addEventListener('click', putRecord);
+        //getId('last_records').addEventListener('click', putRecord);
+        //getId('next_records').addEventListener('click', putRecord);
 
-		async function putRecord(e) { // 放入病歷
-			if (e.target.id == 'next_records') {
-				if (!last_times <= 0) // 到 0 就不要再加上去了
-					last_times--;
-			}
-			else 
-				last_times++;
-			const {data : all_record} = await axios.post('/docMain/all_record', {rId : rId, aId : getId('dId').innerHTML, pId : pId, last_times : last_times});
-			if (!Object.values(all_record)[0]) { // 搜尋失敗
-				alert(Object.values(all_record)[1]); // 跳出錯誤訊息
-				if (Object.values(all_record)[1] == '已無再之前的病歷紀錄') // 已經到最之前的病歷紀錄, 所以要減一個
-					last_times -= 1;
-			}
-			else {
-				if (Object.values(all_record)[1] == 'clear') {
-					clearRecords();
-				}
-				else {
-					// 先清理病歷
-					clearRecords(); 
-					// 插入病歷
-                    console.log(Object.values(all_record));
-					insertRecords(Object.values(all_record)[1], Object.values(all_record)[2]);
-				}
-			}
-		}
-  		
-		var last_times = 0; // 要找的病歷次數
+        async function putRecord(e) { // 放入病歷
+            if (e.target.id == 'next_records') {
+                if (!last_times <= 0) // 到 0 就不要再加上去了
+                    last_times--;
+            }
+            else 
+                last_times++;
+            const {data : all_record} = await axios.post('/docMain/all_record', {rId : rId, aId : getId('dId').innerHTML, pId : pId, last_times : last_times});
+            if (!Object.values(all_record)[0]) { // 搜尋失敗
+                alert(Object.values(all_record)[1]); // 跳出錯誤訊息
+                if (Object.values(all_record)[1] == '已無再之前的病歷紀錄') // 已經到最之前的病歷紀錄, 所以要減一個
+                    last_times -= 1;
+            }
+            else {
+                if (Object.values(all_record)[1] == 'clear') {
+                    clearRecords();
+                }
+                else {
+                    // 先清理病歷
+                    clearRecords(); 
+                    // 插入病歷
+                    insertRecords(Object.values(all_record)[1], Object.values(all_record)[2]);
+                }
+            }
+        }
+        
+        var last_times = 0; // 要找的病歷次數
 
-		async function insertRecords(diagnose_record, medicines_records) { // 把病歷放進去
-			// 放入診斷紀錄
-			getId('diagnose_code').value = Object.values(diagnose_record)[2];
-			getId('main_sue').value = Object.values(diagnose_record)[3];
-			getId('science').value = Object.values(diagnose_record)[4]; 
-			outSymptoms(); // 印出症狀
-			// 放入用藥紀錄
-			const {data : medicines_normal} = await axios.get("/medicines_normal"); // all medicines data
-			for (let i = 0;i < Object.values(medicines_records).length;i++) { // put this medicines records
-				for (let j = 0;j < medicines_normal.length;j++) { // use the mId to find the medicines name
-					if (medicines_normal[j]["mId"] == Object.values(medicines_records[i])[2]) // same mId
-						getId('medicines'+i).value = medicines_normal[j]["medi_eng"];
-				}
-				getId('medi_amount'+i).value = Object.values(medicines_records[i])[3];
-				getId('day'+i).value = Object.values(medicines_records[i])[4];
-				getId('method'+i).value = Object.values(medicines_records[i])[5];
-				getId('medi_mark'+i).value = Object.values(medicines_records[i])[6];
-			}
-		}
+        async function insertRecords(diagnose_record, medicines_records) { // 把病歷放進去
+            // 放入診斷紀錄
+            getId('diagnose_code').value = Object.values(diagnose_record)[2];
+            getId('main_sue').value = Object.values(diagnose_record)[3];
+            //getId('science').value = Object.values(diagnose_record)[4]; 
+            outSymptoms(); // 印出症狀
+            // 放入用藥紀錄
+            const {data : medicines_normal} = await axios.get("/medicines_normal"); // all medicines data
+            for (let i = 0;i < Object.values(medicines_records).length;i++) { // put this medicines records
+                put_index = Object.values(medicines_records)[i].put_index;
+                if (Object.values(medicines_records[i])[2] == null) { // 如果 mId 是空的，代表是處方籤
+                    getId('medicines'+put_index).value = medicines_records[i].subscript;
+                    continue;
+                }
+                for (let j = 0;j < medicines_normal.length;j++) { // use the mId to find the medicines name
+                    if (medicines_normal[j]["mId"] == Object.values(medicines_records[i])[2]) // same mId
+                        getId('medicines'+put_index).value = medicines_normal[j]["medi_eng"];
+                }
+                getId('medi_amount'+put_index).value = Object.values(medicines_records[i])[3];
+                getId('day'+put_index).value = Object.values(medicines_records[i])[4];
+                getId('method'+put_index).value = Object.values(medicines_records[i])[5];
+                getId('medi_mark'+put_index).value = Object.values(medicines_records[i])[6];
+            }
+        }
 
-		function clearRecords() { // 清理紀錄
-			getId('diagnose_code').value = '';
-			getId('main_sue').value = '';
-			getId('science').value = ''; 
-			//outSymptoms(); // 印出症狀
-			getId('diagnose').innerHTML = '';
-			for (let i = 0;i < 5;i++) {
-				getId('medicines'+i).value = '';
-				getId('medi_amount'+i).value = '';
-				getId('day'+i).value = '';
-				getId('method'+i).value = '';
-				getId('medi_mark'+i).value = '';
-			}
-		}
+        function clearRecords() { // 清理紀錄
+            getId('diagnose_code').value = '';
+            getId('main_sue').value = '';
+            //getId('science').value = ''; 
+            //outSymptoms(); // 印出症狀
+            getId('diagnose').innerHTML = '';
+            for (let i = 0;i < 5;i++) {
+                getId('medicines'+i).value = '';
+                getId('medi_amount'+i).value = '';
+                getId('day'+i).value = '';
+                getId('method'+i).value = '';
+                getId('medi_mark'+i).value = '';
+            }
+        }
         
         getId("copy_bt").addEventListener('click', cpContent); // 當搜尋內容有改變
     
         function cpContent() { // copy content to clipboard
             var all_need_copy = getClass('copy');
-            var need_copy = document.querySelectorAll('textarea');
             var total_str = '';
             // add the value needed to be copied
             for (let i = 0;i < all_need_copy.length;i++) {
-                total_str += all_need_copy[i].value;
+                total_str += all_need_copy[i].id + "$^$" + all_need_copy[i].value;
                 total_str += "<new_element>";
             }
              // create a temporary textarea to place the value of copy
@@ -344,40 +450,89 @@
             document.body.appendChild(el);
             el.select();
             var copy_suc = document.execCommand('copy');
-            alert(copy_suc ? 'copy successfully'  : 'copy failed'); //alert successful or failed
-            document.body.removeChild(el); // remove copt textarea
+            alert(copy_suc ? '複製成功！'  : '複製失敗！'); //alert successful or failed
+            document.body.removeChild(el); // remove copy textarea
         }
         
-        function mkInput() { // make the input with format
+        function mkInput(medicine_input_num) { // make the input with format
+            if (medicine_input_num <= 20) { // 如果總藥單藥品欄位數小於原本預設(20)，就要用預設(20)的欄位數
+                medicine_input_num = 10;
+            }
+            else { // 總藥單藥品欄位數大於預設(20)，就改成該次的總藥品欄位數
+                medicine_input_num = medicine_input_num / 2; 
+            }
             var records_form = getId("records_form");
+            var records_form1 = getId("records_form1");
             // each row's element
             const all_elements = ['medicines', 'medi_amount', 'day', 'method', 'medi_mark'];
-            const all_elements_width = [170, 40, 20, 170, 170]; // input width
+            const all_elements_width = [230, 90, 50, 80, 40]; // input width
+            // 第一行
             for (let i = 0;i < medicine_input_num;i++) { // total input num
-                // break
-                var br_element = document.createElement("div");
-                br_element.innerHTML = "<br/>";
-                records_form.appendChild(br_element);
+                var tr_element = document.createElement("tr");
+                records_form.appendChild(tr_element);
                 for (let j = 0;j < all_elements.length;j++) { // all input of a row
-                    realPutIn(all_elements[j], records_form, i, all_elements_width[j]);
+                    realPutIn(all_elements[j], tr_element, i*2, all_elements_width[j]);
                 }
             }
-            outSymptoms();
+            // 第二行
+            for (let i = 0;i < medicine_input_num;i++) { // total input num
+                var tr_element = document.createElement("tr");
+                records_form1.appendChild(tr_element);
+                for (let j = 0;j < all_elements.length;j++) { // all input of a row
+                    realPutIn(all_elements[j], tr_element, (i*2)+1, all_elements_width[j]);
+                }
+            }
+            outSymptoms(); // 印出症狀
+            /*var submit_element = document.createElement("button");
+            submit_element.innerHTML = '送出';
+            submit_element.type = 'button';
+            submit_element.id = 'submit_bt';
+            submit_element.className = 'position-absolute end-50';
+            records_form1.appendChild(submit_element);*/
         }
                 
-        function realPutIn(obj_id, records_form, i, width) { // real function put the input in form
+        function realPutIn(obj_id, tr_element, i, width) { // real function put the input in form
             // space
             var space_element = document.createElement("span");
             space_element.innerHTML = "&nbsp;&nbsp;";
-            records_form.appendChild(space_element);
+            //records_form.appendChild(space_element);
             // input text
             var medicine_obj_element= document.createElement("input");
+            medicine_obj_element.setAttribute("readonly", ""); // 不能修改
+            if (obj_id == 'medi_amount') { // 每天量要小數點
+                medicine_obj_element.type = 'number';
+                medicine_obj_element.step = '0.1';
+            }
+            if (obj_id == 'day') { // 天
+                medicine_obj_element.type = 'number';
+                medicine_obj_element.step = '1';
+            }
             medicine_obj_element.tpye = 'text';
             medicine_obj_element.className = "copy"; // class name = copy
             medicine_obj_element.setAttribute("id", obj_id+i);
             medicine_obj_element.setAttribute("name", obj_id+i);
             medicine_obj_element.setAttribute("style", "width:"+width+"px;");
-            records_form.appendChild(medicine_obj_element);
+            var td_element = document.createElement("td");
+            td_element.appendChild(medicine_obj_element);
+            tr_element.appendChild(td_element);
+        }
+        
+        function mkAge(birth) { // 製作年齡
+            today = new Date();
+            var today_year = today.toString().split(' ')[3];
+            var birth_year = birth.toString().split('-')[0];
+            var age = today_year - birth_year;
+            var new_birth_year = today_year;
+            for (let i = 1;i < birth.toString().split('-').length;i++) {
+                new_birth_year += '-' + birth.toString().split('-')[i];
+            }
+            //console.log(new_birth_year < today);
+            birth = new Date(new_birth_year);
+            birth.setHours(0,0,0,0);
+            if (!birth < today) {
+                age = age - 1;
+            }
+            return age;
         }
     </script>
 </html>

@@ -15,20 +15,20 @@ var config = require("config");
 var root = config.get('server.root');
 
 router.get('/', function(req, res) {
-	try {
-		const user = jwt.verify(req.cookies.token, 'my_secret_key');
-	}
-	catch(e) {
-		console.log(e);
-		res.redirect('/login');
-		res.end();
-		return;
-	};
-	const user = jwt.verify(req.cookies.token, 'my_secret_key');
-	var path = root + "templates/financial.html";
-	res.sendFile(path);
-	res.end;
-	return;
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        res.redirect('/login');
+        res.end();
+        return;
+    };
+    const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    var path = root + "templates/financial.html";
+    res.sendFile(path);
+    res.end;
+    return;
 });
 
 module.exports = router;

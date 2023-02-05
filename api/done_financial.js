@@ -42,7 +42,13 @@ router.get('/records', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    var records = await conn.query("select * from done_financial;");
+    var records;
+    try {
+        records = await conn.query("select * from done_financial;");
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json({'records' : records});
     res.end();

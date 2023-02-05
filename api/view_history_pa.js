@@ -15,16 +15,16 @@ var config = require("config"); // 設定檔
 var root = config.get('server.root'); // 根目錄位置
 
 router.get('/', function(req, res) {
-	try { // 驗證 token
-		const user = jwt.verify(req.cookies.token, 'my_secret_key');
-	}
-	catch(e) { //
+    try { // 驗證 token
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) { //
         res.redirect('/login');
         res.end();
-		console.log(e);
-		return;
-	}
-	const user = jwt.verify(req.cookies.token, 'my_secret_key');
+        console.log(e);
+        return;
+    }
+    const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId) { // 醫生登入成功
         res.sendFile(root + 'templates/view_history_pa.html')
         res.end;

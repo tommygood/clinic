@@ -52,6 +52,10 @@
         table {
             width : 100%;
         }
+        
+        h1 {
+            text-align : center;
+        }
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
@@ -102,7 +106,7 @@
                 if (count_added_records >= limit_records) // 真正放進去的紀錄不能超過限制的次數
                     break; // 停止
                 putNotTurn(debt_records[i], i);
-                not_return_num.push(i);
+                not_return_num.push(debt_records[i].no);
                 count_added_records++; // 真正放進去的次數
             }
             btListener(not_return_num);
@@ -265,7 +269,6 @@
             const page_num = axios.get('/getPageNum', {params : {debt : true}});
             page_num.then(function(result) { // make page
                 var page_num_result = {data : result}.data.data.page_num; // total records num
-                console.log(page_num_result);                
                 total_page_num = countPageNum(page_num_result); // total_page_num = all records/limit_records
                 mkPageListener(total_page_num); // make listener of page list 
             });
@@ -303,13 +306,13 @@
         function putNotTurn(record, i) {
             // add not return record element
             getId('debt_table').innerHTML += 
-                "<tr id = 'log_row'" + i + "/><td/>" + record.no + 
+                "<tr id = 'log_row" + i + "'/><td/>" + record.no + 
                 "<td>" + lessTime(record.times) + "</td>" +
                 "<td>" + record.aId + "</td>" +
                 "<td>" + record.money + "</td>" +
                 "<td>" + record.reason + "</td>" +
                 "<td>" + `${reasonId(record.reason) ? reasonId(record.reason) : '無'}` + "</td>" +
-                "<td><button id = 'turned_" + i + "'>歸還</button></td></tr>";
+                "<td><button id = 'turned_" + record.no + "'>歸還</button></td></tr>";
         }
         
         function reasonId(reason) {
@@ -342,9 +345,9 @@
             var {data : debt} = await axios.get('/debt/records');
             var debt_records = debt.debt_records;
             var debt_no = mkBtNum(e.target.id);
-            var no = debt_records[debt_no].no;
-            var money = debt_records[debt_no].money;
-            var reason = debt_records[debt_no].reason;
+            var no = debt_no;
+            var money = debt_records[debt_no-1].money; // as debt_no is start from 1
+            var reason = debt_records[debt_no-1].reason;
             // user confirm the record is right
             var is_sure = confirm(`歸還 : 編號:${no}, 總金額為:${money}。核對確認無誤`)
             // submit
@@ -359,6 +362,9 @@
                     alert(`歸還失敗, ${error}`);
                     window.location.reload();
                 }
+            }
+            else {
+                alert('取消歸還！');
             }
         }
         

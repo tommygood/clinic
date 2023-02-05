@@ -223,10 +223,14 @@
         #name_col {
             width : 60px;
         }
+        
+        #show_birth {
+            width : 50px;
+        }
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script>
-        var nId; // nurse id
+        //var nId; // nurse id
         
         // 生日的最大值不能大於今日日期
         var today = new Date().toISOString().split('T')[0];
@@ -242,13 +246,17 @@
 
         (async() => { // 查詢 nId
             const {data : user} = await axios.get('/viewPa/nId');
-            if (user.nId == undefined) { // 沒有憑證
-                window.location.assign('/login');
-            }
-            getId('nId').innerHTML = user.nId + "號帳號";
-            nId = user.nId;
+            var {data : account_info} = await getTitle(user.nId);
+            var title = account_info.title;
+            var name = account_info.name;
+            getId('nId').innerHTML = "<b>" + user.nId + "</b> 號" + title + "：" + name + "";
         })();
-
+        
+        async function getTitle(nId) { // 用帳號找職位
+            var title = axios.get('/getTitle', {params : {aId : nId}});
+            console.log(title);
+            return title;
+        }
         // 提交表單
         /*getId('form').addEventListener('submit', async(e) => {
             e.preventDefault();
@@ -442,6 +450,8 @@
                 alert('醫生代碼有誤，掛號取消！');
                 return;
             }
+            const {data : user} = await axios.get('/viewPa/nId'); // 查 nId
+            nId = user.nId;
             if (status == 0) { // 健保，只要收掛號費和部分負擔
                 data = {paid : paid_value, nId : nId, card : true, in : in_value, dId : doc_num, name : name, id : id, sex : sex, birth : birth, identity : identity, tel1 : tel1, tel2 : tel2, mom_id : mom, parity : parity, address : address, can_used : can, pass : pass, allergy : allergy, hate : hate, mark : record_mark, deposit : 0, regist : getId('regist_'+num).value, part_self : getId('part_'+num).value, all_self : 0} 
                 var total_expense = parseInt(getId('regist_'+num).value) + parseInt(getId('part_'+num).value);
@@ -673,7 +683,7 @@
              "<tr id = 'log_row" + i + "'/><td/>" + index + 
              "<td>" + all_id[i] + "</td>" + 
              "<td>" + name + "</td>" +
-             "<td>" + birth + "</td>" +
+             "<td id = 'show_birth'>" + lessBirth(birth) + "</td>" +
              "<td>" + all_identity[i] + "</td>" +
              "<td>" + tel1 + "</td>" +
              "<td>" + tel2 + "</td>" +
@@ -781,7 +791,9 @@
                 return;
             }
             else { // 驗證密碼
-                console.log(confirm_passwd);
+                //console.log(confirm_passwd);
+                const {data : user} = await axios.get('/viewPa/nId'); // 查 nId
+                nId = user.nId;
                 const {data : suc} = await axios.post('/login/check', {account : nId, pass : confirm_passwd});
                 if (suc.error != undefined) { // 密碼錯誤
                     alert(`編輯失敗，${suc.error}。`);
@@ -800,6 +812,8 @@
 
         async function sendEdit(e) { // 送出編輯資料
             e.preventDefault();
+            const {data : user} = await axios.get('/viewPa/nId'); // 查 nId
+            nId = user.nId;
             data = {height : getId('height').value, weight : getId('weight').value, nId : nId, name : getId('name').value, id : getId('id').value, sex : getId('sex').value, birth : getId('birth').value, identity : getId('identity').value, tel1 : getId('tel1').value, tel2 : getId('tel2').value, mom_id : getId('mom').value, parity : getId('parity').value, address : getId('address').value, can_used : getId('can').value, pass : getId('pass').value, allergy : getId('allergy').value, hate : getId('hate').value, mark : getId('mark').value} 
             const {data : suc} = await axios.post('/viewPa/editPatients', data);
             if (suc.suc) { // 新增成功
@@ -878,6 +892,8 @@
         
         async function sendAppend(e) {
             e.preventDefault();
+            const {data : user} = await axios.get('/viewPa/nId'); // 查 nId
+            nId = user.nId;
             data = {height : getId('height').value, weight : getId('weight').value, nId : nId, name : getId('name').value, id : getId('id').value, sex : getId('sex').value, birth : getId('birth').value, identity : getId('identity').value, tel1 : getId('tel1').value, tel2 : getId('tel2').value, mom_id : getId('mom').value, parity : getId('parity').value, address : getId('address').value, can_used : getId('can').value, pass : getId('pass').value, allergy : getId('allergy').value, hate : getId('hate').value, mark : getId('mark').value} 
             const {data : suc} = await axios.post('/viewPa/addPatients', data);
             if (suc.suc) { // 新增成功
@@ -936,6 +952,8 @@
                 part_self = 0;
                 all_self = parseInt(getId('self_' + vac_num).value);
             }
+            const {data : user} = await axios.get('/viewPa/nId'); // 查 nId
+            nId = user.nId;
             var data = {total_vId : total_vId, mark : record_mark, id : all_id[vac_num], vac : 'on', vId : vId, paid : paid_value, nId : nId, card : true, in : in_value, dId : vac_dId, regist : regist, deposit : deposit, part_self : part_self, all_self : all_self} 
             // 總收費
             var total_expense = deposit + regist + part_self + all_self;
@@ -1097,6 +1115,22 @@
         function changeTai() {
             // 把 "台" 改成 "臺"
             getId('address').value = getId('address').value.replaceAll('台', '臺');
+        }
+        
+        function lessBirth(birth) { // 把生日用的好看一點
+            var new_birth = '';
+            var first_dash = false;
+            console.log(birth);
+            for (let i = 0;i < birth.length;i++) {
+                if (birth[i] == '-' && !first_dash) { // 把第一個 - 變成 <br/>
+                    new_birth += "<br/>";
+                    first_dash = true;
+                }
+                else { 
+                    new_birth += birth[i];
+                }
+            }
+            return new_birth;
         }
     </script>
 </html>

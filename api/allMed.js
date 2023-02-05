@@ -13,20 +13,25 @@ var config = require("config");
 var root = config.get('server.root');
 
 router.get('/', async function(req, res) {
-	try {
-		const user = jwt.verify(req.cookies.token, 'my_secret_key');
-	}
-	catch(e) {
-		console.log(e);
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
         res.redirect('/login');
-		res.end();
-		return;
-	};
-	const user = jwt.verify(req.cookies.token, 'my_secret_key');
+        res.end();
+        return;
+    };
+    const user = jwt.verify(req.cookies.token, 'my_secret_key');
     try {
         if (user.data.aId) { // 登入中
             let conn = await pool.getConnection();
-            await conn.query('insert into look_medicines_inventory(`aId`) values(?)', user.data.aId);
+            try { // 新增查看 log
+                await conn.query('insert into look_medicines_inventory(`aId`) values(?)', user.data.aId);
+            }
+            catch(e) {
+                console.log(e);
+            }
             conn.release();
             res.sendFile(root + 'templates/allMed.html');  //回應靜態文件
             return;

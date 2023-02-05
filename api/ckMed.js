@@ -13,16 +13,16 @@ var config = require("config"); // 設定檔
 var root = config.get('server.root'); // 根目錄位置
 
 router.get('/', function(req, res) {
-	try {
-		const user = jwt.verify(req.cookies.token, 'my_secret_key');
-	}
-	catch(e) {
-		console.log(e);
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
         res.redirect('/login');
-		res.end();
-		return;
-	};
-	const user = jwt.verify(req.cookies.token, 'my_secret_key');
+        res.end();
+        return;
+    };
+    const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId && user.data.title == 'nur') { // 登入中
         res.sendFile(root + 'templates/ckMed.html');  //回應靜態文件
         return;

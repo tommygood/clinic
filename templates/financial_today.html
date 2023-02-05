@@ -6,7 +6,7 @@
         <h1>
             今日帳務紀錄
         </h1>
-        <h2><span id = 'nId'></span><span> 號護士</span></h2>
+        <h2><span id = 'nId'></span></h2>
     </head>
     <body>
         <span>總金額：</span>
@@ -84,8 +84,17 @@
         
         (async() => { // 查詢 nId
             const {data : user} = await axios.get('/viewPa/nId');
-            getId('nId').innerHTML = user.nId;
+            var {data : account_info} = await getTitle(user.nId);
+            var title = account_info.title;
+            var name = account_info.name;
+            getId('nId').innerHTML = "<b>" + user.nId + "</b> 號" + title + "：" + name + "";
         })();
+        
+        async function getTitle(nId) { // 用帳號找職位
+            var title = axios.get('/getTitle', {params : {aId : nId}});
+            console.log(title);
+            return title;
+        }
         
         function moneyChange(total_len) { // 監聽更改錢、理由
             //getId("money_"+0).addEventListener('change', changed_list); // 監聽錢
@@ -165,7 +174,8 @@
                     final_all[onlyNum(all_change[i])+1] = [money, reason]; // db index start from 1
                 }
             }
-            const {data : update_financial} = await axios.post('/financial_today', {final_all : final_all, aId :  getId('nId').innerHTML});
+            const {data : user} = await axios.get('/viewPa/nId');
+            const {data : update_financial} = await axios.post('/financial_today', {final_all : final_all, aId : user.nId});
             if (update_financial["suc"] == false) { // update succsessful, no need to alert the error msg
                 for (let i = 0;i < update_financial["error"].length;i++) {
                     alert(update_financial["error"][i]);
@@ -215,7 +225,8 @@
                 }
             }
             // 送出結算記錄
-            const {data : settle} = await axios.post("/financial_today/settle", {last_money : last_money, aId : getId('nId').innerHTML, total_money : total_money, origin_log : origin_log});
+            const {data : user} = await axios.get('/viewPa/nId');
+            const {data : settle} = await axios.post("/financial_today/settle", {last_money : last_money, aId : user.nId, total_money : total_money, origin_log : origin_log});
             if (settle["suc"]) { // settle successfully
                 alert('結算成功!');
                 window.location.reload();

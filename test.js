@@ -68,7 +68,13 @@ app.get('/index_records' , async function (req, res) {
     // only need to supply the few necessary column of record for index.html
     let conn = await pool.getConnection();
     var sql_records = 'select `no`, `dId`, `num`, `pId`, `in` from records where `no` not in (select `rId` from done_records);'
-    var records = await conn.query(sql_records);
+    var records;
+    try {
+        records = await conn.query(sql_records);
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json({records : records});
     res.end;
@@ -79,7 +85,13 @@ app.get('/index_patients' , async function (req, res) {
     // only need to supply the few necessary column of patients for index.html
     let conn = await pool.getConnection();
     var sql_patients = 'select `pId`, `name` from patients;'
-    var records = await conn.query(sql_patients);
+    var records;
+    try {
+        records = await conn.query(sql_patients);
+    }
+    catch(e) {
+        console.log(e);
+    }
     // do not show patients' full name
     records = encryptName(records);
     conn.release();
@@ -88,7 +100,7 @@ app.get('/index_patients' , async function (req, res) {
     return;
 })
 
-function encryptName(records) {
+function encryptName(records) { // 把名字加密，第二字元改成 O
     // encrypt name, second index change to 'O'
     for (let i = 0;i < records.length;i++) {
         // make encrypt name
@@ -116,7 +128,13 @@ app.get('/data', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let rows = await conn.query('select * from patients');
+    let rows;
+    try {
+        rows = await conn.query('select * from patients');
+    }
+    catch(e) {
+        console.log(e);
+    }
     //let nurses = await conn.query('select `no`, `pass`, `status` from nurses');
     conn.release();
     //rows.push(nurses);
@@ -135,7 +153,13 @@ app.get('/records', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let records = await conn.query('select * from records where `no` not in (select `rId` from delete_records) order by `num`;');
+    let records;
+    try {
+        records = await conn.query('select * from records where `no` not in (select `rId` from delete_records) order by `num`;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(records);
     res.end
@@ -153,7 +177,13 @@ app.get('/all_records', async function(req, res) { // all records but not order 
         return;
     };
     let conn = await pool.getConnection();
-    let records = await conn.query('select * from records where `no` not in (select `rId` from delete_records);');
+    let records;
+    try {
+        records = await conn.query('select * from records where `no` not in (select `rId` from delete_records);');
+    }
+    catch(e) {
+        console.log(records);
+    }
     conn.release();
     res.json(records);
     res.end
@@ -171,7 +201,13 @@ app.get('/today_records', async function(req, res) {
     };
     let conn = await pool.getConnection();
     // let records = await conn.query('select * from records order by `num`');
-    let records = await conn.query('select * from records `num` where date(`start`) = curdate() order by `num`;');
+    let records;
+    try {
+        records = await conn.query('select * from records `num` where date(`start`) = curdate() order by `num`;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(records);
     res.end
@@ -190,7 +226,13 @@ app.get('/history_records', async function(req, res) {
     };
     let conn = await pool.getConnection();
     // let records = await conn.query('select * from records order by `num`');
-    let records = await conn.query('select * from records `num` where date(`start`) != curdate() order by `num`;');
+    let records;
+    try {
+        records = await conn.query('select * from records `num` where date(`start`) != curdate() order by `num`;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(records);
     res.end
@@ -207,7 +249,13 @@ app.get('/vac', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let records = await conn.query('select * from vac;');
+    let records;
+    try {
+        records = await conn.query('select * from vac;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(records);
     res.end
@@ -224,10 +272,16 @@ app.get('/vac_re', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    if (req.query["today"]) // today vacines_records
-        var records = await conn.query('select * from vac_re where date(`time`) = curdate();');
-    else // all vaccine records
-        var records = await conn.query('select * from vac_re;');
+    var records;
+    try {
+        if (req.query["today"]) // today vacines_records
+            records = await conn.query('select * from vac_re where date(`time`) = curdate();');
+        else // all vaccine records
+            records = await conn.query('select * from vac_re;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(records);
     res.end
@@ -245,11 +299,16 @@ app.get('/med_inventory_each', async function(req, res) {
     };
     let conn = await pool.getConnection();
     var records;
-    if (req.query['aId']) { // 只給該帳號人員負責的藥品
-        records = await conn.query('select * from med_inventory_each where `aId` = ?;', req.query['aId']);
+    try {
+        if (req.query['aId']) { // 只給該帳號人員負責的藥品
+            records = await conn.query('select * from med_inventory_each where `aId` = ?;', req.query['aId']);
+        }
+        else {
+            records = await conn.query('select * from med_inventory_each;');
+        }
     }
-    else {
-        records = await conn.query('select * from med_inventory_each;');
+    catch(e) {
+        console.log(e);
     }
     conn.release();
     res.json(records);
@@ -267,7 +326,13 @@ app.get('/medicines', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let records = await conn.query('select * from medicines;');
+    let records;
+    try {
+        records = await conn.query('select * from medicines;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(records);
     res.end
@@ -284,7 +349,13 @@ app.get('/done_records', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let done_records = await conn.query('select * from done_records;');
+    let done_records;
+    try {
+        done_records = await conn.query('select * from done_records;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(done_records);
     res.end;
@@ -301,7 +372,13 @@ app.get('/symptoms', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let symptoms = await conn.query('select * from symptoms;');
+    let symptoms;
+    try {
+        symptoms = await conn.query('select * from symptoms;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(symptoms);
     res.end;
@@ -318,7 +395,13 @@ app.get('/medicines_normal', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let medicines_normal = await conn.query('select * from medicines_normal;');
+    let medicines_normal;
+    try {
+        medicines_normal = await conn.query('select * from medicines_normal;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(medicines_normal);
     res.end;
@@ -335,14 +418,20 @@ app.get('/expense', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let expense = await conn.query('select * from expense;');
+    let expense;
+    try {
+        expense = await conn.query('select * from expense;');
+    }
+    catch(e) {
+        console.log(expense);
+    }
     conn.release();
     res.json(expense);
     res.end;
     return;
 });
     
-app.get('/main_pos', async function(req, res) {
+app.get('/main_pos', async function(req, res) { // 查看主責
     try {
         const user = jwt.verify(req.cookies.token, 'my_secret_key');
     }
@@ -353,7 +442,13 @@ app.get('/main_pos', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let expense = await conn.query('select * from main_pos;');
+    let expense;
+    try {
+        expense = await conn.query('select * from main_pos;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(expense);
     res.end;
@@ -371,7 +466,13 @@ app.get('/total_financial', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let expense = await conn.query('select * from financial;');
+    let expense;
+    try {
+        expense = await conn.query('select * from financial;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(expense);
     res.end;
@@ -389,7 +490,13 @@ app.get('/today_financial', async function(req, res) {
         return;
     };
     let conn = await pool.getConnection();
-    let expense = await conn.query('select * from financial_today;');
+    let expense;
+    try {
+        expense = await conn.query('select * from financial_today;');
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     res.json(expense);
     res.end;
@@ -427,7 +534,13 @@ app.get('/no_card', async function(req, res) {
     const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId && user.data.title == 'nur') { // 登入中
         let conn = await pool.getConnection();
-        let no_card = await conn.query('select * from no_card where `rId` not in (select `rId` from delete_records);'); // 找出沒有帶卡且不在被刪除的名單中的病歷號
+        let no_card;
+        try {
+            no_card = await conn.query('select * from no_card where `rId` not in (select `rId` from delete_records);'); // 找出沒有帶卡且不在被刪除的名單中的病歷號
+        }
+        catch(e) {
+            console.log(e);
+        }
         conn.release();
         res.json({no_card : no_card});
     }
@@ -438,22 +551,27 @@ app.get('/no_card', async function(req, res) {
 app.get('/getPageNum', async function(req, res) { // 回傳需計算分頁的紀錄的數量
     let conn = await pool.getConnection();
     var records_num;
-    if (req.query["history"] && req.query["dId"]) // history records, not filter the done records
-        records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from delete_records);', req.query["dId"]);
-    else if (req.query["debt"]) // 全部疫苗
-        records_num = await conn.query('select count(*) from debt where `turned` = 0;');
-    else if (req.query['all_financial'])
-        records_num = await conn.query('select count(*) from financial;');
-    else if (req.query["all_vac"]) // 全部疫苗
-        records_num = await conn.query('select count(*) from vac_re;');
-    else if (req.query["today_vac"]) // 今日疫苗
-        records_num = await conn.query('select count(*) from vac_re where date(`time`) = curdate();');
-    else if (req.query["all_med"]) // 該護士管理之藥品庫存
-        records_num = await conn.query('select count(*) from med_inventory_each where `aId` = ?;', req.query['aId']);
-    else if (!req.query["history"] &&req.query["dId"]) // 候診清單, filter the done records
-        records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from done_records) and `no` not in (select `rId` from delete_records);', req.query["dId"]);
-    else if (req.query["today"] && req.query["dId"]) // today records, not filter the done records
-        records_num = await conn.query('select count(*) from records where `dId` = ? and DATE(`start`) = CURDATE() and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+    try {
+        if (req.query["history"] && req.query["dId"]) // history records, not filter the done records
+            records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+        else if (req.query["debt"]) // 全部疫苗
+            records_num = await conn.query('select count(*) from debt where `turned` = 0;');
+        else if (req.query['all_financial'])
+            records_num = await conn.query('select count(*) from financial;');
+        else if (req.query["all_vac"]) // 全部疫苗
+            records_num = await conn.query('select count(*) from vac_re;');
+        else if (req.query["today_vac"]) // 今日疫苗
+            records_num = await conn.query('select count(*) from vac_re where date(`time`) = curdate();');
+        else if (req.query["all_med"]) // 該護士管理之藥品庫存
+            records_num = await conn.query('select count(*) from med_inventory_each where `aId` = ?;', req.query['aId']);
+        else if (req.query["today"] && req.query["dId"]) // today records, not filter the done records
+            records_num = await conn.query('select count(*) from records where `dId` = ? and DATE(`start`) = CURDATE() and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+        else if (!req.query["history"] &&req.query["dId"]) // 候診清單, filter the done records
+            records_num = await conn.query('select count(*) from records where `dId` = ? and `no` not in (select `rId` from done_records) and `no` not in (select `rId` from delete_records);', req.query["dId"]);
+    }
+    catch(e) {
+        console.log(e);
+    }
     conn.release();
     try {
         page_num = records_num[0]['count(*)'].toString();
@@ -479,7 +597,13 @@ app.get('/medRec', async function(req, res) {
     const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId) { // 登入中
         let conn = await pool.getConnection();
-        let med_rec = await conn.query('select `rId` from medicines_records group by `rId`;'); // 找出沒有帶卡且不在被刪除的名單中的病歷號
+        let med_rec;
+        try {
+            med_rec = await conn.query('select `rId` from medicines_records group by `rId`;'); // 找出沒有帶卡且不在被刪除的名單中的病歷號
+        }
+        catch(e) {
+            console.log(e);
+        }
         conn.release();
         res.json({med_rec : med_rec});
     }
@@ -500,7 +624,13 @@ app.get('/get_account', async function(req, res) { // 找帳號清單
     const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId) { // 登入中
         let conn = await pool.getConnection();
-        let records = await conn.query('select `aId`, `title`, `name` from accounts;'); // 找帳號清單
+        let records;
+        try {
+            records = await conn.query('select `aId`, `title`, `name` from accounts;'); // 找帳號清單
+        }
+        catch(e) {
+            console.log(e);
+        }
         conn.release();
         res.json({records : records});
     }
@@ -521,13 +651,39 @@ app.get('/each_use_medicines', async function(req, res) {
     const user = jwt.verify(req.cookies.token, 'my_secret_key');
     if (user.data.aId) { // 登入中
         let conn = await pool.getConnection();
-        let records = await conn.query('select * from each_use_medicines;'); // 找出沒有帶卡且不在被刪除的名單中的病歷號
+        let records;
+        try {
+            records = await conn.query('select * from each_use_medicines;'); // 找出沒有帶卡且不在被刪除的名單中的病歷號
+        }
+        catch(e) {
+            console.log(e);
+        }
         conn.release();
         res.json({records});
     }
     res.end;
     return;
 });
+
+app.get('/getTitle', async function(req, res) { // 回傳帳號資訊
+    let conn = await pool.getConnection();
+    var title; // 職位
+    var name; // 名稱
+    try {
+        var result = await conn.query('select title, name from accounts where `aId` = ?', req.query['aId']);
+        title = result[0].title;
+        name = result[0].name; 
+        result = await conn.query('select real_name from title_relation where `abbreviation` = ?;', title);
+        console.log(result[0].real_name);
+        title = result[0].real_name;
+    }
+    catch(e) {
+        console.log(e);
+    }
+    conn.release();
+    res.json({title : title, name : name});
+    res.end;
+})
 
 var doc_msg;
 

@@ -46,20 +46,26 @@ router.post('/', async function(req, res) {
         let conn = await pool.getConnection();
         all_changed = req.body.final_all; // all changed data
         aId = req.body.aId; // nId
+        // Start Transaction
+        await conn.beginTransaction();
         try {
-            console.log(all_changed);
+            //console.log(all_changed);
             for (let i = 0;i < Object.keys(all_changed).length;i++) {
-                var fId = await conn.query('select `fId`, `money` from financial_today where `no` = ?', Object.keys(all_changed)[i]); // get the record's fId and original money
-                console.log(fId);
+                var fId = await conn.batch('select `fId`, `money` from financial_today where `no` = ?', Object.keys(all_changed)[i]); // get the record's fId and original money
+                //console.log(fId);
                 // update the changed money to financial and financial_today
-                var update_today_suc = await conn.query('update financial_today set `money` = ? where `no` = ?', [Object.values(all_changed)[i][0], Object.keys(all_changed)[i]])
-                var update_all_suc = await conn.query('update financial set `money` = ? where `no` = ?', [Object.values(all_changed)[i][0], fId[0].fId])
+                var update_today_suc = await conn.batch('update financial_today set `money` = ? where `no` = ?', [Object.values(all_changed)[i][0], Object.keys(all_changed)[i]])
+                var update_all_suc = await conn.batch('update financial set `money` = ? where `no` = ?', [Object.values(all_changed)[i][0], fId[0].fId])
                 // record the changed log, insert into changed_expenses_log
-                var insert_log_suc = await conn.query("insert into change_expenses_log(`aId`, `fId`, `original_money`, `changed_money`, `reason`) values(?, ?, ?, ?, ?)", [aId, fId[0].fId, fId[0].money, Object.values(all_changed)[i][0], Object.values(all_changed)[i][1]]) 
+                var insert_log_suc = await conn.batch("insert into change_expenses_log(`aId`, `fId`, `original_money`, `changed_money`, `reason`) values(?, ?, ?, ?, ?)", [aId, fId[0].fId, fId[0].money, Object.values(all_changed)[i][0], Object.values(all_changed)[i][1]]) 
             }
+            // commit
+            await conn.commit();
         }
         catch(e) {
             console.log(e);
+            // 還原
+            await conn.rollback();
         }
         var error = [] // error msg
         //console.log(update_today_suc);
@@ -153,7 +159,7 @@ router.post('/settle', async function(req, res) { // the nurse settle the financ
     }
     else {
         error.push('authenticaion failed, wrong identification !');
-        conn.release();
+        //conn.release();
         res.json({suc : false, error : error});
         res.end;
         return;
@@ -162,23 +168,29 @@ router.post('/settle', async function(req, res) { // the nurse settle the financ
 
 async function lastRecord(conn, aId, total_money, is_minus) {
     // 先新增一筆上個班次要留給下個班次的金額，可能是增或減，因為要同時加一筆和減一筆，收支才會對
+    // Start Transaction
+    await conn.beginTransaction();
     try {
         var last_reason;
         if (is_minus && total_money > 0) { // 是要減的(留給下一個班的錢)
             last_reason = '留給下一個班的。';
             total_money = total_money * -1;
             console.log(last_reason);
-            var fId = await conn.query('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, last_reason, total_money, null]); // 新增到總帳務
-            await conn.query('insert into financial_today(`aId`, `reason`, `money`, `fId`, `mark`) values(?, ?, ?, ?, ?);', [aId, last_reason, total_money, fId.insertId, null]); // 新增到今日帳務
+            var fId = await conn.batch('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, last_reason, total_money, null]); // 新增到總帳務
+            await conn.batch('insert into financial_today(`aId`, `reason`, `money`, `fId`, `mark`) values(?, ?, ?, ?, ?);', [aId, last_reason, total_money, fId.insertId, null]); // 新增到今日帳務
         }
         if (!is_minus && total_money > 0) { // 要加的(上一個班留的錢)
             last_reason = '上一個班留的。';
-            var fId = await conn.query('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, last_reason, total_money, null]); // 新增到總帳務
-            await conn.query('insert into financial_today(`aId`, `reason`, `money`, `fId`, `mark`) values(?, ?, ?, ?, ?);', [aId, last_reason, total_money, fId.insertId, null]); // 新增到今日帳務
+            var fId = await conn.batch('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, last_reason, total_money, null]); // 新增到總帳務
+            await conn.batch('insert into financial_today(`aId`, `reason`, `money`, `fId`, `mark`) values(?, ?, ?, ?, ?);', [aId, last_reason, total_money, fId.insertId, null]); // 新增到今日帳務
         }
+        // commit
+        await conn.commit();
     }
     catch(e) {
         console.log(e);
+        // 還原
+        await conn.rollback();
     }
 }
 
@@ -206,6 +218,8 @@ router.post('/addFinancial', async function(req, res) { // 新增帳務記錄
     const all_mark = req.body.all_mark;
     const aId = req.body.aId;
     let conn = await pool.getConnection();
+    // Start Transaction
+    await conn.beginTransaction();
     try { // 新增到今日帳務、總帳務
         var reason;
         var money;
@@ -214,14 +228,17 @@ router.post('/addFinancial', async function(req, res) { // 新增帳務記錄
             reason = all_reason[i];
             money = minus(all_money[i]);
             mark = all_mark[i];
-            var fId = await conn.query('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, reason, money, mark]); // 新增到總帳務
-            await conn.query('insert into financial_today(`aId`, `reason`, `money`, `fId`, `mark`) values(?, ?, ?, ?, ?);', [aId, reason, money, fId.insertId, mark]); // 新增到今日帳務
+            var fId = await conn.batch('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, reason, money, mark]); // 新增到總帳務
+            await conn.batch('insert into financial_today(`aId`, `reason`, `money`, `fId`, `mark`) values(?, ?, ?, ?, ?);', [aId, reason, money, fId.insertId, mark]); // 新增到今日帳務
         }
+        await conn.commit();
     }
     catch(e) {
         console.log(e);
         suc = false;
         error_txt = e;
+        // 還原
+        await conn.rollback();
     }
     conn.release();
     res.json({suc : suc, error_txt : error_txt});

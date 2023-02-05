@@ -5,5 +5,7 @@ create table backup_medicines_records(
 `day_num` float(5),
 `days` int(2),
 `rule` varchar(5),
-`mark` varchar(5)
+`mark` varchar(5),
+`subscript` varchar(1000) default null,
+`put_index` int(3)
 )

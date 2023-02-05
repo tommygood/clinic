@@ -74,21 +74,27 @@ router.post('/turned', async function(req, res) {
     let conn = await pool.getConnection();
     var suc = true;
     var error = null;
+    // Start Transaction
+    await conn.beginTransaction();
     try {
         // update record's paid to 1
         const rId = req.body.reason.split(',')[1];
-        await conn.query('update records set paid = 1 where `no` = ?', rId);
+        await conn.batch('update records set paid = 1 where `no` = ?', rId);
         // update turned = 1 
-        var update_debt = await conn.query('update debt set `turned` = 1 where `no` = ?;', req.body.no);
+        var update_debt = await conn.batch('update debt set `turned` = 1 where `no` = ?;', req.body.no);
         // insert into financial
-        var fId = await conn.query('insert into financial(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.aId, req.body.reason, req.body.money]); // 新增到總帳務
+        var fId = await conn.batch('insert into financial(`aId`, `reason`, `money`) values(?, ?, ?);', [req.body.aId, req.body.reason, req.body.money]); // 新增到總帳務
         // insert into financial_today
-        await conn.query('insert into financial_today(`aId`, `reason`, `money`, `fId`) values(?, ?, ?, ?);', [req.body.aId, req.body.reason, req.body.money, fId.insertId]); // 新增到今日帳務
+        await conn.batch('insert into financial_today(`aId`, `reason`, `money`, `fId`) values(?, ?, ?, ?);', [req.body.aId, req.body.reason, req.body.money, fId.insertId]); // 新增到今日帳務
+        // commit
+        await conn.commit();
     }
     catch(e) {
         suc = false;
         var error = e;
         console.log(e);
+        // 還原
+        await conn.rollback();
     }
     conn.end();
     res.json({suc : suc, error : error});

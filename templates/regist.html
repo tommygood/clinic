@@ -8,6 +8,9 @@
         </h1>
     </head>
     <body>
+        <div class = 'position-absolute top-0 end-0'>
+            <div id = 'account_info'></div>
+        </div>
        <table class = 'position-absolute' id = 'tab' border = '1'>
            <tr>
                <td colspan = '4'><b>目前帳號</b></td>
@@ -101,5 +104,19 @@
             // 先把新的帳號 value 放進去
             getId('account').value = accounts.length + 1; // 帳號 = 現在的帳號數量 + 1
         })(); 
+        
+        (async() => { // 查詢 nId
+            const {data : user} = await axios.get('/viewPa/nId');
+            var {data : account_info} = await getTitle(user.nId);
+            var title = account_info.title;
+            var name = account_info.name;
+            getId('account_info').innerHTML = "<b>" + user.nId + "</b> 號" + title + "：" + name + "";
+        })();
+        
+        async function getTitle(nId) { // 用帳號找職位
+            var title = axios.get('/getTitle', {params : {aId : nId}});
+            console.log(title);
+            return title;
+        }
     </script>
 </html>

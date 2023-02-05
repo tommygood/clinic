@@ -58,14 +58,12 @@
                 <button class = 'position-absolute start-50' type = 'button' id = 'paste_bt'>貼上</button>
                 <button class = 'position-absolute start-50' type = 'button' id = 'add_num'>新增欄位</button>
             </div>
-            <textarea class = 'copy' id = 'main_sue' name = 'main_sue' cols = '155' rows = '5'></textarea>
-            
-            <!--
-            <div class = 'position-relative'>藥====品====名====稱 &nbsp;&nbsp;&nbsp;每日量x天 &nbsp;&nbsp;用法 &nbsp;&nbsp;註</div>
-            -->
             <tr>
-            <td><div>藥品名稱</div></td><td>每日量</td><td>天</td><td>用法</td><td>註</td>
+            <td>藥品名稱</td><td>每日<span>量</span></td><td>天</td><td>用法</td><td>註</td>
             </tr>
+            <textarea class = 'copy' id = 'main_sue' name = 'main_sue' cols = '105' rows = '5'></textarea>
+            <div class = 'position-relative start-50 border border-3 border-primary' id = 'family_pos'>
+            </div>
         </table>
         <table class = '' id = 'records_form1' action = '/ckPatients' method = 'post'>
             <!--
@@ -92,6 +90,8 @@
 
         #submit_bt {
             padding : 5px;
+            margin : 0px 0px 0px 1120px;
+            position : absolute;
         }
     
         td {
@@ -110,12 +110,13 @@
         }
         
         #main_sue_text {
-            width : 100px;
+            width : 10%;
         }
 
         /*main sue position need absolute, to place science textarea next to it*/
         #main_sue {
-            position : relative;
+            position : absolute;
+            width : 50%;
         }
         
         #records_form {
@@ -165,6 +166,42 @@
             width : 100px;
             margin : 0px 0px 0px 470px;
         }
+        
+        #chat_title {
+            font-size : 20px;
+            margin : 100px 0px 0px 0px;
+            width : 250px;
+            height: 600px; 
+            overflow-x: auto; 
+            overflow-y: auto; 
+        }
+        
+        #msg {
+            height : 30px;
+            margin : 0px 50px 10px 0px;
+        }
+        
+        #send_msg {
+            height : 30px;
+            width : 50px;
+            font-size : 15px;
+            margin : 0px 0px 10px 0px;
+        }
+        
+        #family_pos { // 第二種 div，應該是這個才可
+            position : absolute;
+            height : 20%;
+            width : 30%;
+            overflow-y : auto;
+        }
+        
+        #family_table {
+            width : 100%;
+        }
+        
+        #family_table td {
+            border: 1px solid black;
+        }
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -173,7 +210,9 @@
         var rId;
         var pId;
         var is_submit = false; // 離開網頁是否是完診
+        var default_medicine_input_num = 10;
         var medicine_input_num = 10; // total medicines row number
+        var new_medicine_input_num = medicine_input_num;
         mkInput();
         (async() => {
             const {data : rec} = await axios.get('/records');
@@ -223,6 +262,8 @@
             const {data : info} = await axios.get('/data');
             const {data : getFee} = await axios.get('docMain/getFee', {params : {rId : rId}});
             const {data : getPId} = await axios.get('/docMain/getPId', {params : {rId : rId}});
+            const {data : getDeposit} = await axios.get('/docMain/getDeposit', {params : {rId : rId}});
+            is_deposit = parseInt(getDeposit.is_depo);
             pId = getPId.pId[0].pId; // pId
             const fee = getFee.fee[0]; // three kinds of fee
             var not_null = true; // 是否沒有 pId
@@ -248,6 +289,7 @@
                 //pId = this_doc[pa_num.pa_num].pId;
                 for (let j = 0;j < info.length;j++) { // find the patient
                     if (pId == info[j].pId) { // same pId
+                        findFamily(pId);
                         in_patients = true;
                     //document.getElementById('r_num').value = this_doc[pa_num.pa_num].r_num;
                         //document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
@@ -257,8 +299,8 @@
                         "<td id = 'patient_name'>" + info[j].name + "</td>" +
                         "<td>" + info[j].birth + "</td>" +
                         "<td>" + info[j].sex + "</td>" +
-                        "<td>" + info[j].birth + "</td>" +
-                        "<td>" + info[j].birth + "</td>" +
+                        "<td>" + mkAge(info[j].birth) + "</td>" +
+                        "<td>" + `${is_deposit ? '有' : '無'}` + "</td>" +
                         "<td>" + info[j].pass + "</td>" +
                         "<td>" + info[j].allergy + "</td>" +
                         "<td>" + info[j].hate + "</td>" +
@@ -282,7 +324,7 @@
 
         var symptoms = null; // 所有症狀，先設 null
         async function outSymptoms() { // 印出症狀
-            console.log(getId('diagnose_code').value);
+            //console.log(getId('diagnose_code').value);
             if (symptoms == null) { // 第一次讀取症狀
                 const {data : symptoms_data} = await axios.get('/symptoms');
                 symptoms = symptoms_data // 放入檔案
@@ -385,7 +427,7 @@
                     if (!checkFloat(getId('medi_amount'+i).value)) { // 檢查浮點數是否小數點後超過兩個數字
                         return; // 結束
                     }
-                    data['medicines'+i] = {medicines : getId('medicines'+i).value, medi_amount : getId('medi_amount'+i).value, day : getId('day'+i).value, method : getId('method'+i).value, medi_mark : getId('medi_mark'+i).value};
+                    data['medicines'+i] = {medicines : getId('medicines'+i).value, medi_amount : getId('medi_amount'+i).value, day : getId('day'+i).value, method : getId('method'+i).value, medi_mark : getId('medi_mark'+i).value, put_index : i};
                 }
                 const ck_diagnose = await axios.post('/ckPatients', data);
                 if (ck_diagnose.data.suc) { // 沒有回傳錯誤
@@ -399,7 +441,7 @@
                     printPdf(); // 印出 pdf
                 }
                 else { // 印出錯誤
-                    console.log(ck_diagnose.data.suc);
+                    //console.log(ck_diagnose.data.suc);
                     alert('看診失敗' + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
                     //var error_mes = "text :[" + ck_diagnose.data.error.text + "]。 sql : [" + ck_diagnose.data.error.sql + "]";
                     is_submit = false; // 送出錯誤，把是送出改回 fasle
@@ -407,6 +449,13 @@
             });
         }
         listenSubmit();
+        
+        function sendFinishMsg(rId, patient_name) {
+            // when doctor finish the record successfully, send a successful finish message on chat room;
+            var dId = getId('dId').innerHTML;
+            var msg = dId + " 號醫生已完診。第 " + rId + " 號病歷號，病患 : " + patient_name;
+            socket.emit("docMsg", msg);
+        }
 
         function checkFloat(num) { // 檢查浮點數是否小數點後超過兩個數字
             if (!num) {
@@ -449,11 +498,22 @@
         // listen to search last/next time record button
         getId('last_records').addEventListener('click', putRecord);
         getId('next_records').addEventListener('click', putRecord);
+        var save_current_record = true;
+        var save_current_record_content = '';
 
         async function putRecord(e) { // 放入病歷
+            if (save_current_record) { // 保存當前病歷
+                save_current_record = false;
+                cpContent('is_save');
+            }
             if (e.target.id == 'next_records') {
-                if (!last_times <= 0) // 到 0 就不要再加上去了
+                if (!last_times <= 0) { // 到 0 就不要減
                     last_times--;
+                }
+                if (last_times <= 0) { // 已經沒有再下次的紀錄，還原原本暫存的紀錄
+                    pasteContent('is_save');
+                    return;
+                }
             }
             else 
                 last_times++;
@@ -471,6 +531,7 @@
                     // 先清理病歷
                     clearRecords(); 
                     // 插入病歷
+                    //console.log(Object.values(all_record)[2]);
                     insertRecords(Object.values(all_record)[1], Object.values(all_record)[2]);
                 }
             }
@@ -479,27 +540,38 @@
         var last_times = 0; // 要找的病歷次數
 
         async function insertRecords(diagnose_record, medicines_records) { // 把病歷放進去
+            if (diagnose_record === undefined) { // 沒有紀錄就結束
+                return;
+            }
             // 放入診斷紀錄
-            console.log(diagnose_record);
-            getId('diagnose_code').value = Object.values(diagnose_record)[2];
+            getId('diagnose_code').value = '\n' + Object.values(diagnose_record)[2];
             getId('main_sue').value = Object.values(diagnose_record)[3];
             outSymptoms(); // 印出症狀
-            console.log(medicines_records);
+            if (medicines_records === undefined) { // 沒有紀錄就結束
+                return;
+            }
             // 放入用藥紀錄
             const {data : medicines_normal} = await axios.get("/medicines_normal"); // all medicines data
+            new_medicine_input_num = Object.values(medicines_records).length; // 新的藥單的紀錄數量
+            if (parseInt(new_medicine_input_num / 2) > medicine_input_num) { // 如果總藥單藥品欄位數 > 預設欄位數(20)
+                mkMoreInput(parseInt(new_medicine_input_num / 2)); // 製作額外的(大於預設的)欄位
+                medicine_input_num = parseInt(new_medicine_input_num / 2); // 欄位數就改成以它為準
+            }
+            let put_index; // 顯示藥品的欄位
             for (let i = 0;i < Object.values(medicines_records).length;i++) { // put this medicines records
+                put_index = Object.values(medicines_records)[i].put_index;
                 if (Object.values(medicines_records[i])[2] == null) { // 如果 mId 是空的，代表是處方籤
-                    getId('medicines'+i).value = medicines_records[i].subscript;
+                    getId('medicines'+put_index).value = medicines_records[i].subscript;
                     continue;
                 }
                 for (let j = 0;j < medicines_normal.length;j++) { // use the mId to find the medicines name
                     if (medicines_normal[j]["mId"] == Object.values(medicines_records[i])[2]) // same mId
-                        getId('medicines'+i).value = medicines_normal[j]["medi_eng"];
+                        getId('medicines'+put_index).value = medicines_normal[j]["medi_eng"];
                 }
-                getId('medi_amount'+i).value = Object.values(medicines_records[i])[3];
-                getId('day'+i).value = Object.values(medicines_records[i])[4];
-                getId('method'+i).value = Object.values(medicines_records[i])[5];
-                getId('medi_mark'+i).value = Object.values(medicines_records[i])[6];
+                getId('medi_amount'+put_index).value = Object.values(medicines_records[i])[3];
+                getId('day'+put_index).value = Object.values(medicines_records[i])[4];
+                getId('method'+put_index).value = Object.values(medicines_records[i])[5];
+                getId('medi_mark'+put_index).value = Object.values(medicines_records[i])[6];
             }
         }
 
@@ -523,37 +595,60 @@
             return document.getElementsByClassName(obj_class);
         }
     
-        function cpContent() { // copy content to clipboard
+        function cpContent(is_save) { // copy content to clipboard
             var all_need_copy = getClass('copy');
             var total_str = '';
             // add the value needed to be copied
             for (let i = 0;i < all_need_copy.length;i++) {
-                total_str += all_need_copy[i].value;
+                total_str += all_need_copy[i].id + "$^$" + all_need_copy[i].value;
                 total_str += "<new_element>";
             }
-             // create a temporary textarea to place the value of copy
-            var el = document.createElement('textarea');
-            el.value += total_str; // add the value
-            // make textarea unseen and unused
-            el.setAttribute('readonly', '');
-            el.style = {position: 'absolute', left: '‑9999px'};
-            document.body.appendChild(el);
-            el.select();
-            var copy_suc = document.execCommand('copy');
-            alert(copy_suc ? 'copy successfully'  : 'copy failed'); //alert successful or failed
-            document.body.removeChild(el); // remove copy textarea
+            if (is_save != 'is_save') { // 單純按複製才要提醒複製成功、複製到剪貼簿
+                // create a temporary textarea to place the value of copy
+                var el = document.createElement('textarea');
+                el.value += total_str; // add the value
+                // make textarea unseen and unused
+                el.setAttribute('readonly', '');
+                el.style = {position: 'absolute', left: '‑9999px'};
+                document.body.appendChild(el);
+                el.select();
+                var copy_suc = document.execCommand('copy');
+                document.body.removeChild(el); // remove copy textarea
+                alert(copy_suc ? '複製成功！'  : '複製失敗！'); //alert successful or failed
+            }
+            else { // 若是上下病歷就存到區域變數中，不用存到剪貼簿
+                save_current_record_content = total_str;
+            }
         }
         
         getId("paste_bt").addEventListener('click', pasteContent); // paste the clipboard content
         
-        async function pasteContent() { // paste the clipboard content
-            var paste_text = await navigator.clipboard.readText();
-             paste_text = paste_text.split("<new_element>");
-             // the element need to put in the content of copied 
+        async function pasteContent(is_save) { // paste the clipboard content
+            clearRecords();
+            if (is_save == 'is_save') { // 是上下次病歷暫存，直接從區域變數拿
+                var paste_text = save_current_record_content;
+            }
+            else { // 不是上下次病歷暫存，從剪貼簿拿
+                var paste_text = await navigator.clipboard.readText();
+            }
+            paste_text = paste_text.split("<new_element>");
+            // the element need to put in the content of copied 
+            if (parseInt((paste_text.length-2)/5)/2 > default_medicine_input_num) { // 如果總藥單藥品欄位數 > 預設
+                mkMoreInput(parseInt((paste_text.length-2)/5) / 2); // 製作需要的更多格
+                medicine_input_num = parseInt((paste_text.length-2)/5) / 2;
+            }
             var all_need_copy = getClass('copy');
             // put clickboard content in
-            for (let i = 0;i < all_need_copy.length;i++) {
-                all_need_copy[i].value = paste_text[i];
+            for (let i = 0;i < paste_text.length;i++) { // 所有要剪貼簿的內容
+                paste_select = paste_text[i].split('$^$');
+                paste_id = paste_select[0];
+                paste_content = paste_select[1];
+                if (getId(paste_id) != undefined) { // 有此 id 的元素就貼上去
+                    getId(paste_id).value = paste_content;
+                }
+                else {
+                    console.log(paste_id);
+                }
             }
             outSymptoms();
         }
@@ -569,7 +664,7 @@
                 var tr_element = document.createElement("tr");
                 records_form.appendChild(tr_element);
                 for (let j = 0;j < all_elements.length;j++) { // all input of a row
-                    realPutIn(all_elements[j], tr_element, i, all_elements_width[j]);
+                    realPutIn(all_elements[j], tr_element, i*2, all_elements_width[j]);
                 }
             }
             // 第二行
@@ -577,16 +672,49 @@
                 var tr_element = document.createElement("tr");
                 records_form1.appendChild(tr_element);
                 for (let j = 0;j < all_elements.length;j++) { // all input of a row
-                    realPutIn(all_elements[j], tr_element, medicine_input_num+i, all_elements_width[j]);
+                    realPutIn(all_elements[j], tr_element, (i*2)+1, all_elements_width[j]);
                 }
             }
             outSymptoms(); // 印出症狀
             var submit_element = document.createElement("button");
-            submit_element.innerHTML = '送出';
+            submit_element.innerHTML = '送出看診';
             submit_element.type = 'button';
             submit_element.id = 'submit_bt';
-            submit_element.className = 'position-absolute end-50';
-            records_form1.appendChild(submit_element);
+            //submit_element.className = 'position-absolute start-50';
+            body.appendChild(submit_element);
+        }
+        
+        function mkMoreInput(new_medicine_input_num) { // make the input with format
+            var records_form = getId("records_form");
+            var records_form1 = getId("records_form1");
+            // each row's element
+            const all_elements = ['medicines', 'medi_amount', 'day', 'method', 'medi_mark'];
+            const all_elements_width = [230, 90, 50, 80, 40]; // input width
+            // 第一行
+            for (let i = medicine_input_num;i < new_medicine_input_num;i++) { // 起始是現有的欄位數，到新的紀錄的總欄位數
+                var tr_element = document.createElement("tr");
+                records_form.appendChild(tr_element);
+                for (let j = 0;j < all_elements.length;j++) { // all input of a row
+                    realPutIn(all_elements[j], tr_element, (i*2), all_elements_width[j]);
+                }
+            }
+            // 第二行
+            var index = 0;
+            for (let i = medicine_input_num;i < new_medicine_input_num;i++) { // total input num
+                index += 1;
+                var tr_element = document.createElement("tr");
+                records_form1.appendChild(tr_element);
+                for (let j = 0;j < all_elements.length;j++) { // all input of a row
+                    realPutIn(all_elements[j], tr_element, (i*2)+1, all_elements_width[j]);
+                }
+            }
+            /*outSymptoms(); // 印出症狀
+            var submit_element = document.createElement("button");
+            submit_element.innerHTML = '送出看診';
+            submit_element.type = 'button';
+            submit_element.id = 'submit_bt';
+            //submit_element.className = 'position-absolute start-50';
+            body.appendChild(submit_element);*/
         }
                 
         function realPutIn(obj_id, tr_element, i, width) { // real function put the input in form
@@ -614,23 +742,29 @@
             tr_element.appendChild(td_element);
         }
         
-        // chat room
-        function getDocName(dId_text) { // 只要醫生代號
-            var doc_name = "";
-            for (let i = 0;i < dId_text.length;i++) {
-                if (isNum(dId_text[i])) // 是數字
-                    doc_name += dId_text[i];
+        function mkAge(birth) { // 製作年齡
+            today = new Date();
+            var today_year = today.toString().split(' ')[3];
+            var birth_year = birth.toString().split('-')[0];
+            var age = today_year - birth_year;
+            var new_birth_year = today_year;
+            for (let i = 1;i < birth.toString().split('-').length;i++) {
+                new_birth_year += '-' + birth.toString().split('-')[i];
             }
-            return doc_name;
+            //console.log(new_birth_year < today);
+            birth = new Date(new_birth_year);
+            birth.setHours(0,0,0,0);
+            if (!birth < today) {
+                age = age - 1;
+            }
+            return age;
         }
-
-        function isNum(n) { // 是不是數字
-            return !isNaN(parseFloat(n)) && isFinite(n);
-        }
+        
+        // chat room
         
         getId("send_msg").addEventListener("click", sendMsg);
 
-        function sendMsg() { // send msg
+        async function sendMsg() { // send msg
             const msg_len = getId('msg').value.length;
             // keep message standard = **xxx**
             // if meet the keep message standard, pass to localStroage
@@ -640,13 +774,14 @@
             }
             else {
                 // send normal messages
-                var msg = getDocName(getId("dId").innerHTML) + " 號醫生: ";
+                var nId = await getNid();
+                var msg = nId + " 號護士: ";
                 msg += getId("msg").value;
                 socket.emit("docMsg", msg);
             }
         }
         
-         function takeOutMark(msg) {
+        function takeOutMark(msg) {
             // make a message without first and last two * mark 
             var new_mark = '';
             for (let i = 2;i < msg.length-2;i++) {
@@ -655,24 +790,17 @@
             return new_mark;
         }
         
-        function sendKeepMsg(msg) { // send msg
-            var msg_title = getDocName(getId("dId").innerHTML) + " 號醫生: ";
+        async function sendKeepMsg(msg) { // send msg
+            var nId = await getNid();
+            var msg_title = nId + " 號護士: ";
             var final_msg = msg_title + msg;
             socket.emit("saveKeepMsg", final_msg);
-        }
-        
-        function sendFinishMsg(rId, patient_name) {
-            // when doctor finish the record successfully, send a successful finish message on chat room;
-            var dId = getId('dId').innerHTML;
-            var msg = dId + " 號醫生已完診。第 " + rId + " 號病歷號，病患 : " + patient_name;
-            socket.emit("docMsg", msg);
         }
         
         var had_keep_msg = false; // whether already have keep message
         var all_keep_msg_id = [];
         document.addEventListener("DOMContentLoaded", () => { // load message into browser
             socket.on("msg", function (chat_msg) {
-                console.log(chat_msg);
                 var header_text = onlyText(chat_msg)[0]; // header text, include which account
                 var real_text = addBr(onlyText(chat_msg)[1]); // the content of text
                 var new_msg = header_text + real_text + "\n"; // all text = header + content
@@ -689,7 +817,6 @@
             socket.on("keepMsg", function (keep_msg, kmId) {
                 insertKeepElement(kmId, keep_msg);
             });
-            
         });
                 
         // count deleted button real index, as some is deleted
@@ -699,6 +826,7 @@
         putKeepMsg();
         
         function insertKeepElement(keep_msg_no, keep_msg_content) {
+            // insert keep element
             all_keep_msg_id.push(keep_msg_no);
             var header_text = onlyText(keep_msg_content)[0]; // header text, include which account
             var real_text = addBr(onlyText(keep_msg_content)[1]); // the content of text
@@ -722,10 +850,10 @@
             get_keep_msg.then(async function(keep_messages) {
                 var {data : keep_messages} = keep_messages;
                 var keep_msg = keep_messages.keep_messages;
-                const {data : user} = await axios.get('/docMain/dId');
-                const dId = user.dId;
                 // get all deleted keep message id
-                var deleted_id = axios.get('/viewPa/delKeepMsg', {params : {aId : dId}});
+                const {data : user} = await axios.get('/viewPa/nId');
+                const nId = user.nId; // nurse id
+                var deleted_id = axios.get('/viewPa/delKeepMsg', {params : {aId : nId}});
                 deleted_id.then(function(deleted_id) { // this user's deleted keep message id
                     const all_del_id = deleted_id.data.del_keep_msg; 
                     // filter all keep messages
@@ -774,7 +902,8 @@
             if (!is_sure) // not sure, back. 
                 return;
             // delete the keep message with kmId
-            const {data : del_keep_msg} = await axios.post('/viewPa/delKeepMsg', {del_id : all_keep_msg_id[i], aId : getDocName(getId("dId").innerHTML)});
+            var nId = await getNid();
+            const {data : del_keep_msg} = await axios.post('/viewPa/delKeepMsg', {del_id : all_keep_msg_id[i], aId : nId});
             if (del_keep_msg.suc) {
                 alert('刪除重要紀錄成功!');
             }
@@ -800,8 +929,7 @@
         }
         
         function addBr(real_text) { // add break into text when is too long
-            // each line maximum char numbers limit
-            const max_char_limit = 10;
+            const max_char_limit = 12;
             br_text = ""; // break added text
             for (let i = 0;i < real_text.length;i++) {
                 if (i % max_char_limit == 0) // the limit char of a line
@@ -811,12 +939,14 @@
             return br_text;
         }
         
+        async function getNid() { // 從 innerHTML 挑出 nId
+            const {data : user} = await axios.get('/viewPa/nId');
+            return user.nId;
+        }
+        
         window.addEventListener("beforeunload", async function(e) {
             // 如果診斷已經有資料且不是完診的離開頁面，就要先把內容暫存到資料庫
-            console.log(is_submit);
-            console.log(getId('diagnose_code').value);
             if (getId('diagnose_code').value && !is_submit) {
-                console.log(1);
                 // 要回傳的資料
                 var data = {
                     dId : getId('dId').innerHTML,
@@ -829,7 +959,7 @@
                 }
                 // 把開的藥放進去
                 for (let i = 0;i < medicine_input_num*2;i++) {
-                    data['medicines'+i] = {medicines : getId('medicines'+i).value, medi_amount : getId('medi_amount'+i).value, day : getId('day'+i).value, method : getId('method'+i).value, medi_mark : getId('medi_mark'+i).value};
+                    data['medicines'+i] = {medicines : getId('medicines'+i).value, medi_amount : getId('medi_amount'+i).value, day : getId('day'+i).value, method : getId('method'+i).value, medi_mark : getId('medi_mark'+i).value, put_index : i};
                 }
                 const ck_diagnose = await axios.post('/ckPatients/backup', data);
             }
@@ -846,7 +976,7 @@
         }
         
         getId('add_num').addEventListener('click', (e) => { 
-            console.log(medicine_input_num);
+            //console.log(medicine_input_num);
             mkAddInput();
             medicine_input_num += 1;
         });
@@ -890,6 +1020,74 @@
             }
             else {
                 console.log('查看是否為施打疫苗錯誤');
+            }
+        }
+        
+        async function findFamily(pId) { // 尋找家屬
+            const {data : result} = await axios.post('/docMain/findFamily', {pId : pId});
+            const suc = Object.values(result)[0];
+            if (suc) { // 成功
+                var family_info = Object.values(result)[1];
+                var family_relation = Object.values(result)[2];
+                var table = document.createElement('table');
+                table.id = 'family_table';
+                table = familyTableTitle(table); // 製作標頭
+                for (let i = 0;i < family_info.length;i++) { // 放進找到的家人
+                    if (family_info[i].pId == pId) { // 是自己
+                        continue;
+                    }
+                    tr = document.createElement('tr'); // table row
+                    td_name = document.createElement('td'); // patient's name
+                    td_name.innerHTML = family_info[i].name;
+                    tr.appendChild(td_name);
+                    td_relation = document.createElement('td'); // patient's name
+                    td_relation.innerHTML = family_relation[i];
+                    tr.appendChild(td_relation);
+                    td_birth = document.createElement('td'); // patient's age
+                    td_birth.innerHTML = mkAge(family_info[i].birth);
+                    tr.appendChild(td_birth);
+                    td_pass = document.createElement('td'); // patient's age
+                    td_pass.innerHTML = family_info[i].pass;
+                    tr.appendChild(td_pass);
+                    table.appendChild(tr);
+                }
+                getId('family_pos').appendChild(table);
+            }
+        }
+        
+        function familyTableTitle(table) { // 製作親屬 table 的標頭
+            table.setAttribute('border', 2);
+            var tr_title = document.createElement('tr');
+            var td_title = document.createElement('td');
+            td_title.innerHTML = '此病患家人';
+            td_title.colSpan = 5;
+            tr_title.appendChild(td_title);
+            table.appendChild(tr_title);
+            var tr = document.createElement('tr');
+            var td_name = document.createElement('td');
+            td_name.innerHTML = '姓名';
+            tr.appendChild(td_name);
+            var td_relation = document.createElement('td');
+            td_relation.innerHTML = '關係';
+            tr.appendChild(td_relation);
+            var td_birth = document.createElement('td');
+            td_birth.innerHTML = '年齡';
+            tr.appendChild(td_birth);
+            var td_pass = document.createElement('td');
+            td_pass.innerHTML = '病史';
+            tr.appendChild(td_pass);
+            table.appendChild(tr);
+            return table;
+        }
+        
+        function putFoundPatients(all_family) { // 把找到的家人放進去
+            // 先清空 table
+            result.innerHTML = '';
+            putHeader(); // 放標頭
+            var i;
+            for (index in all_family) { // 把家屬放進去 
+                i = all_family[index];
+                putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
             }
         }
     </script>

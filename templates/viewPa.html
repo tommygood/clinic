@@ -16,7 +16,8 @@
         <div class = 'position-absolute top-0 end-0'>
             <div id = 'nId'></div>
         </div>
-        <div class = "row position-absolute top-0">
+        <div class ='position-absolute top-0 end-0'>
+            <div class = 'col-md-11'></div>
             <button type = 'button' id = 'logout' style = "width:80px;">登出</button>
         </div>
         <!-- page navbar -->
@@ -88,11 +89,6 @@
         #nId {
         }
 
-        #chat_title {
-            font-size : 20px;
-            margin : 100px 0px 0px 0px;
-        }
-
         #tab_pos {
             margin : 0px 0px 0px 0px;
             width : 1250px;
@@ -102,6 +98,8 @@
         }
         
         #chat_title {
+            font-size : 20px;
+            margin : 100px 0px 0px 0px;
             width : 250px;
             height: 600px; 
             overflow-x: auto; 
@@ -320,7 +318,10 @@
         }
         (async() => { // 查詢 nId
             const {data : user} = await axios.get('/viewPa/nId');
-            getId('nId').innerHTML = user.nId + " 號護士登入中";
+            var {data : account_info} = await getTitle(user.nId);
+            var title = account_info.title;
+            var name = account_info.name;
+            getId('nId').innerHTML = "<b>" + user.nId + "</b> 號" + title + "：" + name + "";
         })();
 
         (async() => { // 查詢是否為主責, 是就標示
@@ -392,7 +393,7 @@
                                     "<td>" + lessTime(response.data[j].start) + "</td>" +
                                     "<td>" + data.data[i].id + "</td>" +
                                     "<td>" + data.data[i].sex + "</td>" +
-                                    "<td>" + data.data[i].birth + "</td>" +
+                                    "<td>" + lessBirth(data.data[i].birth) + "</td>" +
                                     "<td>" + data.data[i].tel1 + "</td>" +
                                     "<td>" + data.data[i].tel2 + "</td>" +
                                     "<td>" + response.data[j].mark + "</td>" + 
@@ -499,6 +500,12 @@
                     resort_index++; // 下一個看診號
                 }
             //}
+        }
+
+        async function getTitle(nId) { // 用帳號找職位
+            var title = axios.get('/getTitle', {params : {aId : nId}});
+            console.log(title);
+            return title;
         }
 
         async function updateIn() { // 更新在場
@@ -609,14 +616,6 @@
         }
 
         async function getNid() { // 從 innerHTML 挑出 nId
-            /*var only_nId = '' // 只要 nId
-            for (let i = 0;i < nId.length;i++) {
-                if (nId[i] == " ") // 加完了
-                    break;
-                else
-                    only_nId += nId[i];
-            }
-            return only_nId;*/
             const {data : user} = await axios.get('/viewPa/nId');
             return user.nId;
         }
@@ -734,7 +733,9 @@
             else {
                 // send normal messages
                 var nId = await getNid();
-                var msg = nId + " 號護士: ";
+                var {data : title} = await getTitle(nId);
+                var title = title.title;
+                var msg = nId + " 號" + title + ": ";
                 msg += getId("msg").value;
                 socket.emit("docMsg", msg);
             }
@@ -751,7 +752,9 @@
         
         async function sendKeepMsg(msg) { // send msg
             var nId = await getNid();
-            var msg_title = nId + " 號護士: ";
+            var {data : title} = await getTitle(nId);
+            var title = title.title;
+            var msg_title = nId + " 號" + title + ": ";
             var final_msg = msg_title + msg;
             socket.emit("saveKeepMsg", final_msg);
         }
@@ -952,6 +955,19 @@
             }
         });
         
-        
+        function lessBirth(birth) { // 把生日用的好看一點
+            var new_birth = '';
+            var first_dash = false;
+            for (let i = 0;i < birth.length;i++) {
+                if (birth[i] == '-' && !first_dash) { // 把第一個 - 變成 <br/>
+                    new_birth += "<br/>";
+                    first_dash = true;
+                }
+                else { 
+                    new_birth += birth[i];
+                }
+            }
+            return new_birth;
+        }
     </script>
 </html>

@@ -78,26 +78,25 @@
     }
     
     td,tr,th{
-            border:1px solid black;
-            border-collapse: collapse;
-            cursor:all-scroll;
-            width : 1%;
-            text-align : center;
+        border:1px solid black;
+        border-collapse: collapse;
+        width : 1%;
+        text-align : center;
     }
     
     #chat_msg {
-            margin :100px 0px 0px 0px;
+        margin :100px 0px 0px 0px;
     }
 
     #chat_title {
-            margin : 100px 0px 0px 0px;
+        margin : 100px 0px 0px 0px;
     }
     
     #chat_title {
-            width : 250px;
-            height: 600px; 
-            overflow-x: auto; 
-            overflow-y: auto; 
+        width : 250px;
+        height: 600px; 
+        overflow-x: auto; 
+        overflow-y: auto; 
     }
         
     #msg {
@@ -153,7 +152,10 @@
             const {data : rec} = await axios.get('/records');
             const {data : done} = await axios.get('/done_records');
             const {data : data} = await axios.get('/data');
-            getId('dId').innerHTML = "<b>" + user.dId + "</b> 號醫生登入中";
+            var {data : account_info} = await getTitle(user.dId);
+            var title = account_info.title;
+            var name = account_info.name;
+            getId('dId').innerHTML = "<b>" + user.dId + "</b> 號" + title + "：" + name + "";
             getId('doc_info').innerHTML = "<b>" + user.dId + "</b> 號醫生候診清單";
             var in_patients;
             var index = 0;
@@ -176,10 +178,10 @@
                         tab.innerHTML += 
                         "<tr" + " id = 'log_row" + j + "'/><td/>"+ rec[j].no  +  
                         "<td>" + rec[j].num + "</td>" +
-                        "<td>" + rec[j].start + "</td>" +
+                        "<td>" + lessTime(rec[j].start) + "</td>" +
                         "<td>" + data[i].name + "</td>" +
                         "<td>" + data[i].sex + "</td>" +
-                        "<td>" + data[i].birth + "</td>" +
+                        "<td>" + lessBirth(data[i].birth) + "</td>" +
                         "<td>" + data[i].tel1 + "</td>" +
                         "<td>" + data[i].tel2 + "</td>" +
                         "<td>" + rec[j].mark + "</td>" + 
@@ -215,22 +217,10 @@
         })();
         
         // chat room
-        function getDocName(dId_text) { // 只要醫生代號
-            var doc_name = "";
-            for (let i = 0;i < dId_text.length;i++) {
-                if (isNum(dId_text[i])) // 是數字
-                    doc_name += dId_text[i];
-            }
-            return doc_name;
-        }
-
-        function isNum(n) { // 是不是數字
-            return !isNaN(parseFloat(n)) && isFinite(n);
-        }
         
         getId("send_msg").addEventListener("click", sendMsg);
 
-        function sendMsg() { // send msg
+        async function sendMsg() { // send msg
             const msg_len = getId('msg').value.length;
             // keep message standard = **xxx**
             // if meet the keep message standard, pass to localStroage
@@ -240,13 +230,22 @@
             }
             else {
                 // send normal messages
-                var msg = getDocName(getId("dId").innerHTML) + " 號醫生: ";
+                var nId = await getNid();
+                var {data : title} = await getTitle(nId);
+                var title = title.title;
+                var msg = nId + " 號" + title + ": ";
                 msg += getId("msg").value;
                 socket.emit("docMsg", msg);
             }
         }
         
-         function takeOutMark(msg) {
+        async function getTitle(nId) { // 用帳號找職位
+            var title = axios.get('/getTitle', {params : {aId : nId}});
+            console.log(title);
+            return title;
+        }
+        
+        function takeOutMark(msg) {
             // make a message without first and last two * mark 
             var new_mark = '';
             for (let i = 2;i < msg.length-2;i++) {
@@ -255,8 +254,11 @@
             return new_mark;
         }
         
-        function sendKeepMsg(msg) { // send msg
-            var msg_title = getDocName(getId("dId").innerHTML) + " 號醫生: ";
+        async function sendKeepMsg(msg) { // send msg
+            var nId = await getNid();
+            var {data : title} = await getTitle(nId);
+            var title = title.title;
+            var msg_title = nId + " 號" + title + ": ";
             var final_msg = msg_title + msg;
             socket.emit("saveKeepMsg", final_msg);
         }
@@ -265,7 +267,6 @@
         var all_keep_msg_id = [];
         document.addEventListener("DOMContentLoaded", () => { // load message into browser
             socket.on("msg", function (chat_msg) {
-                console.log(chat_msg);
                 var header_text = onlyText(chat_msg)[0]; // header text, include which account
                 var real_text = addBr(onlyText(chat_msg)[1]); // the content of text
                 var new_msg = header_text + real_text + "\n"; // all text = header + content
@@ -291,6 +292,7 @@
         putKeepMsg();
         
         function insertKeepElement(keep_msg_no, keep_msg_content) {
+            // insert keep element
             all_keep_msg_id.push(keep_msg_no);
             var header_text = onlyText(keep_msg_content)[0]; // header text, include which account
             var real_text = addBr(onlyText(keep_msg_content)[1]); // the content of text
@@ -314,10 +316,10 @@
             get_keep_msg.then(async function(keep_messages) {
                 var {data : keep_messages} = keep_messages;
                 var keep_msg = keep_messages.keep_messages;
-                const {data : user} = await axios.get('/docMain/dId');
-                const dId = user.dId;
                 // get all deleted keep message id
-                var deleted_id = axios.get('/viewPa/delKeepMsg', {params : {aId : dId}});
+                const {data : user} = await axios.get('/viewPa/nId');
+                const nId = user.nId; // nurse id
+                var deleted_id = axios.get('/viewPa/delKeepMsg', {params : {aId : nId}});
                 deleted_id.then(function(deleted_id) { // this user's deleted keep message id
                     const all_del_id = deleted_id.data.del_keep_msg; 
                     // filter all keep messages
@@ -366,7 +368,8 @@
             if (!is_sure) // not sure, back. 
                 return;
             // delete the keep message with kmId
-            const {data : del_keep_msg} = await axios.post('/viewPa/delKeepMsg', {del_id : all_keep_msg_id[i], aId : getDocName(getId("dId").innerHTML)});
+            var nId = await getNid();
+            const {data : del_keep_msg} = await axios.post('/viewPa/delKeepMsg', {del_id : all_keep_msg_id[i], aId : nId});
             if (del_keep_msg.suc) {
                 alert('刪除重要紀錄成功!');
             }
@@ -392,8 +395,7 @@
         }
         
         function addBr(real_text) { // add break into text when is too long
-            // each line maximum char numbers limit
-            const max_char_limit = 10;
+            const max_char_limit = 12;
             br_text = ""; // break added text
             for (let i = 0;i < real_text.length;i++) {
                 if (i % max_char_limit == 0) // the limit char of a line
@@ -401,6 +403,11 @@
                 br_text += real_text[i];
             }
             return br_text;
+        }
+        
+        async function getNid() { // 從 innerHTML 挑出 nId
+            const {data : user} = await axios.get('/viewPa/nId');
+            return user.nId;
         }
         
         // nav direct
@@ -416,6 +423,41 @@
             }
         }
         navDirect();
+        
+        function lessTime(times) { // 把時間弄得好看一點
+            if (times == null) // 如果還沒有時間
+                return null;
+            var new_time = '';
+            var dash_is_breaked = false; // 只要把第一個 dash 換行，因為是年分
+            for (let i = 0;i < times.length-5;i++) { // 不要後面五個字元
+                if (times[i] == '-' && !dash_is_breaked) {
+                    new_time += '<br/>';
+                    dash_is_breaked = true;
+                    continue;
+                }
+                if (times[i] == 'T') { // 把 T 換掉
+                    new_time += '<br/>';
+                    continue;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
+        
+        function lessBirth(birth) { // 把生日用的好看一點
+            var new_birth = '';
+            var first_dash = false;
+            for (let i = 0;i < birth.length;i++) {
+                if (birth[i] == '-' && !first_dash) { // 把第一個 - 變成 <br/>
+                    new_birth += "<br/>";
+                    first_dash = true;
+                }
+                else { 
+                    new_birth += birth[i];
+                }
+            }
+            return new_birth;
+        }
     </script>
 </html>
 
