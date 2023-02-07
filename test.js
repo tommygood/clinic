@@ -674,7 +674,7 @@ app.get('/getTitle', async function(req, res) { // 回傳帳號資訊
         title = result[0].title;
         name = result[0].name; 
         result = await conn.query('select real_name from title_relation where `abbreviation` = ?;', title);
-        console.log(result[0].real_name);
+        //console.log(result[0].real_name);
         title = result[0].real_name;
     }
     catch(e) {

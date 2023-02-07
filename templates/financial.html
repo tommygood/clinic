@@ -266,18 +266,25 @@
         }
 
         function turnPage(e) { // 翻頁
-            if (e.target.innerHTML == "上一頁") {
+            if (e.keyCode && !(e.keyCode == 37 || e.keyCode == 39)) {
+                return;
+            }
+            if (e.target.innerHTML == "上一頁" || e.keyCode == 37) {
                 // 不能讓上一頁到 -1
                 if (now_page < 1) {
                     now_page = 0;
+                    return;
                 }
                 else {
                     now_page -= 1;
                 }
             }
-            else if (e.target.innerHTML == "下一頁") {
+            else if (e.target.innerHTML == "下一頁" || e.keyCode == 39) {
                 if (now_page+1 < total_page_num) { // 下一頁不能超過最後一頁
                     now_page += 1;
+                }
+                else {
+                    return;
                 }
             }
             else if (e.target.innerHTML == "首頁") {
@@ -323,5 +330,8 @@
         }
 
         mkDoc('first');
+        
+        // get key down
+        document.body.addEventListener('keydown', turnPage ,false) //偵測按鍵
     </script>
 </html>

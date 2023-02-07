@@ -62,10 +62,10 @@
             <td>藥品名稱</td><td>每日<span>量</span></td><td>天</td><td>用法</td><td>註</td>
             </tr>
             <textarea class = 'copy' id = 'main_sue' name = 'main_sue' cols = '105' rows = '5'></textarea>
-            <div class = 'position-relative start-50 border border-3 border-primary' id = 'family_pos'>
+            <div class = 'position-relative start-50 border border-3 border-primary' id = 'recommand_pos'>
             </div>
         </table>
-        <table class = '' id = 'records_form1' action = '/ckPatients' method = 'post'>
+        <table class = 'position-absolute' id = 'records_form1' action = '/ckPatients' method = 'post'>
             <!--
             <div class = 'position-relative'>藥====品====名====稱 &nbsp;&nbsp;&nbsp;每日量x天 &nbsp;&nbsp;用法 &nbsp;&nbsp;註</div>
             -->
@@ -73,11 +73,17 @@
             <td>藥品名稱</td><td>每日<span>量</span></td><td>天</td><td>用法</td><td>註</td>
             </tr>
         </table>
+        <div class = 'position-absolute border border-3 border-primary' id = 'family_pos'>
+        </div>
         </span>
                 <!-- chat room -->
         <div class = 'position-absolute top-0 end-0' id = "chat_title">---------------------<br/>聊天室<br/></div>
         <input class = "position-fixed bottom-0 end-0" style = "width:200px;" type = "input" id = 'msg'></div>
         <button class = "position-fixed bottom-0 end-0" id = "send_msg">send</button>
+        <div id="light">
+            資料處理中，請稍後...
+        </div>
+        <div id="fade"></div>
     </body>
     <style>
         #symptoms {
@@ -89,9 +95,12 @@
         }
 
         #submit_bt {
-            padding : 5px;
-            margin : 0px 0px 0px 1120px;
+            padding : 10px;
+            left : 76%;
             position : absolute;
+            top : 95%;
+            width : 100px;
+            height : 35px;
         }
     
         td {
@@ -170,8 +179,8 @@
         #chat_title {
             font-size : 20px;
             margin : 100px 0px 0px 0px;
-            width : 250px;
-            height: 600px; 
+            width : 14.5%;
+            height: 80%; 
             overflow-x: auto; 
             overflow-y: auto; 
         }
@@ -188,11 +197,22 @@
             margin : 0px 0px 10px 0px;
         }
         
-        #family_pos { // 第二種 div，應該是這個才可
+        #recommand_pos { // 第二種 div，應該是這個才可
             position : absolute;
             height : 20%;
-            width : 30%;
+            width : 35%;
             overflow-y : auto;
+        }
+        
+        #recommand_pos td {
+            border: 2px solid black;
+        }
+        
+        #recommand_table {
+            width : 100%;
+            -webkit-user-select:none;
+            -moz-user-select:none;
+            user-select:none;
         }
         
         #family_table {
@@ -202,6 +222,51 @@
         #family_table td {
             border: 1px solid black;
         }
+        
+        #family_pos {
+            position : absolute;
+            height : 55%;
+            width : 11%;
+            /*margin : 0px 0px 0px 345px;*/
+            left : 74.5%;
+            overflow-x : auto;
+            overflow-y : auto;
+        }
+        
+        #pass {
+            width : 100px;
+        }
+        
+        #fade {
+            display:none;
+            position:absolute;
+            top:0%;
+            left:0%;
+            width:100%;
+            height:100%;
+            background-color:black;
+            z-index:1001;
+            -moz-opacity:0.8;
+            opacity:.80;
+            filter:alpha(opacity=80);
+        }
+        
+        #light{
+            display:none;
+            position:absolute;
+            top:40%;
+            left:35%;
+            width:30%;
+            height:20%;
+            padding:16px;
+            border:3px solid orange;
+            background-color:white;
+            z-index:1002;
+            overflow:auto;
+            font-size : 30px;
+            text-align : center;
+        }
+
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -211,8 +276,8 @@
         var pId;
         var is_submit = false; // 離開網頁是否是完診
         var default_medicine_input_num = 10;
-        var medicine_input_num = 10; // total medicines row number
-        var new_medicine_input_num = medicine_input_num;
+        var medicine_input_num = default_medicine_input_num; // total medicines row number
+        //var new_medicine_input_num = medicine_input_num;
         mkInput();
         (async() => {
             const {data : rec} = await axios.get('/records');
@@ -314,6 +379,7 @@
                     }
                 }
             }
+            findRecommand();
         }
 
         function getId(id) {
@@ -324,7 +390,7 @@
 
         var symptoms = null; // 所有症狀，先設 null
         async function outSymptoms() { // 印出症狀
-            //console.log(getId('diagnose_code').value);
+            findRecommand();
             if (symptoms == null) { // 第一次讀取症狀
                 const {data : symptoms_data} = await axios.get('/symptoms');
                 symptoms = symptoms_data // 放入檔案
@@ -419,7 +485,7 @@
                     self_part : getId('self_part').value, 
                     regist : getId('regist').value, 
                     rId : getId('rId').value, 
-                    diagnose_code_pass : getId('diagnose_code_pass').value, 
+                    diagnose_code_pass : `${isNum(getId('diagnose_code').value) ? getId('diagnose_code').value : 0}`, 
                     main_sue : getId('main_sue').value, 
                 }
                 // 把開的藥放進去
@@ -429,23 +495,33 @@
                     }
                     data['medicines'+i] = {medicines : getId('medicines'+i).value, medi_amount : getId('medi_amount'+i).value, day : getId('day'+i).value, method : getId('method'+i).value, medi_mark : getId('medi_mark'+i).value, put_index : i};
                 }
+                // 送出看診，顯示 loading 畫面
+                getId('light').style.display='block';
+                getId('fade').style.display='block';
                 const ck_diagnose = await axios.post('/ckPatients', data);
-                if (ck_diagnose.data.suc) { // 沒有回傳錯誤
-                    // 若醫生有改收費，就廣播到聊天室
-                    if (ck_diagnose.data.had_changed_pay != "") {
-                        socket.emit("docMsg", ck_diagnose.data.had_changed_pay);
+                // 後端跑完就關掉 loading 畫面
+                getId('light').style.display='none';
+                getId('fade').style.display='none';
+                var myInterval = setInterval(function(){ // 等待一下，讓 loading 畫面消失再顯示看診成功
+                    if (ck_diagnose.data.suc) { // 沒有回傳錯誤
+                        // 若醫生有改收費，就廣播到聊天室
+                        if (ck_diagnose.data.had_changed_pay != "") {
+                            socket.emit("docMsg", ck_diagnose.data.had_changed_pay);
+                        }
+                        alert("看診成功！" + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
+                        // send finish message on chat room
+                        sendFinishMsg(getId('rId').value, (getId('patient_name') ? getId('patient_name').innerHTML : null));
+                        printPdf(); // 印出 pdf
                     }
-                    alert("看診成功！" + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
-                    // send finish message on chat room
-                    sendFinishMsg(getId('rId').value, (getId('patient_name') ? getId('patient_name').innerHTML : null));
-                    printPdf(); // 印出 pdf
-                }
-                else { // 印出錯誤
-                    //console.log(ck_diagnose.data.suc);
-                    alert('看診失敗' + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
-                    //var error_mes = "text :[" + ck_diagnose.data.error.text + "]。 sql : [" + ck_diagnose.data.error.sql + "]";
-                    is_submit = false; // 送出錯誤，把是送出改回 fasle
-                };
+                    else { // 印出錯誤
+                        //console.log(ck_diagnose.data.suc);
+                        alert('看診失敗' + (ck_diagnose.data.return_text ? '\n警告：' + ck_diagnose.data.return_text : ''));
+                        //var error_mes = "text :[" + ck_diagnose.data.error.text + "]。 sql : [" + ck_diagnose.data.error.sql + "]";
+                        is_submit = false; // 送出錯誤，把是送出改回 fasle
+                    };
+                     clearInterval(myInterval);
+                },100);
+                
             });
         }
         listenSubmit();
@@ -512,6 +588,7 @@
                 }
                 if (last_times <= 0) { // 已經沒有再下次的紀錄，還原原本暫存的紀錄
                     pasteContent('is_save');
+                    save_current_record = true; // 回到最下次，要重新暫存新的紀錄
                     return;
                 }
             }
@@ -544,7 +621,9 @@
                 return;
             }
             // 放入診斷紀錄
-            getId('diagnose_code').value = '\n' + Object.values(diagnose_record)[2];
+            if (Object.values(diagnose_record)[2] != 0) { // 為 0 代表上次暫存不是數字
+                getId('diagnose_code').value = '\n' + Object.values(diagnose_record)[2];
+            }
             getId('main_sue').value = Object.values(diagnose_record)[3];
             outSymptoms(); // 印出症狀
             if (medicines_records === undefined) { // 沒有紀錄就結束
@@ -552,10 +631,10 @@
             }
             // 放入用藥紀錄
             const {data : medicines_normal} = await axios.get("/medicines_normal"); // all medicines data
-            new_medicine_input_num = Object.values(medicines_records).length; // 新的藥單的紀錄數量
-            if (parseInt(new_medicine_input_num / 2) > medicine_input_num) { // 如果總藥單藥品欄位數 > 預設欄位數(20)
-                mkMoreInput(parseInt(new_medicine_input_num / 2)); // 製作額外的(大於預設的)欄位
-                medicine_input_num = parseInt(new_medicine_input_num / 2); // 欄位數就改成以它為準
+            new_medicine_input_num = findMaxPutIndex(Object.values(medicines_records)); // 新的藥單的紀錄數量，找最大的 index 值
+            if (new_medicine_input_num > medicine_input_num) { // 如果總藥單藥品欄位數 > 預設欄位數(20)
+                mkMoreInput(new_medicine_input_num); // 製作額外的(大於預設的)欄位
+                medicine_input_num = new_medicine_input_num; // 欄位數就改成以它為準
             }
             let put_index; // 顯示藥品的欄位
             for (let i = 0;i < Object.values(medicines_records).length;i++) { // put this medicines records
@@ -573,6 +652,17 @@
                 getId('method'+put_index).value = Object.values(medicines_records[i])[5];
                 getId('medi_mark'+put_index).value = Object.values(medicines_records[i])[6];
             }
+        }
+
+        function findMaxPutIndex(new_medicines_records) { // 新的藥單的紀錄數量，找最大的 index 值
+            var max = default_medicine_input_num; // 沒有比預設大就用預設的
+            for (let i = 0;i < new_medicines_records.length;i++) {
+                var put_index = parseInt(new_medicines_records[i].put_index / 2) + 1; // 因為 index 從 0 開始，所以 +1
+                if (max < put_index) {
+                    max = put_index;
+                }
+            }
+            return max;
         }
 
         function clearRecords() { // 清理紀錄
@@ -676,12 +766,14 @@
                 }
             }
             outSymptoms(); // 印出症狀
-            var submit_element = document.createElement("button");
-            submit_element.innerHTML = '送出看診';
-            submit_element.type = 'button';
-            submit_element.id = 'submit_bt';
-            //submit_element.className = 'position-absolute start-50';
-            body.appendChild(submit_element);
+            if (!getId('submit_bt')) {
+                var submit_element = document.createElement("button");
+                submit_element.innerHTML = '送出看診';
+                submit_element.type = 'button';
+                submit_element.id = 'submit_bt';
+                //submit_element.className = 'bottom-50';
+                body.appendChild(submit_element);
+            }
         }
         
         function mkMoreInput(new_medicine_input_num) { // make the input with format
@@ -946,7 +1038,7 @@
         
         window.addEventListener("beforeunload", async function(e) {
             // 如果診斷已經有資料且不是完診的離開頁面，就要先把內容暫存到資料庫
-            if (getId('diagnose_code').value && !is_submit) {
+            if (!is_submit) {
                 // 要回傳的資料
                 var data = {
                     dId : getId('dId').innerHTML,
@@ -954,7 +1046,7 @@
                     self_part : getId('self_part').value, 
                     regist : getId('regist').value, 
                     rId : getId('rId').value, 
-                    diagnose_code_pass : getId('diagnose_code').value, 
+                    diagnose_code_pass : `${isNum(getId('diagnose_code').value) ? getId('diagnose_code').value : 0}`, 
                     main_sue : getId('main_sue').value, 
                 }
                 // 把開的藥放進去
@@ -973,6 +1065,10 @@
             if (backup.data.diagnose.length > 0 || backup.data.medicines.length > 0) { // 暫存其中有一個不是空的集合
                 insertRecords(backup.data.diagnose[0], backup.data.medicines);
             }
+        }
+        
+        function isNum(n) { // 是不是數字
+            return !isNaN(parseFloat(n)) && isFinite(n);
         }
         
         getId('add_num').addEventListener('click', (e) => { 
@@ -1000,14 +1096,14 @@
                 realPutIn(all_elements[j], tr_element, medicine_input_num*2 + 1, all_elements_width[j]);
             }
             outSymptoms(); // 印出症狀
-            getId('submit_bt').remove(); // 先把送出按鈕刪除
+            /*getId('submit_bt').remove(); // 先把送出按鈕刪除
             var submit_element = document.createElement("button");
             submit_element.innerHTML = '送出';
             submit_element.type = 'button';
             submit_element.id = 'submit_bt';
             submit_element.className = 'position-absolute end-50';
             records_form1.appendChild(submit_element);
-            listenSubmit(); // listen to submit button
+            listenSubmit(); // listen to submit button*/
         }
         
         // check if vaccine
@@ -1015,7 +1111,10 @@
             const ck_vac = await axios.post('/ckPatients/checkVac', {rId : rId});
             if (ck_vac.data.suc) {
                 for (let i = 0;i < ck_vac.data.all_vId.length;i++) { // 可能有多種疫苗
-                    getId('main_sue').value += "施打疫苗: " + ck_vac.data.all_vId[i].vId + "\n";
+                    // 若主訴已經有施打疫苗的資訊，就不要重複寫入
+                    if (!(getId('main_sue').value).includes("施打疫苗: " + ck_vac.data.all_vId[i].vId + "\n")) {
+                        getId('main_sue').value += "施打疫苗: " + ck_vac.data.all_vId[i].vId + "\n";
+                    }
                 }
             }
             else {
@@ -1048,11 +1147,57 @@
                     tr.appendChild(td_birth);
                     td_pass = document.createElement('td'); // patient's age
                     td_pass.innerHTML = family_info[i].pass;
+                    td_pass.setAttribute('width', '200px');
+                    td_pass.id = 'pass';
                     tr.appendChild(td_pass);
                     table.appendChild(tr);
                 }
                 getId('family_pos').appendChild(table);
             }
+        }
+        
+        async function findRecommand() { // 尋找診斷對應的推薦主訴
+            var diagnose_code = getId('diagnose_code').value;
+            if (getId('recommand_table')) { // 如果已經有，就先刪除
+                getId('recommand_table').remove();
+            }
+            var table = document.createElement('table');
+            table.id = 'recommand_table';
+            table = recommandTableTitle(table, diagnose_code); // 製作標頭
+            if (!(diagnose_code != 0 && isNum(diagnose_code))) { // 診斷空的或是不是數字
+                getId('recommand_pos').appendChild(table); // 就不要放推薦
+                return;
+            }
+            var medicines_mainsue = ['test', 'test1', 'test1', 'test1', 'test1', 'test1']; // 所有診斷對應的主訴
+            for (let i = 0;i < medicines_mainsue.length;i++) { // 放進找到的家人
+                if (i % 3 == 0) { // 一排 3 個 推薦的
+                    var tr = document.createElement('tr'); // table row
+                }
+                var td = document.createElement('td'); // column
+                td.onclick = function (e) { // 按下推薦，把推薦放入主訴
+                    insertRecommand(e.target.innerHTML);
+                };
+                td.innerHTML = medicines_mainsue[i];
+                tr.appendChild(td);
+                table.appendChild(tr);
+            }
+            getId('recommand_pos').appendChild(table);
+        }
+        
+        function insertRecommand(td_text) { // 把推薦放入主訴
+            getId('main_sue').value += td_text + ' ';
+        }
+        
+        function recommandTableTitle(table, diagnose_code) {
+            console.log(diagnose_code);
+            table.setAttribute('border', 2);
+            var tr = document.createElement('tr');
+            var td = document.createElement('td');
+            td.innerHTML = '診斷：' + diagnose_code + '。推薦之主訴';
+            td.colSpan = 5;
+            tr.appendChild(td);
+            table.appendChild(tr);
+            return table;
         }
         
         function familyTableTitle(table) { // 製作親屬 table 的標頭
@@ -1089,6 +1234,11 @@
                 i = all_family[index];
                 putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
             }
+        }
+        
+        window.onload=function(){
+            getId('light').style.display='none';
+            getId('fade').style.display='none';
         }
     </script>
 </html>

@@ -160,7 +160,9 @@
     <script>
         var rId;                                                                      
         var pId;
-        const medicine_input_num = 10; // total medicines row number
+        var default_medicine_input_num = 10;
+        var medicine_input_num = default_medicine_input_num; // total medicines row number
+ 
         (async() => {
             const {data : rec} = await axios.get('/records');
             const {data : pa_num} = await axios.get('/ckPatients/rNum');
@@ -168,11 +170,12 @@
             const {data : dId} = await axios.get('/docMain/dId');
             const {data : done_records} = await axios.get('/done_records'); // done records
             getId('dId').innerHTML = Object.values(dId);
+            mkInput();
             for (let i = 0;i < done_records.length;i++) { // 先檢查這筆紀錄是否已經看完, 因有可能是醫生檢查已看診病歷
                 if (pa_num.rId == done_records[i].rId) { // 看完的
                     const {data : all_record} = await axios.post('/docMain/all_record', {rId : pa_num.rId, check_first : true});
                     if (Object.values(all_record)[1] && Object.values(all_record)[2]) { // whether both record not empty
-                        await mkInput(Object.values(Object.values(all_record)[2]).length);
+                        //await mkInput(Object.values(Object.values(all_record)[2]).length);
                         insertRecords(Object.values(all_record)[1], Object.values(all_record)[2]); // put the record in
                     }
                     // put done record fee and the patient info in table
@@ -294,7 +297,7 @@
         }
 
 
-        document.addEventListener("keyup", async(event) => {
+        /*document.addEventListener("keyup", async(event) => {
             // 總共需要檢查快捷的格
             var check_hot = ["main_sue"]
             // append medicine in hot_key array with total medicine input num
@@ -302,6 +305,7 @@
                 check_hot.push('medicines'+i);
             for (let num = 0;num < check_hot.length;num++) {
                 const {data : hot_key} = await axios.get('hot_key');
+                console.log(check_hot[num]);
                 var main_sue = getId(check_hot[num]).value;
                 if (event.keyCode == 13 && main_sue.includes("/")) {
                     var relative = "";
@@ -357,7 +361,7 @@
                     getId(check_hot[num]).value = new_mainsue;
                 }
             }
-        });
+        });*/
 
         // listen the next and last bt
         //getId('last_records').addEventListener('click', putRecord);
@@ -392,13 +396,26 @@
         var last_times = 0; // 要找的病歷次數
 
         async function insertRecords(diagnose_record, medicines_records) { // 把病歷放進去
+            if (diagnose_record === undefined) { // 沒有紀錄就結束
+                return;
+            }
             // 放入診斷紀錄
-            getId('diagnose_code').value = Object.values(diagnose_record)[2];
+            if (Object.values(diagnose_record)[2] != 0) { // 為 0 代表上次暫存不是數字
+                getId('diagnose_code').value = '\n' + Object.values(diagnose_record)[2];
+            }
             getId('main_sue').value = Object.values(diagnose_record)[3];
-            //getId('science').value = Object.values(diagnose_record)[4]; 
             outSymptoms(); // 印出症狀
+            if (medicines_records === undefined) { // 沒有紀錄就結束
+                return;
+            }
             // 放入用藥紀錄
             const {data : medicines_normal} = await axios.get("/medicines_normal"); // all medicines data
+            new_medicine_input_num = findMaxPutIndex(Object.values(medicines_records)); // 新的藥單的紀錄數量，找最大的 index 值
+            if (new_medicine_input_num > medicine_input_num) { // 如果總藥單藥品欄位數 > 預設欄位數(20)
+                mkMoreInput(new_medicine_input_num); // 製作額外的(大於預設的)欄位
+                medicine_input_num = new_medicine_input_num; // 欄位數就改成以它為準
+            }
+            let put_index; // 顯示藥品的欄位
             for (let i = 0;i < Object.values(medicines_records).length;i++) { // put this medicines records
                 put_index = Object.values(medicines_records)[i].put_index;
                 if (Object.values(medicines_records[i])[2] == null) { // 如果 mId 是空的，代表是處方籤
@@ -414,6 +431,50 @@
                 getId('method'+put_index).value = Object.values(medicines_records[i])[5];
                 getId('medi_mark'+put_index).value = Object.values(medicines_records[i])[6];
             }
+        }
+
+        function findMaxPutIndex(new_medicines_records) { // 新的藥單的紀錄數量，找最大的 index 值
+            var max = default_medicine_input_num; // 沒有比預設大就用預設的
+            for (let i = 0;i < new_medicines_records.length;i++) {
+                var put_index = parseInt(new_medicines_records[i].put_index / 2) + 1; // 因為 index 從 0 開始，所以 +1
+                if (max < put_index) {
+                    max = put_index;
+                }
+            }
+            return max;
+        }
+        
+        function mkMoreInput(new_medicine_input_num) { // make the input with format
+            var records_form = getId("records_form");
+            var records_form1 = getId("records_form1");
+            // each row's element
+            const all_elements = ['medicines', 'medi_amount', 'day', 'method', 'medi_mark'];
+            const all_elements_width = [230, 90, 50, 80, 40]; // input width
+            // 第一行
+            for (let i = medicine_input_num;i < new_medicine_input_num;i++) { // 起始是現有的欄位數，到新的紀錄的總欄位數
+                var tr_element = document.createElement("tr");
+                records_form.appendChild(tr_element);
+                for (let j = 0;j < all_elements.length;j++) { // all input of a row
+                    realPutIn(all_elements[j], tr_element, (i*2), all_elements_width[j]);
+                }
+            }
+            // 第二行
+            var index = 0;
+            for (let i = medicine_input_num;i < new_medicine_input_num;i++) { // total input num
+                index += 1;
+                var tr_element = document.createElement("tr");
+                records_form1.appendChild(tr_element);
+                for (let j = 0;j < all_elements.length;j++) { // all input of a row
+                    realPutIn(all_elements[j], tr_element, (i*2)+1, all_elements_width[j]);
+                }
+            }
+            /*outSymptoms(); // 印出症狀
+            var submit_element = document.createElement("button");
+            submit_element.innerHTML = '送出看診';
+            submit_element.type = 'button';
+            submit_element.id = 'submit_bt';
+            //submit_element.className = 'position-absolute start-50';
+            body.appendChild(submit_element);*/
         }
 
         function clearRecords() { // 清理紀錄
@@ -454,13 +515,7 @@
             document.body.removeChild(el); // remove copy textarea
         }
         
-        function mkInput(medicine_input_num) { // make the input with format
-            if (medicine_input_num <= 20) { // 如果總藥單藥品欄位數小於原本預設(20)，就要用預設(20)的欄位數
-                medicine_input_num = 10;
-            }
-            else { // 總藥單藥品欄位數大於預設(20)，就改成該次的總藥品欄位數
-                medicine_input_num = medicine_input_num / 2; 
-            }
+        function mkInput() { // make the input with format
             var records_form = getId("records_form");
             var records_form1 = getId("records_form1");
             // each row's element
@@ -483,12 +538,6 @@
                 }
             }
             outSymptoms(); // 印出症狀
-            /*var submit_element = document.createElement("button");
-            submit_element.innerHTML = '送出';
-            submit_element.type = 'button';
-            submit_element.id = 'submit_bt';
-            submit_element.className = 'position-absolute end-50';
-            records_form1.appendChild(submit_element);*/
         }
                 
         function realPutIn(obj_id, tr_element, i, width) { // real function put the input in form

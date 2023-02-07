@@ -667,6 +667,14 @@
                     putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
                 }
             }
+            // 條件六 : 地址
+            for (i in all_address) {
+                // 還沒放過且有符合的字串
+                if (!(is_put.includes(i)) && all_address[i].includes(getId('search').value) && getId('search').value != ' ' && getId('search').value != '') { 
+                    is_put.push(i);
+                    putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
+                }
+            }
             setExpense(all_identity[i], is_put);
         }
 
