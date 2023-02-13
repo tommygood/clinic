@@ -1189,7 +1189,6 @@
         }
         
         function recommandTableTitle(table, diagnose_code) {
-            console.log(diagnose_code);
             table.setAttribute('border', 2);
             var tr = document.createElement('tr');
             var td = document.createElement('td');
@@ -1234,11 +1233,6 @@
                 i = all_family[index];
                 putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
             }
-        }
-        
-        window.onload=function(){
-            getId('light').style.display='none';
-            getId('fade').style.display='none';
         }
     </script>
 </html>

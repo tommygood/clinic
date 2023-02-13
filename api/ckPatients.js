@@ -109,13 +109,14 @@ router.post('/', async function(req, res) {
                 else {
                     all_used_medicines[true_code.code] += num;
                 }
+                // 小數點加減法會自己跑到小數點後很多位，所以要取到小數點第二位才是正確
+                all_used_medicines[true_code.code] = Math.round(all_used_medicines[true_code.code] * 100) / 100;
             }
         }
         var over_required = false;
         for (let i = 0;i < Object.keys(all_used_medicines).length;i++) { // 檢查藥品剩餘量是否 > 需求量
             var sql = "select sum(now_quantity) from med_inventory_each where `code` = ? group by `code`;";
             const remain_quantity = await conn.query(sql, Object.keys(all_used_medicines)[i]);
-            console.log(Object.keys(all_used_medicines));
             if (remain_quantity[0] == undefined) { // 檢查是否有此筆藥物
                 suc = false;
                 return_text = '無此藥品。\n編號：' + Object.keys(all_used_medicines)[i] + '。';

@@ -31,4 +31,38 @@ router.get('/', function(req, res) {
     return;
 });
 
+router.post('/showDetail', async function(req, res) {
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        res.json({'error' : '未登入'});
+        res.end();
+        return;
+    };
+    let conn = await pool.getConnection();
+    var suc = true;
+    var result;
+    try {
+        if (req.body.reason_type == 1) {
+            result = await conn.query('select * from records where `no` = ?', req.body.rId);
+        }
+        else if (req.body.reason_type == 2) {
+            result = await conn.query('select * from each_use_medicines where `no` = ?', req.body.rId);
+        }
+        else if (req.body.reason_type == 3) {
+            result = await conn.query('select * from med_inventory_each where `no` = ?', req.body.rId);
+        }
+    }
+    catch(e) {
+        suc = false;
+        console.log(e);
+    }
+    conn.release();
+    res.json({'suc' : suc, result : result});
+    res.end();
+    return;
+});
+
 module.exports = router;

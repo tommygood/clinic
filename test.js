@@ -685,6 +685,22 @@ app.get('/getTitle', async function(req, res) { // 回傳帳號資訊
     res.end;
 })
 
+app.post('/getSinglePatient', async function(req, res) { // 回傳帳號資訊
+    let conn = await pool.getConnection();
+    var result;
+    var suc = true;
+    try {
+        result = await conn.query('select * from patients where `pId` = ?', [req.body.pId]);
+    }
+    catch(e) {
+        suc = false;
+        console.log(e);
+    }
+    conn.release();
+    res.json({suc : suc, result : result});
+    res.end;
+})
+
 var doc_msg;
 
 async function keepDb(msg) {

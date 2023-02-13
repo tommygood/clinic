@@ -197,7 +197,7 @@
             var value_id = ''; // column id
             for (let i = 0;i < total_len;i++) { // 總共有 total_len 行 row
                 name = "log_row" + i;
-                console.log(name);
+                //console.log(name);
                 var value_index = getId(name).getElementsByTagName('td')[2].innerHTML.indexOf('id');
                 update_index.push(getId(name).getElementsByTagName('td')[0].innerHTML); // 放入對照的 rId
                 value_id = '';
@@ -222,8 +222,6 @@
                 location.reload();
             }
         }
-
-
 
         var start_tar;
         var start_pos; // 拖曳起始的位置

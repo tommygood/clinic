@@ -103,12 +103,12 @@
                 expense : getId('expense').value
             };
             const checked_data = await axios.post('/addMed/check', data);
-            if (checked_data.data.error != null) { // 輸入為錯誤
-                alert(checked_data.data.error);
-                return;
+            if (checked_data.data.suc) {
+                alert('新增成功！');
             }
-            alert('新增成功！\n' + checked_data.data.return_text);
-            //window.location.href = '/viewPa';
+            else {
+                alert('新增失敗！\n' + checked_data.data.return_text);
+            }
             window.location.reload();
         });
 

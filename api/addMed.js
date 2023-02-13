@@ -31,8 +31,7 @@ router.get('/', async function(req, res) {
         return;
     }
     else {
-        res.statusCode = 302;
-        res.setHeader("Location", "http://localhost:8080/login");
+        res.redirect('/login');
         res.end();
         return;
     }
@@ -49,7 +48,6 @@ router.post('/check', async function(req, res) {
         return;
     };
     const {code, expire, aId, quantity, reason, mark, expense} = req.body;
-    console.log(req.body);
     // 檢查不能輸入空值的欄位
     if (code.length == 0 || aId.length == 0 || quantity.length == 0 || reason.length == 0 || mark.length == 0) {
         return res.json({error:'請勿輸入空值'});
@@ -57,7 +55,8 @@ router.post('/check', async function(req, res) {
     };
     try {
         let conn = await pool.getConnection();
-        var minus = ['借出', '遺失', '賣出', '還出']; // 減少數量的動作
+        var suc = true;
+        var minus = ['借出', '遺失', '賣出', '還出', '售出']; // 減少數量的動作
         var in_minus = false;
         var return_text = ''; // 要回傳的訊息
         const in_normal = await conn.query('select count(*) from medicines_normal where `code` = ?', code);
@@ -69,21 +68,27 @@ router.post('/check', async function(req, res) {
         }
         for (let i = 0;i < minus.length;i++) {
             if (reason == minus[i]) { // 是減少藥物數量, 數量 * -1
+                in_minus = true; // 是減少藥物數量
                 //var emId = await conn.query('insert into med_inventory_each(`code`, `expire`, `aId`, `quantity`, `reason`, `mark`) values(?, ?, ?, ?, ?, ?);', [code, expire, aId, parseInt(quantity, 10) * -1, reason, mark]);
                 // 記錄一筆藥品使用紀錄
                 var the_medicine_id = await conn.query("select `no`, `now_quantity` from med_inventory_each where `code` = ? order by expire", code);
-                if (the_medicine_id[0].now_quantity < parseInt(quantity, 10)) { // 如果藥品剩餘量 < 需求量
-                    return_text = '藥碼：' + true_code.code + '，已無庫存。';
+                // 此藥品的總剩餘量
+                var this_medicine_num = await conn.query("select sum(`now_quantity`) from med_inventory_each where `code` = ? order by expire", code);
+                if (parseFloat(this_medicine_num[0]['sum(`now_quantity`)']) < parseFloat(quantity)) { // 如果藥品剩餘量 < 需求量
+                    // 回傳藥品不足訊息
+                    return_text = '藥碼：' + code + '，庫存不足。' + '\n需求：' + parseFloat(quantity) +
+                    '\n剩餘：' + this_medicine_num[0]['sum(`now_quantity`)'];
+                    suc = false;
+                    break;
                 }
-                var emId = await conn.query('insert into each_use_medicines(`aId`, `quantity`, `reason`, `mark`, `emId`) values(?, ?, ?, ?, ?);', [aId, parseInt(quantity, 10) * -1, reason, mark, the_medicine_id[0].no]);
+                var emId = await conn.query('insert into each_use_medicines(`aId`, `quantity`, `reason`, `mark`, `emId`, `code`) values(?, ?, ?, ?, ?, ?);', [aId, parseFloat(quantity) * -1, reason, mark, the_medicine_id[0].no, code]);
                 // 更新被使用的藥的現在數量
-                await conn.query('update med_inventory_each set `now_quantity` = ? where `no` = ?', [the_medicine_id[0].now_quantity + parseInt(quantity, 10) * -1, the_medicine_id[0].no]);
-                in_minus = true;
+                await conn.query('update med_inventory_each set `now_quantity` = ? where `no` = ?', [parseFloat(the_medicine_id[0].now_quantity) + parseFloat(quantity) * -1, the_medicine_id[0].no]);
             }
         }
         if (!in_minus) // 是增加藥物數量
-            var emId = await conn.query('insert into med_inventory_each(`code`, `expire`, `aId`, `quantity`, `reason`, `mark`, `now_quantity`) values(?, ?, ?, ?, ?, ?, ?);', [code, expire, aId, parseInt(quantity, 10), reason, mark, parseInt(quantity, 10)]);
-        if (expense) {
+            var emId = await conn.query('insert into med_inventory_each(`code`, `expire`, `aId`, `quantity`, `reason`, `mark`, `now_quantity`) values(?, ?, ?, ?, ?, ?, ?);', [code, expire, aId, parseFloat(quantity), reason, mark, parseFloat(quantity)]);
+        if (expense && suc) {
             if (reason == "購入") { // 有花費且是購入
                 //await conn.query("insert into expense(`aId`, `cost`, `emId`, `mark`) values(?, ?, ?, ?)", [aId, parseInt(expense, 10), emId.insertId, mark]);
                 var fId = await conn.query('insert into financial(`aId`, `reason`, `money`, `mark`) values(?, ?, ?, ?);', [aId, '購買藥物,' + emId.insertId, parseInt(expense, 10) * -1, mark]); // 新增到總帳務
@@ -98,11 +103,12 @@ router.post('/check', async function(req, res) {
         conn.release();
     }
     catch(e) {
+        suc = false;
         //conn.release();
         console.log(e);
     }
     //conn.release();
-    return res.json({error:null, return_text : return_text});
+    return res.json({suc : suc, return_text : return_text});
     res.end();
 });
 
