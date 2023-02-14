@@ -75,8 +75,9 @@
         </table>
         <div class = 'position-absolute border border-3 border-primary' id = 'family_pos'>
         </div>
-        </span>
-                <!-- chat room -->
+        <div class = 'position-absolute border border-3 border-primary' id = 'medi_info_pos'>
+        </div>
+        <!-- chat room -->
         <div class = 'position-absolute top-0 end-0' id = "chat_title">---------------------<br/>聊天室<br/></div>
         <input class = "position-fixed bottom-0 end-0" style = "width:200px;" type = "input" id = 'msg'></div>
         <button class = "position-fixed bottom-0 end-0" id = "send_msg">send</button>
@@ -267,6 +268,12 @@
             text-align : center;
         }
 
+        #medi_info_pos {
+            top : 93%;
+            width : 72%;
+            left : 0.5%;
+            height : 5%;
+        }
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -396,19 +403,18 @@
                 symptoms = symptoms_data // 放入檔案
                 for (let i = 0;i < symptoms.length;i++) { // 找出對應症狀
                     if (symptoms[i].index == getId('diagnose_code').value) {
-                        getId('diagnose').innerHTML = symptoms[i].eng_name;
+                        getId('diagnose').innerHTML = "<b>" + symptoms[i].eng_name + "</b>";
                     }
                 }
             }
             else {
                 for (let i = 0;i < symptoms.length;i++) {
                     if (symptoms[i].index == getId('diagnose_code').value) {
-                        getId('diagnose').innerHTML = symptoms[i].eng_name;
+                        getId('diagnose').innerHTML = "<b>" + symptoms[i].eng_name + "</b>";
                     }
                 }
             }
         }
-
 
         document.addEventListener("keyup", async(event) => {
             // 總共需要檢查快捷的格
@@ -470,6 +476,7 @@
                         }
                     }
                     getId(check_hot[num]).value = new_mainsue;
+                    mkMedInfo(getId(check_hot[num])); // 顯示藥品資訊
                 }
             }
         });
@@ -774,6 +781,48 @@
                 //submit_element.className = 'bottom-50';
                 body.appendChild(submit_element);
             }
+            listenMedInput(); // 監聽藥品輸入，顯示藥品資訊
+        }
+        
+        function listenMedInput() { // 監聽藥品輸入，顯示藥品資訊
+            var all_input = document.getElementsByTagName('input');
+            for (let i = 0;i < all_input.length;i++) {
+                all_input[i].addEventListener('click', searchMedInfo);
+                all_input[i].addEventListener('input', searchMedInfo);
+                all_input[i].addEventListener('keyup', searchMedInfo);
+                all_input[i].addEventListener('change', searchMedInfo);
+                all_input[i].addEventListener('keydown', searchMedInfo);
+            }
+            //document.body.addEventListener('keydown', aaa);
+        }
+        
+        function searchMedInfo(e) { // 若現在輸入格在藥品那行(包括每日量等等)，找出對應該行的藥品名稱的藥品資訊
+            const input_id = e.target.id;
+            if (input_id != 'diagnose_code' && input_id != 'msg') { // 是藥品輸入欄位
+                var id_num = getNum(input_id); // 只找 id
+                var this_row_medicine_name = getId('medicines' + id_num); // 只看那一行的 medicine name
+                mkMedInfo(this_row_medicine_name); // 依照藥品名稱製作藥品資訊
+            }
+        }
+        
+        async function mkMedInfo(medicine_name) { // 依照藥品名稱製作藥品資訊
+            if (medicine_name.value) { // 有此藥品名稱的資訊
+                getId('medi_info_pos').innerHTML = '藥品名稱：' + medicine_name.value + '。懷孕等級：' +
+                '。苦等級：。'
+            }
+            else { // 無此藥品名稱的資訊，清空欄位
+                getId('medi_info_pos').innerHTML = '';
+            }
+        }
+        
+        function getNum(input_id) {
+            var only_num = '';
+            for (let i = 0;i < input_id.length;i++) {
+                if (!isNaN(input_id[i])) { // 是數字
+                    only_num += input_id[i]; // 就加入字串
+                }
+            }
+            return only_num;
         }
         
         function mkMoreInput(new_medicine_input_num) { // make the input with format
@@ -800,6 +849,8 @@
                     realPutIn(all_elements[j], tr_element, (i*2)+1, all_elements_width[j]);
                 }
             }
+            listenMedInput() // 監聽藥品輸入，顯示藥品資訊
+            moveMedInfo((new_medicine_input_num - medicine_input_num) * 40); // 多一個，藥品資訊就往下 40 px
             /*outSymptoms(); // 印出症狀
             var submit_element = document.createElement("button");
             submit_element.innerHTML = '送出看診';
@@ -1072,10 +1123,15 @@
         }
         
         getId('add_num').addEventListener('click', (e) => { 
-            //console.log(medicine_input_num);
             mkAddInput();
             medicine_input_num += 1;
+            moveMedInfo(40); // 把藥品資訊往下移 40 px
         });
+        
+        function moveMedInfo(range) { // 把藥品資訊往下移
+            const now_top = parseInt(getComputedStyle(getId('medi_info_pos')).top); // 當前高度
+            getId('medi_info_pos').style.top = (now_top + range) + 'px'; // 往下移
+        }
         
         function mkAddInput() { // make the input with format
             var records_form = getId("records_form");
@@ -1096,6 +1152,7 @@
                 realPutIn(all_elements[j], tr_element, medicine_input_num*2 + 1, all_elements_width[j]);
             }
             outSymptoms(); // 印出症狀
+            listenMedInput(); // 監聽藥品輸入，顯示藥品資訊
             /*getId('submit_bt').remove(); // 先把送出按鈕刪除
             var submit_element = document.createElement("button");
             submit_element.innerHTML = '送出';
