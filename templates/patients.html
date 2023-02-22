@@ -52,6 +52,8 @@
             <br/>
             <div class = 'position-relative top-0 start-0' id = 'main_sue_text'>
                 主訴&理學：
+                <span class = 'position-absolute border border-3 border-primary' id = 'record_bt_space'>
+                </span>
                 <button class = 'position-absolute start-50' id = 'last_records' type = 'button'>上次病歷</button>
                 <button class = 'position-absolute start-50' id = 'next_records' type = 'button'>下次病歷</button>
                 <button class = 'position-absolute start-50' type = 'button' id = 'copy_bt'>複製</button>
@@ -154,27 +156,27 @@
         
         #last_records {
             width : 100px;
-            margin : 0px 0px 0px 50px;
+            margin : 0px 0px 0px 200px;
         }
         
         #next_records {
             width : 100px;
-            margin : 0px 0px 0px 180px;
+            margin : 0px 0px 0px 330px;
         }
         
         #copy_bt {
             width : 50px;
-            margin : 0px 0px 0px 310px;
+            margin : 0px 0px 0px 460px;
         }
         
         #paste_bt {
             width : 50px;
-            margin : 0px 0px 0px 390px;
+            margin : 0px 0px 0px 540px;
         }
         
         #add_num {
             width : 100px;
-            margin : 0px 0px 0px 470px;
+            margin : 0px 0px 0px 620px;
         }
         
         #chat_title {
@@ -274,6 +276,11 @@
             left : 0.5%;
             height : 5%;
         }
+        
+        #record_bt_space {
+            width : 110%;
+            height : 190%;
+        }
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -327,6 +334,7 @@
             document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
             rId = this_doc[pa_num.pa_num].no; // rId
             patientInfo(rId); // put the fee of the records and info of patient in
+            recordDetail(todayDate(), rId); // 放入當前病單號和今日日期
             const {data : check_record} = await axios.post('/docMain/check_record', {rId : rId, aId : getId('dId').innerHTML, pId : pId});
         })();
 
@@ -476,7 +484,9 @@
                         }
                     }
                     getId(check_hot[num]).value = new_mainsue;
-                    mkMedInfo(getId(check_hot[num])); // 顯示藥品資訊
+                    if (check_hot[num] != 'main_sue') { // 快捷鍵不是主訴，就代表是在藥品名稱的欄位用快捷鍵
+                        mkMedInfo(getId(check_hot[num])); // 顯示藥品資訊
+                    }
                 }
             }
         });
@@ -589,18 +599,19 @@
                 save_current_record = false;
                 cpContent('is_save');
             }
-            if (e.target.id == 'next_records') {
+            if (e.target.id == 'next_records') { // 是下次紀錄
                 if (!last_times <= 0) { // 到 0 就不要減
-                    last_times--;
+                    last_times--; // 查看的紀錄索引 -1
                 }
                 if (last_times <= 0) { // 已經沒有再下次的紀錄，還原原本暫存的紀錄
                     pasteContent('is_save');
                     save_current_record = true; // 回到最下次，要重新暫存新的紀錄
+                    recordDetail(todayDate(), rId); // 放入當前病單號和今日日期
                     return;
                 }
             }
-            else 
-                last_times++;
+            else // 是上次紀錄
+                last_times++; // 查看紀錄的索引+1
             const {data : all_record} = await axios.post('/docMain/all_record', {rId : rId, aId : getId('dId').innerHTML, pId : pId, last_times : last_times});
             if (!Object.values(all_record)[0]) { // 搜尋失敗
                 alert(Object.values(all_record)[1]); // 跳出錯誤訊息
@@ -615,13 +626,41 @@
                     // 先清理病歷
                     clearRecords(); 
                     // 插入病歷
-                    //console.log(Object.values(all_record)[2]);
+                    recordDetail(all_record['last_record_times'], all_record['last_rId']); // 顯示該病歷的病單號和完診時間
                     insertRecords(Object.values(all_record)[1], Object.values(all_record)[2]);
                 }
             }
         }
         
+        function todayDate() { // 今日日期
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+            var yyyy = today.getFullYear();
+
+            today = yyyy + '-' + mm + '-' + dd;
+            return today;
+        }
+        
         var last_times = 0; // 要找的病歷次數
+
+        function recordDetail(end_time, last_rId) { // 顯示當前病歷內容屬於哪個病單號和完診時間
+            getId('record_bt_space').innerHTML = '病單號：' + last_rId + '。<br/>' + 
+            '日期：' + lessTime(end_time) + '。';
+        }
+        
+        function lessTime(times) { // 把時間弄得好看一點
+            if (times == null) // 如果還沒有時間
+                return null;
+            var new_time = '';
+            for (let i = 0;i < times.length;i++) { // 不要後面五個字元
+                if (times[i] == 'T') { // 把 T 換掉
+                    return new_time;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
 
         async function insertRecords(diagnose_record, medicines_records) { // 把病歷放進去
             if (diagnose_record === undefined) { // 沒有紀錄就結束
@@ -880,6 +919,7 @@
             medicine_obj_element.setAttribute("id", obj_id+i);
             medicine_obj_element.setAttribute("name", obj_id+i);
             medicine_obj_element.setAttribute("style", "width:"+width+"px;");
+            medicine_obj_element.setAttribute('autocomplete', 'off');
             var td_element = document.createElement("td");
             td_element.appendChild(medicine_obj_element);
             tr_element.appendChild(td_element);

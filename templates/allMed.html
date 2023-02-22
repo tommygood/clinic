@@ -128,6 +128,7 @@
                         "<td id = 'medi_name'>" + medicines[k].medi_eng + "</td>" +
                         "<td>" + parseFloat(med_inventory_each[i].quantity) + "</td>" + 
                         "<td>" + parseFloat(med_inventory_each[i].now_quantity) + "</td>" + 
+                        "<td>" + lessTime(med_inventory_each[i].purchase_date) + "</td>" +
                         "<td>" + med_inventory_each[i].expire + "</td>" +
                         "<td>" + med_inventory_each[i].aId + "</td></tr>";
                         break;
@@ -142,8 +143,8 @@
         async function tabTitle() { // 製作 table title
             const {data : user} = await axios.get('/viewPa/nId');
             getId('tab').innerHTML = 
-            "<tr><td colspan = '7'>帳號：" + user.nId + "。單次批貨藥品紀錄</td>" + 
-            "</tr><tr><td>編號</td><td>藥碼</td><td>藥品名稱</td><td>原始數量</td><td>目前數量</td><td>過期日期</td><td>負責人員</td>";
+            "<tr><td colspan = '8'>帳號：" + user.nId + "。單次批貨藥品紀錄</td>" + 
+            "</tr><tr><td>編號</td><td>藥碼</td><td>藥品名稱</td><td>原始數量</td><td>目前數量</td><td>進貨日期</td><td>過期日期</td><td>負責人員</td>";
         }
         
         function mkPage(page_num) { // make page with page_num

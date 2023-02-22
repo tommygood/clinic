@@ -74,11 +74,13 @@
                 <br/>
                 </td></tr><tr id = 'tel1_row'><td>
                 <span id = 'tel1_text'>電話1：</span>
-                <input type = 'text' name = 'tel1' id = 'tel1' autocomplete="nope"/>
+                <input type = 'number' name = 'tel1' id = 'tel1' autocomplete="nope"/>
                 <br/>
+                </td></tr><tr id = 'hidden_row'><td>
+                <input/>
                 </td></tr><tr id = 'tel2_row'><td>
                 <span id = 'tel2_text'>電話2：</span>
-                <input type = 'text' name = 'tel2' id = 'tel2'></input>
+                <input type = 'number' name = 'tel2' id = 'tel2' autocomplete="nope"/>
                 <br/>
                 </td></tr><tr id = 'mom_row'><td>
                 <span id = 'mom_text'>母身份證：</span>
@@ -86,7 +88,7 @@
                 <br/>
                 </td></tr><tr id = 'parity_row'><td>
                 <span id = 'parity_text'>胎次：</span>
-                <input type = 'text' name = 'parity' id = 'parity' autocomplete="nope" required/>
+                <input type = 'number' name = 'parity' id = 'parity' autocomplete="nope" required/>
                 <br/>
                 </td></tr><tr id = 'address_row'><td>
                 <span id = 'address_text'>地址：</span>
@@ -226,6 +228,10 @@
         
         #show_birth {
             width : 50px;
+        }
+        
+        #hidden_row {
+            display : none; /* 此行要隱藏 autocomplete 才有用 */
         }
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
@@ -787,7 +793,7 @@
                 "<tr><td>代號</td><td>身分證字號</td><td id = 'name_col'>姓名</td><td>生日</td><td>身分</td><td>電話1</td><td>電話2</td><td>母身分證</td>" + 
                 "<td>胎次</td><td>地址</td><td>病史</td><td>過敏</td><td>不喜</td><td>註記</td><td>體重</td><td>身高</td><td>編輯</td><td>尋親</td><td>付款</td>" +
                 "<td>在場</td><td>押金</td><td>掛號費</td><td>部分負擔</td><td>自費</td>" +
-                "<td>健保看診</td><td>押單</td><td>健保疫苗</td><td>自費</td><td>加藥</td><td>還單</td></tr>";
+                "<td>健保<br/>看診</td><td>押單</td><td>健保<br/>疫苗</td><td>自費</td><td>加藥</td><td>還單</td></tr>";
             }
         }
 

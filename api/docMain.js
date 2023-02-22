@@ -131,7 +131,7 @@ router.post('/all_record', async function(req, res) { // 回傳該次病歷紀�
             // 找出已完成, 不在刪除的紀錄, 病人代號相同, 有在診斷紀錄的 records，並用完診時間排序
             var same_records;
             try {
-                same_records = await conn.query('select `no` from records where `no` in (select `rId` from done_records where `rId` not in (select `rId` from delete_records)) and `pId` = ? and `no` in (select `rId` from diagnose_records) order by `end`;', req.body.pId); 
+                same_records = await conn.query('select `no`, `end` from records where `no` in (select `rId` from done_records where `rId` not in (select `rId` from delete_records)) and `pId` = ? and `no` in (select `rId` from diagnose_records) order by `end`;', req.body.pId); 
                 if (same_records.length == 0) { // 沒有以前的病歷
                     conn.release();
                     res.end;
@@ -148,6 +148,7 @@ router.post('/all_record', async function(req, res) { // 回傳該次病歷紀�
                     return res.json({suc : true, clear : 'clear'}); 
                 }
                 var last_rId = same_records[same_records.length-req.body.last_times].no; // 這個病人上次病歷號
+                var last_record_times = same_records[same_records.length-req.body.last_times].end; // 這個病人上次病歷完診時間
             }
             catch(e) {
                 // 沒有再更之前的病歷紀錄
@@ -188,7 +189,7 @@ router.post('/all_record', async function(req, res) { // 回傳該次病歷紀�
         conn.release();
         res.end;
         // length == 1, means no record, so return null
-        return res.json({suc : true, last_diagnose : last_diagnose.length ? last_diagnose[0] : null, last_medicines : all_last_medicines.length ? all_last_medicines : null}); 
+        return res.json({suc : true, last_diagnose : last_diagnose.length ? last_diagnose[0] : null, last_medicines : all_last_medicines.length ? all_last_medicines : null, last_record_times : last_record_times, last_rId : last_rId}); 
     }
     else {
         return res.json({suc : false, msg : '身份認證失敗'});
