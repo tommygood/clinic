@@ -317,9 +317,14 @@
                 "<td>" + lessTime(record.times) + "</td>" +
                 "<td>" + record.aId + "</td>" +
                 "<td>" + record.money + "</td>" +
-                "<td>" + record.reason + "</td>" +
+                "<td>" + reasonText(record.reason) + "</td>" +
                 "<td>" + `${reasonId(record.reason) ? reasonId(record.reason) : '無'}` + "</td>" +
                 "<td><button id = 'turned_" + record.no + "'>歸還</button></td></tr>";
+        }
+        
+        function reasonText(reason) {
+            text_part = reason.split(',')[0];
+            return text_part;
         }
         
         function reasonId(reason) {

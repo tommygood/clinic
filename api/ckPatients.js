@@ -556,4 +556,62 @@ router.post('/checkVac', async function(req, res) { // 更新是否在場
     res.end();
     return;
 })  
+
+router.get('/medi_normal_eng', async function(req, res) { // 回傳所有常用藥品的英文名稱
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+        const pa_num = jwt.verify(req.cookies.pa_num, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        return res.redirect('/login');
+        res.end();
+        return;
+    };
+    let conn = await pool.getConnection();
+    try {
+        var all_medi_eng;
+        all_medi_eng = await conn.query('select medi_eng from medicines_normal;');
+    }
+    catch(error) {
+        console.log(error);
+        conn.release();
+        res.json({suc : false, error : error});
+        res.end;
+        return;
+    }
+    conn.release();
+    res.json({suc: true, data : {all_medi_eng : all_medi_eng}});
+    res.end;
+    return;
+});
+
+router.post('/getMediInfo', async function(req, res) { // 查看單個藥品資訊
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        res.json({suc:false});
+        res.end();
+        return;
+    };
+    let conn = await pool.getConnection();
+    var suc = true;
+    var medi_info;
+    try {
+        const medi_eng = req.body.medi_eng;
+        sql = 'select * from medicines_normal where `medi_eng` = ? ORDER BY `index` DESC LIMIT 1;';
+        medi_info = await conn.query(sql, medi_eng);
+    }
+    catch(e) {
+        suc = false;
+        console.log(e);
+    }
+    conn.release();
+    res.json({suc:suc, medi_info : medi_info});
+    res.end();
+    return;
+}) 
+
 module.exports = router;

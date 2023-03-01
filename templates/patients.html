@@ -74,6 +74,8 @@
             <tr>
             <td>藥品名稱</td><td>每日<span>量</span></td><td>天</td><td>用法</td><td>註</td>
             </tr>
+            <datalist id = 'medi_list'>
+            </datalist>
         </table>
         <div class = 'position-absolute border border-3 border-primary' id = 'family_pos'>
         </div>
@@ -212,10 +214,30 @@
         }
         
         #recommand_table {
-            width : 100%;
+            position : absolute;
+            margin-left : 50%;
+            width : 50%;
+            height : 100%;
             -webkit-user-select:none;
             -moz-user-select:none;
             user-select:none;
+        }
+        
+        #recommand_table td {
+            font-size : 13px;
+        }
+        
+        #recommand_medi_table {
+            position : absolute;
+            width : 50%;
+            height : 100%;
+            -webkit-user-select:none;
+            -moz-user-select:none;
+            user-select:none;
+        }
+        
+        #recommand_medi_table td {
+            font-size : 13px;
         }
         
         #family_table {
@@ -334,7 +356,7 @@
             document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
             rId = this_doc[pa_num.pa_num].no; // rId
             patientInfo(rId); // put the fee of the records and info of patient in
-            recordDetail(todayDate(), rId); // 放入當前病單號和今日日期
+            recordDetail(todayDate(), rId, '<b>(當前)</b>'); // 放入當前病單號和今日日期
             const {data : check_record} = await axios.post('/docMain/check_record', {rId : rId, aId : getId('dId').innerHTML, pId : pId});
         })();
 
@@ -385,8 +407,8 @@
                         "<td>" + info[j].allergy + "</td>" +
                         "<td>" + info[j].hate + "</td>" +
                         "<td>" + info[j].mark + "</td>" + 
-                        "<td>" + info[j].weight + "</td>" +
-                        "<td>" + info[j].height + "</td>" +
+                        "<td id = 'patient_weight'>" + info[j].weight + "</td>" +
+                        "<td id = 'patient_height'>" + info[j].height + "</td>" +
                         "<td ><input type = 'text' id = 'regist' style = 'width:50px' value = '" + fee.regist + "'></input></td>" +
                         "<td><input type = 'text' id = 'self_part' style = 'width:50px' value = '" + fee.self_part + "'></input></td>" +
                         "<td><input type = 'text' id = 'all_self' style = 'width:50px' value = '" + fee.all_self + "'></input></td></tr>"
@@ -394,7 +416,8 @@
                     }
                 }
             }
-            findRecommand();
+            findRecommand('recommand_table');
+            findMediRecommand('recommand_medi_table');
         }
 
         function getId(id) {
@@ -405,7 +428,8 @@
 
         var symptoms = null; // 所有症狀，先設 null
         async function outSymptoms() { // 印出症狀
-            findRecommand();
+            findRecommand('recommand_table');
+            findMediRecommand('recommand_medi_table');
             if (symptoms == null) { // 第一次讀取症狀
                 const {data : symptoms_data} = await axios.get('/symptoms');
                 symptoms = symptoms_data // 放入檔案
@@ -485,7 +509,7 @@
                     }
                     getId(check_hot[num]).value = new_mainsue;
                     if (check_hot[num] != 'main_sue') { // 快捷鍵不是主訴，就代表是在藥品名稱的欄位用快捷鍵
-                        mkMedInfo(getId(check_hot[num])); // 顯示藥品資訊
+                        mkMedInfo(getId(check_hot[num]).value); // 顯示藥品資訊
                     }
                 }
             }
@@ -606,7 +630,7 @@
                 if (last_times <= 0) { // 已經沒有再下次的紀錄，還原原本暫存的紀錄
                     pasteContent('is_save');
                     save_current_record = true; // 回到最下次，要重新暫存新的紀錄
-                    recordDetail(todayDate(), rId); // 放入當前病單號和今日日期
+                    recordDetail(todayDate(), rId, '<b>(當前)</b>'); // 放入當前病單號和今日日期
                     return;
                 }
             }
@@ -644,9 +668,9 @@
         
         var last_times = 0; // 要找的病歷次數
 
-        function recordDetail(end_time, last_rId) { // 顯示當前病歷內容屬於哪個病單號和完診時間
-            getId('record_bt_space').innerHTML = '病單號：' + last_rId + '。<br/>' + 
-            '日期：' + lessTime(end_time) + '。';
+        function recordDetail(end_time, last_rId, mark = null) { // 顯示當前病歷內容屬於哪個病單號和完診時間
+            getId('record_bt_space').innerHTML = '病單號：' + last_rId + '。' + `${mark ? mark : ''}` +
+            '<br/>' + '日期：' + lessTime(end_time) + '。';
         }
         
         function lessTime(times) { // 把時間弄得好看一點
@@ -840,17 +864,26 @@
             if (input_id != 'diagnose_code' && input_id != 'msg') { // 是藥品輸入欄位
                 var id_num = getNum(input_id); // 只找 id
                 var this_row_medicine_name = getId('medicines' + id_num); // 只看那一行的 medicine name
-                mkMedInfo(this_row_medicine_name); // 依照藥品名稱製作藥品資訊
+                mkMedInfo(this_row_medicine_name.value); // 依照藥品名稱製作藥品資訊
             }
         }
         
         async function mkMedInfo(medicine_name) { // 依照藥品名稱製作藥品資訊
-            if (medicine_name.value) { // 有此藥品名稱的資訊
-                getId('medi_info_pos').innerHTML = '藥品名稱：' + medicine_name.value + '。懷孕等級：' +
-                '。苦等級：。'
+            const {data : result} = await axios.post('ckPatients/getMediInfo', {medi_eng : medicine_name});
+            if (result.medi_info.length > 0) {
+                var medi_info = result.medi_info[0];
+                if (medicine_name) { // 有此藥品名稱的資訊
+                    getId('medi_info_pos').innerHTML = '英文名稱：' + medicine_name + 
+                    '。中文名稱：' + medi_info.medi_mand +
+                    '。懷孕等級：' +
+                    '。苦等級：。'
+                }
+                else { // 無此藥品名稱的資訊，清空欄位
+                    getId('medi_info_pos').innerHTML = '';
+                }
             }
-            else { // 無此藥品名稱的資訊，清空欄位
-                getId('medi_info_pos').innerHTML = '';
+            else {
+                getId('medi_info_pos').innerHTML = medicine_name + '：查無此藥品資訊。';
             }
         }
         
@@ -920,6 +953,9 @@
             medicine_obj_element.setAttribute("name", obj_id+i);
             medicine_obj_element.setAttribute("style", "width:"+width+"px;");
             medicine_obj_element.setAttribute('autocomplete', 'off');
+            if (obj_id == 'medicines') {
+                medicine_obj_element.setAttribute('list', 'medi_list');
+            }
             var td_element = document.createElement("td");
             td_element.appendChild(medicine_obj_element);
             tr_element.appendChild(td_element);
@@ -1253,14 +1289,14 @@
             }
         }
         
-        async function findRecommand() { // 尋找診斷對應的推薦主訴
+        async function findRecommand(table_name) { // 尋找診斷對應的推薦主訴
             var diagnose_code = getId('diagnose_code').value;
-            if (getId('recommand_table')) { // 如果已經有，就先刪除
-                getId('recommand_table').remove();
+            if (getId(table_name)) { // 如果已經有，就先刪除
+                getId(table_name).remove();
             }
             var table = document.createElement('table');
-            table.id = 'recommand_table';
-            table = recommandTableTitle(table, diagnose_code); // 製作標頭
+            table.id = table_name;
+            table = recommandTableTitle(table, diagnose_code, '主訴：'); // 製作標頭
             if (!(diagnose_code != 0 && isNum(diagnose_code))) { // 診斷空的或是不是數字
                 getId('recommand_pos').appendChild(table); // 就不要放推薦
                 return;
@@ -1281,15 +1317,78 @@
             getId('recommand_pos').appendChild(table);
         }
         
+        async function findMediRecommand(table_name) { // 尋找診斷對應的推薦主訴
+            var diagnose_code = getId('diagnose_code').value;
+            if (getId(table_name)) { // 如果已經有，就先刪除
+                getId(table_name).remove();
+            }
+            var table = document.createElement('table');
+            table.id = table_name;
+            table = recommandTableTitle(table, diagnose_code, '藥品：'); // 製作標頭
+            if (!(diagnose_code != 0 && isNum(diagnose_code))) { // 診斷空的或是不是數字
+                getId('recommand_pos').appendChild(table); // 就不要放推薦
+                return;
+            }
+            var medicines_mainsue = getAllMediName(); // 所有藥品英文名稱
+            for (let i = 0;i < medicines_mainsue.length;i++) { // 放進找到的家人
+                if (i % 3 == 0) { // 一排 3 個 推薦的
+                    var tr = document.createElement('tr'); // table row
+                }
+                var td = document.createElement('td'); // column
+                td.onclick = function (e) { // 按下推薦，把推薦放入主訴
+                    insertRecommandMedi(e.target.innerHTML);
+                };
+                td.innerHTML = medicines_mainsue[i];
+                tr.appendChild(td);
+                table.appendChild(tr);
+            }
+            getId('recommand_pos').appendChild(table);
+        }
+        
+        function getAllMediName() {
+            const all_medi_eng = getId('medi_list').getElementsByTagName('option');
+            var all_medi = [];
+            for (let i = 0;i < all_medi_eng.length;i++) {
+                all_medi.push(all_medi_eng[i].value);
+            }
+            return all_medi;
+        }
+        
+        function insertRecommandMedi(medi_name) { // 把推薦藥品放入藥品欄位
+            // 依照藥品名稱製作藥品資訊
+            mkMedInfo(medi_name); 
+            // 先優先放入第一行
+            for (let i = 0;i < medicine_input_num*2;i++) {
+                // 如果是第一行和該格是空的就放入
+                if ((i+1) % 2 != 0 && getId('medicines' + i).value == '') {
+                    getId('medicines' + i).value = medi_name;
+                    getId('medi_amount' + i).value = getId('patient_weight').innerHTML * 0.1;
+                    getId('day' + i).value = parseInt(getId('patient_height').innerHTML * 0.02);
+                    return;
+                }
+            }
+            // 再放入第二行
+            for (let i = 0;i < medicine_input_num*2;i++) {
+                // 如果是第二行和該格是空的就放入
+                if ((i+1) % 2 == 0 && getId('medicines' + i).value == '') {
+                    getId('medicines' + i).value = medi_name;
+                    getId('medi_amount' + i).value = Math.round(getId('patient_weight').innerHTML * 0.1 * 100) / 100;
+                    getId('day' + i).value = parseInt(getId('patient_height').innerHTML * 0.02);
+                    return;
+                }
+            }
+        }
+        
         function insertRecommand(td_text) { // 把推薦放入主訴
             getId('main_sue').value += td_text + ' ';
         }
         
-        function recommandTableTitle(table, diagnose_code) {
+        // 製作推薦 table 的標頭
+        function recommandTableTitle(table, diagnose_code, recommand_type) {
             table.setAttribute('border', 2);
             var tr = document.createElement('tr');
             var td = document.createElement('td');
-            td.innerHTML = '診斷：' + diagnose_code + '。推薦之主訴';
+            td.innerHTML = '診斷：' + diagnose_code + '。推薦之' + recommand_type;
             td.colSpan = 5;
             tr.appendChild(td);
             table.appendChild(tr);
@@ -1331,5 +1430,19 @@
                 putData(i, all_index[i], all_name[i], all_birth[i], all_tel1[i], all_tel2[i]);
             }
         }
+        
+        // make medicine list
+        async function mkMediList() {
+            const {data : result} = await axios.get('/ckPatients/medi_normal_eng');
+            const all_medi_eng = result.data.all_medi_eng; // 全部的常用藥品的英文名稱
+            var option;
+            // 把藥品名稱加入 datalist
+            for (let i = 0;i < all_medi_eng.length;i++) {
+                option = document.createElement('option');
+                option.value = all_medi_eng[i].medi_eng;
+                getId('medi_list').appendChild(option);
+            }
+        }
+        mkMediList();
     </script>
 </html>
