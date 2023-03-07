@@ -211,20 +211,22 @@ router.post('/check_record', async function(req, res) { // 回傳該次病歷紀
         let conn = await pool.getConnection();
         var last_diagnose;
         var last_medicines;
+        var all_last_medicines;
         try {
             last_diagnose = await conn.query('select * from diagnose_records where `rId` = ?', req.body.rId); // 上次看診的診斷
             last_medicines = await conn.query('select * from medicines_records where `rId` = ?', req.body.rId); // 上次看診的診斷
+            all_last_medicines = []; // 該次看診的全部用藥，有可能不止一個用藥
+            for (let i = 0;i < last_medicines.length;i++) {
+                all_last_medicines.push(last_medicines[i]);
+            }   
+            last_diagnose = last_diagnose[0];
         }
         catch(e) {
             console.log(e);
         }
-        var all_last_medicines = []; // 該次看診的全部用藥，有可能不止一個用藥
-        for (let i = 0;i < last_medicines.length;i++) {
-            all_last_medicines.push(last_medicines[i])
-        }
         conn.release();
         res.end;
-        return res.json({suc : true, last_diagnose : last_diagnose[0], last_medicines : all_last_medicines}); 
+        return res.json({suc : true, last_diagnose : last_diagnose, last_medicines : all_last_medicines}); 
     }
     else {
         return res.json({suc : false, msg : '身份認證失敗'});
@@ -404,5 +406,34 @@ router.post('/findFamily', async function(req, res) { // 找出家屬
     return res.json({suc : suc, all_family : all_family, all_relation : all_relation});
     res.end;
 });
+
+
+router.post('/get_diagnose_record', async function(req, res) { // 找出家屬
+    try {
+        const user = jwt.verify(req.cookies.token, 'my_secret_key');
+    }
+    catch(e) {
+        console.log(e);
+        res.redirect('/login');
+        res.end();
+        return;
+    };
+    let conn = await pool.getConnection();
+    try {
+        const sql = 'select `rId` from diagnose_records where `diagnose_code` = ?;';
+        var same_diagnose_rId;
+        var suc = true;
+        same_diagnose_rId = await conn.query(sql, req.body.diagnose_code); 
+    }
+    catch(e) {
+        suc = false;
+        console.log(e);
+    }
+    conn.release();
+    return res.json({suc : suc, same_diagnose_rId : same_diagnose_rId});
+    res.end;
+});
+
+
 
 module.exports = router;

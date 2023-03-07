@@ -5,7 +5,7 @@
         
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8" crossorigin="anonymous"></script>
-        
+
         <script>
             var socket = io();
         </script>
@@ -40,6 +40,7 @@
         </table>
         <div class = 'start-0' id = 'symptoms'>
         病碼：<input class = 'copy' id = 'diagnose_code' name = 'diagnose_code'></input>
+        <button id = 'getMediRecord'>查藥單</button>
         &nbsp;&nbsp;&nbsp;&nbsp;診斷：<span id = 'diagnose' name = 'diagnose'></span>
         </div>
         <br/>
@@ -85,10 +86,23 @@
         <div class = 'position-absolute top-0 end-0' id = "chat_title">---------------------<br/>聊天室<br/></div>
         <input class = "position-fixed bottom-0 end-0" style = "width:200px;" type = "input" id = 'msg'></div>
         <button class = "position-fixed bottom-0 end-0" id = "send_msg">send</button>
-        <div id="light">
+        <div id="light" class = 'light'>
             資料處理中，請稍後...
         </div>
+        <div id = 'medi_light' class = 'light'>
+            <!-- table page -->
+            <ul class="nav nav-tabs" id="myTab" role="tablist">
+            </ul>
+            <div id = 'tab_pos_title' class = 'position-relative'></div>
+            <div id = 'tab_pos' class = 'position-relative'></div>
+            <nav aria-label="Page navigation example" class = 'position-absolute bottom-0' id = "page_top">
+            </nav>
+        </div>
         <div id="fade"></div>
+        <div id = 'each_medi_light' class = 'light'>
+            <a href = 'javascript:void(0)' id = 'closebt' onclick = 'closeEachMediWindow()'>關閉</a>
+            <iframe id = 'each_medi_iframe' src="" title="單筆藥單"></iframe>
+        </div>
     </body>
     <style>
         #symptoms {
@@ -276,7 +290,7 @@
             filter:alpha(opacity=80);
         }
         
-        #light{
+        .light{
             display:none;
             position:absolute;
             top:40%;
@@ -292,6 +306,20 @@
             text-align : center;
         }
 
+        #medi_light {
+            top:0%;
+            left:5%;
+            width:90%;
+            height:90%;
+        }
+        
+        #each_medi_light {
+            top:0%;
+            left:5%;
+            width:90%;
+            height:90%;
+        }
+
         #medi_info_pos {
             top : 93%;
             width : 72%;
@@ -302,6 +330,52 @@
         #record_bt_space {
             width : 110%;
             height : 190%;
+        }
+        
+        #diagnose_code {
+            width : 15%;
+        }
+        
+        a {
+            color : #f33;
+            -webkit-user-select:none;
+            -moz-user-select:none;
+            user-select:none;
+            text-align : center;
+        }
+
+        #page_last {
+            width : 120px;
+        }
+
+        #page_next {
+            width : 120px;
+        }
+
+        #last_page {
+            width : 100px;
+        }
+
+        #first_page {
+            width : 100px;
+        }
+
+        #page_top {
+            left : 20%
+        }
+        
+        #closebt {
+            position : absolute;
+            left : 90%;
+        }
+        
+        #each_medi_iframe {
+            height : 100%;
+            width : 100%;
+        }
+        
+        #now_symptom_index_input {
+            width : 10%;
         }
     </style>
     <script src = 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js' ></script>
@@ -353,8 +427,14 @@
             rec.sort(function(a,b){
                 return a.num - b.num;
             });
-            document.getElementById('rId').value = this_doc[pa_num.pa_num].no;
-            rId = this_doc[pa_num.pa_num].no; // rId
+            var local_rId;
+            for (let i = 0;i < this_doc.length;i++) { // 這個醫生的未看診紀錄
+                if (this_doc[i].no == pa_num.rId) { // 找其中有和 cookie 中的 rId 相符的紀錄
+                    local_rId = pa_num.rId;
+                }
+            }
+            document.getElementById('rId').value = local_rId;
+            rId = local_rId; // 全域的 rId
             patientInfo(rId); // put the fee of the records and info of patient in
             recordDetail(todayDate(), rId, '<b>(當前)</b>'); // 放入當前病單號和今日日期
             const {data : check_record} = await axios.post('/docMain/check_record', {rId : rId, aId : getId('dId').innerHTML, pId : pId});
@@ -427,14 +507,18 @@
         getId("diagnose_code").addEventListener('change', outSymptoms); // 當搜尋內容有改變
 
         var symptoms = null; // 所有症狀，先設 null
+        var now_symptom_index; // 現在的診斷碼
+        var now_symptom_eng; // 現在的診斷的英文名稱
         async function outSymptoms() { // 印出症狀
             findRecommand('recommand_table');
             findMediRecommand('recommand_medi_table');
-            if (symptoms == null) { // 第一次讀取症狀
+            if (symptoms == null) { // 第一次讀取症狀，才要去撈資料庫
                 const {data : symptoms_data} = await axios.get('/symptoms');
                 symptoms = symptoms_data // 放入檔案
                 for (let i = 0;i < symptoms.length;i++) { // 找出對應症狀
                     if (symptoms[i].index == getId('diagnose_code').value) {
+                        now_symptom_eng = symptoms[i].eng_name;
+                        now_symptom_index = symptoms[i].index;
                         getId('diagnose').innerHTML = "<b>" + symptoms[i].eng_name + "</b>";
                     }
                 }
@@ -442,6 +526,8 @@
             else {
                 for (let i = 0;i < symptoms.length;i++) {
                     if (symptoms[i].index == getId('diagnose_code').value) {
+                        now_symptom_eng = symptoms[i].eng_name;
+                        now_symptom_index = symptoms[i].index;
                         getId('diagnose').innerHTML = "<b>" + symptoms[i].eng_name + "</b>";
                     }
                 }
@@ -1444,5 +1530,350 @@
             }
         }
         mkMediList();
+        
+        // 查此診斷過去開過的藥單
+        getId('getMediRecord').addEventListener('click', showMediRecord);
+        
+        async function showMediRecord() {
+            mkMediLight(); // 製作彈出視窗
+            openMediWindow();
+        }
+        
+        const regist_html = getId('medi_light').innerHTML; // 暫存 page element
+        
+        async function mkMediLight() { // 製作彈出視窗，顯示藥單紀錄
+            const {data : result} = await axios.post('/docMain/get_diagnose_record', {diagnose_code : now_symptom_index});
+            const all_same_diagnose_rId = result.same_diagnose_rId;
+            // header 
+            mkMedHeader();
+            
+            // body
+            getId("medi_light").innerHTML += '<b>loading...</b>';
+            for (let i = 0;i < all_same_diagnose_rId.length;i++) {
+                var rId = all_same_diagnose_rId[i].rId;
+                const {data : result} = await axios.post('/financial/showDetail', {reason_type : 1, rId : rId});
+                var record_content = result.result[0];
+                if (result.suc && record_content.pId) {
+                    const pId = record_content.pId;
+                    var {data : patient_info} = await axios.post('/getSinglePatient', {pId : pId});
+                    var patient_info = patient_info.result[0];
+                }
+                else {
+                    console.log('細項查詢錯誤！');
+                }
+                // 放入每一筆相同診斷的紀錄
+                /*getId('medi_light').innerHTML +=
+                '病單號：' + all_same_diagnose_rId[i].rId +
+                '。看診日期：' + onlyDate(record_content.start) + 
+                '。病人姓名：' + patient_info.name +
+                '。性別：' + patient_info.sex + 
+                "<button onclick = 'showEachMedDetail(" + rId + ")' id = 'medicine_record_detail'>病單</button>"  + " <br/>";*/
+            }
+            // tail
+            mkPageElement();
+            mkDoc('first', all_same_diagnose_rId.length);
+        }
+
+        function mkMedHeader() { // 診斷藥單的 header
+            // 診斷的基本資訊、關閉
+            getId('medi_light').innerHTML = 
+            "<div>診斷代碼：<input id = 'now_symptom_index_input' value = '" + now_symptom_index + "'></input>。" + 
+            "診斷英文：<b>" + now_symptom_eng + "</b>" + 
+            "<a href = 'javascript:void(0)' id = 'closebt' onclick = 'closeWindow()'>關閉</a>;</div>";
+            var setEvent = setInterval(function(){ // 延遲一下再設 listener 才可偵測到
+                clearInterval(setEvent); // 跑一次就好，不要一直重複
+                // 監聽是否更改搜尋藥單的診斷代碼
+                getId('now_symptom_index_input').addEventListener('change', changeInsideDiagnose);
+            }, 500);
+        }
+        
+        function changeInsideDiagnose() { // 更改搜尋藥單的診斷代碼
+            now_symptom_index = getId('now_symptom_index_input').value; // 更改診斷代碼
+            resetMediEng(); // 重設診斷的英文名稱
+            mkMediLight(); // 重新製作新的診斷代碼的藥單紀錄
+        }
+
+        function resetMediEng() {
+            for (let i = 0;i < symptoms.length;i++) {
+                if (symptoms[i].index == now_symptom_index) {
+                    now_symptom_eng = symptoms[i].eng_name;
+                    return;
+                }
+            }
+            now_symptom_eng = '無';
+            return;
+        }
+
+        function mkPageElement() {
+            getId('medi_light').innerHTML = regist_html;
+        }
+
+        async function showEachMedDetail(rId) { // 顯示單筆藥單的詳細資訊
+            // 給該次病單號的 rId cookie
+            const {data : suc} = await axios.post('/docMain/getPa', {view : true, rId : rId, pa_num : rId});
+            if (suc) { // 有此病患的已看診紀錄
+                getId('each_medi_iframe').src = "/ckPatients?view=true";
+            }
+            else {
+                alert('無此患者的病單！');
+                return;
+            }
+            closeWindow(); // 關掉全部的藥單
+            getId('each_medi_light').style.display='block';
+            getId('fade').style.display='block';
+        }
+        
+        async function closeEachMediWindow() { // 回到上一步，全部相同診斷的紀錄
+            // 先給回原本病單號 rId 的 cookie
+            const {data : suc} = await axios.post('/docMain/getPa', {view : false, rId : rId, pa_num : rId});
+            getId('medi_light').style.display='block';
+            getId('each_medi_light').style.display='none';
+        }
+
+        function closeWindow() { // 關閉視窗
+            getId('medi_light').style.display='none';
+            getId('fade').style.display='none';
+        }
+
+        function openMediWindow() { // 開啟視窗
+            getId('medi_light').style.display='block';
+            getId('fade').style.display='block';
+        }
+        
+        function onlyDate(times) { // 把時間弄得好看一點
+            if (times == null) // 如果還沒有時間
+                return null;
+            var new_time = '';
+            for (let i = 0;i < times.length;i++) { // 不要後面五個字元
+                if (times[i] == 'T') { // 把 T 換掉
+                    break;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
+        
+        // page 
+        function lessTime(times) { // 把時間弄得好看一點
+            if (times == null) // 如果還沒有時間
+                return null;
+            var new_time = '';
+            for (let i = 0;i < times.length-5;i++) { // 不要後面五個字元
+                if (times[i] == 'T') { // 把 T 換掉
+                    new_time += '\n';
+                    continue;
+                }
+                new_time += times[i];
+            }
+            return new_time;
+        }
+
+        function getId(id) {
+            return document.getElementById(id);
+        }
+
+        // make page
+        let now_page = 0; // 現在的頁數
+
+        async function putPageRecord(page) {
+            const {data : result} = await axios.post('/docMain/get_diagnose_record', {diagnose_code : now_symptom_index});
+            const all_same_diagnose_rId = result.same_diagnose_rId;
+            all_same_diagnose_rId.sort(function(a,b){ // 從最後看的開始排序
+                return b.rId - a.rId;
+            });
+            var count_records = 0; // 總共有幾個可以放的紀錄, 不包含看完的
+            var count_added_records = 0; // 真正放了幾個紀錄進 table
+            total_len = 0; // when reset table, reset the total_len too
+            //getId("medi_light").innerHTML = ''; // 每次重新點, 都清空 table
+            mkMedHeader(); // 診斷 header
+            // body
+            for (let i = 0;i < all_same_diagnose_rId.length;i++) {
+                var rId = all_same_diagnose_rId[i].rId;
+                const {data : result} = await axios.post('/financial/showDetail', {reason_type : 1, rId : rId});
+                var record_content = result.result[0];
+                if (result.suc && record_content.pId) {
+                    const pId = record_content.pId;
+                    var {data : patient_info} = await axios.post('/getSinglePatient', {pId : pId});
+                    var patient_info = patient_info.result[0];
+                }
+                else {
+                    console.log('細項查詢錯誤！');
+                    continue;
+                }
+                count_records++; // 計算總共有加了幾筆紀錄
+                if (count_records <= (page-1) * limit_records) // 還沒到可以放進去的 index
+                    continue; // 重找
+                if (count_added_records >= limit_records) // 真正放進去的紀錄不能超過限制的次數
+                    break; // 停止
+                count_added_records++; // 真正放進去的次數
+                // 放入每一筆相同診斷的紀錄
+                getId('medi_light').innerHTML +=
+                '病單號：' + all_same_diagnose_rId[i].rId +
+                '。看診日期：' + onlyDate(record_content.start) + 
+                '。病人姓名：' + patient_info.name +
+                '。性別：' + patient_info.sex + 
+                "。<button onclick = 'showEachMedDetail(" + rId + ")' id = 'medicine_record_detail'>病單</button>"  + " <br/>";
+            }
+            getId("medi_light").innerHTML += regist_html; // 每次重新點, 都清空 table
+            mkPageListener(total_page_num);
+        }
+
+        var total_len = 0;
+        let limit_records = 10; // 頁面能顯示最大的列數量
+
+        function mkPage(page_num) { // make page with page_num
+            if (getId('page_list')) // if page_list exist, renew one
+                getId("page_list").remove(); // remove
+            // 如果總頁數 < 一行限制最大頁數，一行限制最大頁數 = 總頁數
+            var temp_max_col_page = total_page_num < max_col_page ? total_page_num : max_col_page; 
+            // create and add the needed elements
+            var page_list_element = document.createElement("ul");
+            page_list_element.className = "pagination";
+            page_list_element.setAttribute("id", "page_list");
+            var page_top = getId("page_top");
+            page_top.appendChild(page_list_element);
+            var page_list = getId('page_list');
+            var page_list = getId('page_list');
+            if (page_num >= temp_max_col_page) { // 一行最大只能 10 頁
+                page_num = temp_max_col_page + parseInt(now_page);
+            }
+            if (page_num >= total_page_num) { // 不能超過最大頁數
+                page_num = total_page_num;
+            }
+            if (now_page > total_page_num-temp_max_col_page) {
+                // 總共的頁數不能低於 10 ，所以當現在頁數 < 總頁數-10，開始的頁數還是要保持在總頁數 -10
+                start_page = total_page_num-temp_max_col_page;
+            }
+            else { // 開始頁數 = 現在頁數
+                start_page = now_page;
+            }
+            // 製作元素
+
+            // 上一頁的元素
+            var page_li= document.createElement("li");
+            page_li.className = "page-item";
+            var page_a = document.createElement("a");
+            page_a.className = "page-link";
+            page_a.setAttribute("id", "page_last");
+            page_a.innerHTML = '上一頁'; // start from page 1
+            page_li.appendChild(page_a);
+            page_list.appendChild(page_li);
+
+            // 首頁的元素
+            var page_li= document.createElement("li");
+            page_li.className = "page-item";
+            var page_a = document.createElement("a");
+            page_a.className = "page-link";
+            page_a.setAttribute("id", "first_page");
+            page_a.innerHTML = '首頁'; // start from page 1
+            page_li.appendChild(page_a);
+            page_list.appendChild(page_li);
+
+            for (let i = start_page;i < page_num;i++) { // make page with page num
+                var page_li= document.createElement("li");
+                page_li.className = "page-item";
+                var page_a = document.createElement("a");
+                page_a.className = "page-link";
+                page_a.setAttribute("id", "page_"+(i+1));
+                if (i == now_page) { // 目前的頁數要用黑色字體
+                    page_a.style.color = 'black';
+                }
+                page_a.style.width = '50px';
+                page_a.innerHTML = (parseInt(i)+1); // start from page 1
+                page_li.appendChild(page_a);
+                page_list.appendChild(page_li);
+            }
+            // 尾頁的元素
+            var page_li= document.createElement("li");
+            page_li.className = "page-item";
+            var page_a = document.createElement("a");
+            page_a.className = "page-link";
+            page_a.setAttribute("id", "last_page");
+            page_a.innerHTML = '尾頁'; // start from page 1
+            page_li.appendChild(page_a);
+            page_list.appendChild(page_li);
+
+            // 下一頁
+            var page_li= document.createElement("li");
+            page_li.className = "page-item";
+            var page_a = document.createElement("a");
+            page_a.className = "page-link";
+            page_a.setAttribute("id", "page_next");
+            page_a.innerHTML = '下一頁'; // start from page 1
+            page_li.appendChild(page_a);
+            page_list.appendChild(page_li);
+        }
+
+        let start_page; // 開始的頁數
+        let max_col_page = 10; // 一行最多可以有幾個頁數
+        function mkPageListener(page_num) { // 依照 page 的數量監聽
+            // 如果總頁數 < 一行限制最大頁數，一行限制最大頁數 = 總頁數
+            var temp_max_col_page = total_page_num < max_col_page ? total_page_num : max_col_page; 
+            mkPage(page_num); // 製作頁面按鈕
+            if (page_num >= temp_max_col_page) { // 最大只能 15 頁
+                page_num = temp_max_col_page + parseInt(now_page);;
+            }
+            if (page_num >= total_page_num) {
+                page_num = total_page_num;
+            }
+            getId('page_last').addEventListener('click', turnPage);
+            getId('page_next').addEventListener('click', turnPage);
+            getId('last_page').addEventListener('click', turnPage);
+            getId('first_page').addEventListener('click', turnPage);
+            for (let i = parseInt(start_page)+1;i < page_num+1;i++) // 從第一頁開始監聽
+                getId('page_'+i).addEventListener('click', turnPage); // put records in table depend on page num
+        }
+
+        function turnPage(e) { // 翻頁
+            if (e.target.innerHTML == "上一頁") {
+                // 不能讓上一頁到 -1
+                if (now_page < 1) {
+                    now_page = 0;
+                }
+                else {
+                    now_page -= 1;
+                }
+            }
+            else if (e.target.innerHTML == "下一頁") {
+                if (now_page+1 < total_page_num) { // 下一頁不能超過最後一頁
+                    now_page += 1;
+                }
+            }
+            else if (e.target.innerHTML == "首頁") {
+                now_page = 0;
+            }
+            else if (e.target.innerHTML == "尾頁") {
+                now_page = total_page_num-1;
+            }
+            else { // 現在頁數 = 案的頁數-1
+                now_page = parseInt(e.target.innerHTML)-1;
+            }
+            mkPageListener(total_page_num); // 重新製作頁面按鈕、監聽
+            putPageRecord(now_page+1); // 把紀錄放進 table, 現在是第幾個 table, 第幾頁
+        };
+
+        let total_page_num;
+        async function mkDoc(e, page_num) { // 製作醫生 table
+            //now_page = 0;
+            if (e == 'first') {
+                var tab_id = 1;
+            }
+            else {
+                var tab_id = getDid(e.target.id); // 取得 dId
+            }
+            now_table = tab_id;
+            //mkTable(tab_id); // 製作該 id 的 table
+            putPageRecord(tab_id);
+            total_page_num = countPageNum(page_num); // total_page_num = all records/limit_records
+            mkPageListener(page_num); // make listener of page list 
+        }
+
+        function countPageNum(page_num_result) { // count page num
+            let page_num = Math.floor(page_num_result/limit_records); // without float
+            let page_less = page_num_result%limit_records; 
+            if (page_less != 0) // is float
+                page_num += 1; // add one more page
+            return page_num;
+        }
     </script>
 </html>
