@@ -29,7 +29,8 @@ class App extends React.Component {
             <BrowserRouter basename="/pig">
             <Routes>
               <Route path="/" element={<Sid />} />
-              <Route path="page1" element={<Test2 />} />
+              <Route path="/page1" element={<Test2 />} />
+              <Route path="/page2" element={<Test2 />} />
               <Route path="*" element={<Test3 />} />
             </Routes>
             </BrowserRouter>

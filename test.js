@@ -35,6 +35,7 @@ app.use('/view_history_pa', require('./api/view_history_pa'));
 app.use('/done_financial', require('./api/done_financial'));
 app.use('/debt', require('./api/debt'));
 app.use('/regist', require('./api/regist'));
+app.use('/js', express.static('./js'));
 const db = require("mariadb");
 const pool = db.createPool({
     trace : true,

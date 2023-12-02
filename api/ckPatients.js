@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const fs = require('fs');
 var bodyParser = require("body-parser");
 var db = require('mariadb');
 var func = require('../module/func');
@@ -393,6 +394,7 @@ router.get('/', function(req, res) {
     };
     const user = jwt.verify(req.cookies.token, 'my_secret_key');
     const pa = jwt.verify(req.cookies.pa_num, 'my_secret_key');
+    makeUploadXml(1);
     if (user.data.aId && (pa.data.pa_num != null)) { // 登入中
         if (req.query.view) // view the record
             return res.sendFile(root + 'templates/viewPatients.html');
@@ -613,5 +615,255 @@ router.post('/getMediInfo', async function(req, res) { // 查看單個藥品資�
     res.end();
     return;
 }) 
+
+function makeUploadXml(data_type) { // 製作 xml 檔
+    // 先依照不同看診型別，區分共用變數值
+    if (data_type == 1) { // 一般看診
+        m23 = 0; // M23 處方調劑方式, 先設為是 自行調劑 才能開藥
+    }
+    else if (data_type == 2) { // 疫苗接種
+        m23 = 2; // M23 處方調劑方式, 因為打疫苗所以不用開藥
+    }
+    else {
+        console.log('尚未提供此資料型態的上傳功能！');
+        return;
+    }
+    // 先定義不同看診型別的共用變數
+    // MSG 標頭
+    // H00 = data_type
+    h01 = 'A'; // H01 資料格式, A = 正常上傳, B = 異常上傳, C = 註銷未調劑慢連箋處方, D = 整筆刪除
+    // MB1 健保資料
+    m01 = 'x12345678912'; // M01 安全模組代碼
+    m02 = 'aaaaaaaaaaaa'; // M02 卡片號碼
+    m03 = 'f123456789'; // M03 身分證號或身分證明文件號碼
+    m04 = ''; // M04 出生日期
+    m05 = 'xxxxxxxxxx' // M05 醫療院所代碼
+    m06 = 'g123456789' // M06 醫事人員身分證號
+    m07 = '01' // M07 就醫類別
+    m11 = 'xxxxxxxxxxxxx'; // M11 就診日期時間, R
+    m12 = '1'; // M12 是否有帶健保卡, 1(有帶卡) or 2(補卡)
+    m13 = '1234'; // M13 就醫序號, HC
+    m14 = 'security_sign'; // M14 安全簽章, S
+    m15 = 'identifiy_code'; // M15 就醫識別碼, S
+    m35 = '123456'; // M35 主要診斷碼
+    // M36~40 次要診斷碼，可以填或不填
+    m44 = 150; // M44 門診醫療費用(當次)
+    m45 = 200; // M45 門診部分負擔費用(當次)
+    m51 = 4; // M51 給付類別, 一般應該是 3(普通傷害), 4(普通疾病)
+    
+    // 先輸入標頭和健保資料
+    content = ''; // 要回傳的 xml 檔的內容
+    content = addXmlElement(content, '<?xml version="1.0" encoding="Big5"?>', true, true); // 定義 xml
+    content = addXmlElement(content, '<RECS>', true, true);
+    content = addXmlElement(content, '<REC>', true, true);
+    // message header
+    content = addXmlElement(content, '<MSH>', true, true);
+    // H00
+    content = addXmlElement(content, '<H00>', false, true, true);
+    content = addXmlElement(content, data_type, false, false); // 資料型別
+    content = addXmlElement(content, '</H00>', true, true);
+    // H01
+    content = addXmlElement(content, '<H01>', false, true, true);
+    content = addXmlElement(content, h01, false, false); // 先預設正常上傳
+    content = addXmlElement(content, '</H01>', true, true);
+    content = addXmlElement(content, '</MSH>', true, true);
+    // message body
+    content = addXmlElement(content, '<MB>', true, true);
+    // MB1 健保資料
+    content = addXmlElement(content, '<MB1>', true, true);
+    // M01
+    content = addXmlElement(content, '<M01>', false, true, true);
+    content = addXmlElement(content, m01, false, false); 
+    content = addXmlElement(content, '</M01>', true, true);
+    // M02
+    content = addXmlElement(content, '<M02>', false, true, true);
+    content = addXmlElement(content, m02, false, false); 
+    content = addXmlElement(content, '</M02>', true, true);
+    // M03
+    content = addXmlElement(content, '<M03>', false, true, true);
+    content = addXmlElement(content, m03, false, false); 
+    content = addXmlElement(content, '</M03>', true, true);
+    // M04
+    content = addXmlElement(content, '<M04>', false, true, true);
+    content = addXmlElement(content, m04, false, false); 
+    content = addXmlElement(content, '</M04>', true, true);
+    // M05
+    content = addXmlElement(content, '<M05>', false, true, true);
+    content = addXmlElement(content, m05, false, false); 
+    content = addXmlElement(content, '</M05>', true, true);
+    // M06
+    content = addXmlElement(content, '<M06>', false, true, true);
+    content = addXmlElement(content, m06, false, false); 
+    content = addXmlElement(content, '</M06>', true, true);
+    // M07
+    content = addXmlElement(content, '<M07>', false, true, true);
+    content = addXmlElement(content, m07, false, false); 
+    content = addXmlElement(content, '</M07>', true, true);
+    // M11
+    content = addXmlElement(content, '<M11>', false, true, true);
+    content = addXmlElement(content, m11, false, false); 
+    content = addXmlElement(content, '</M11>', true, true);
+    // M12
+    content = addXmlElement(content, '<M12>', false, true, true);
+    content = addXmlElement(content, m12, false, false); 
+    content = addXmlElement(content, '</M12>', true, true);
+    // M13
+    content = addXmlElement(content, '<M13>', false, true, true);
+    content = addXmlElement(content, m13, false, false); 
+    content = addXmlElement(content, '</M13>', true, true);
+    // M14
+    content = addXmlElement(content, '<M14>', false, true, true);
+    content = addXmlElement(content, m14, false, false); 
+    content = addXmlElement(content, '</M14>', true, true);
+    // M15
+    content = addXmlElement(content, '<M15>', false, true, true);
+    content = addXmlElement(content, m15, false, false); 
+    content = addXmlElement(content, '</M15>', true, true);
+    // M35
+    content = addXmlElement(content, '<M35>', false, true, true);
+    content = addXmlElement(content, m35, false, false); 
+    content = addXmlElement(content, '</M35>', true, true);
+    // M44
+    content = addXmlElement(content, '<M44>', false, true, true);
+    content = addXmlElement(content, m44, false, false); 
+    content = addXmlElement(content, '</M44>', true, true);
+    // M45
+    content = addXmlElement(content, '<M45>', false, true, true);
+    content = addXmlElement(content, m45, false, false); 
+    content = addXmlElement(content, '</M45>', true, true);
+    // M51
+    content = addXmlElement(content, '<M51>', false, true, true);
+    content = addXmlElement(content, m51, false, false); 
+    content = addXmlElement(content, '</M51>', true, true);
+    // close MB1
+    content = addXmlElement(content, '</MB1>', true, true);
+    
+    // 再依照不同看診型別，區分醫令專區變數值
+    if (data_type == 1) { // 一般看診
+        d01 = m11 // D01 same as M11
+        d02 = 1; // D02 醫令類別, 1 = 藥品主檔
+        d03 = 1; // D03 醫令序號, 第一筆 MB2 = 1, 第二筆 MB2 = 2 以此類推
+        d04 = 'A'; // D04 處方種類, 7 日以下 = A, 30 日以下 = B
+        d05 = 0; // D05 醫令調劑方式, 0 = 自行調劑, 1 = 交付調劑
+        d06 = 'a123456789'; // D06 診療項目代號, 若 d02 = 1 就填藥碼, d02 = 2 就填支付標準代碼
+        d08 = 'Q3D'; // D08 用法(藥品使用頻率), Q3D = 每三天一次
+        d09 = '7'; // D09 天數
+        d10 = '30.5'; // D10 總量, 四捨五入到小數點後第一位
+        d11 = 'xxx'; // D11 處方簽章, S
+        d14 = 'PO'; // D14 給藥途徑/作用部位, PO = 口服
+        // 寫入到 xml
+        // MB2 醫令專區
+        content = addXmlElement(content, '<MB2>', true, true);
+        // D01
+        content = addXmlElement(content, '<D01>', false, true, true);
+        content = addXmlElement(content, d01, false, false); 
+        content = addXmlElement(content, '</D01>', true, true);
+        // D02
+        content = addXmlElement(content, '<D02>', false, true, true);
+        content = addXmlElement(content, d02, false, false); 
+        content = addXmlElement(content, '</D02>', true, true);
+        // D03
+        content = addXmlElement(content, '<D03>', false, true, true);
+        content = addXmlElement(content, d03, false, false); 
+        content = addXmlElement(content, '</D03>', true, true);
+        // D04
+        content = addXmlElement(content, '<D04>', false, true, true);
+        content = addXmlElement(content, d04, false, false); 
+        content = addXmlElement(content, '</D04>', true, true);
+        // D05
+        content = addXmlElement(content, '<D05>', false, true, true);
+        content = addXmlElement(content, d05, false, false); 
+        content = addXmlElement(content, '</D05>', true, true);
+        // D06
+        content = addXmlElement(content, '<D06>', false, true, true);
+        content = addXmlElement(content, d06, false, false); 
+        content = addXmlElement(content, '</D06>', true, true);
+        // D08
+        content = addXmlElement(content, '<D08>', false, true, true);
+        content = addXmlElement(content, d08, false, false); 
+        content = addXmlElement(content, '</D08>', true, true);
+        // D09
+        content = addXmlElement(content, '<D09>', false, true, true);
+        content = addXmlElement(content, d09, false, false); 
+        content = addXmlElement(content, '</D0>', true, true);
+        // D10
+        content = addXmlElement(content, '<D10>', false, true, true);
+        content = addXmlElement(content, d10, false, false); 
+        content = addXmlElement(content, '</D10>', true, true);
+        // D11
+        content = addXmlElement(content, '<D11>', false, true, true);
+        content = addXmlElement(content, d11, false, false); 
+        content = addXmlElement(content, '</D11>', true, true);
+        // D14
+        content = addXmlElement(content, '<D14>', false, true, true);
+        content = addXmlElement(content, d14, false, false); 
+        content = addXmlElement(content, '</D14>', true, true);
+        content = addXmlElement(content, '</MB2>', true, true);
+    }
+    else if (data_type == 2) { // 疫苗接種
+        
+    }
+    else {
+        
+    }
+    
+    content = addXmlElement(content, '</MB>', true, true);
+    content = addXmlElement(content, '</REC>', true, true);
+    content = addXmlElement(content, '</RECS>', false, true); // 最後一個標籤不用換行
+    console.log(content);
+    
+    // 寫入並存到 .xml 
+    fs.writeFile("upload/test.xml", content, function(err) {
+        if(err) {
+            return console.log(err);
+        }
+        //console.log("The file was saved!");
+    }); 
+}
+
+function addXmlElement(content, obj, need_newline, is_tag, add_space) {
+    obj = obj.toString(); // 先轉換成字串等等才能相加
+    // 不是標籤，要過濾內容
+    if (!is_tag) { 
+        obj = filterXmlObj(obj, add_space); // 過濾掉不能出現在內容的字元
+    }
+    // 並檢查字元前是否需要新增空間
+    if (add_space) {
+        obj = addSpaceBeforeAll(obj);
+    }
+    // 是否需要在最後面換行
+    if (need_newline) {
+        last_element = '\n';
+    }
+    else {
+        last_element = '';
+    }
+    
+    return content + obj + last_element;
+}
+
+function addSpaceBeforeAll(obj) {
+    new_obj = '  ';
+    for (let i = 0;i < obj.length;i++) {
+        new_obj += obj[i];
+    }
+    return new_obj;
+}
+
+function filterXmlObj(obj, add_space) { // 過濾掉不能出現在內容的字元
+    new_obj = '';
+    // 過濾掉不能出現在內容的字元
+    can_not_use = ['>', '<', '&', '"', "'"]; // 不能使用的字元
+    relative_fulltype = ['＞', '＜', '＆', '＂', "＇"] // 如果有，要轉成對應的全形
+    for (let i = 0;i < obj.length;i++) {
+        if (can_not_use.includes(obj[i])) { // 有不能使用的字元
+            new_obj += relative_fulltype[can_not_use.indexOf(obj[i])]; // 要轉成對應的全形
+        }
+        else {
+            new_obj += obj[i];
+        }
+    }
+    return new_obj;
+}
 
 module.exports = router;

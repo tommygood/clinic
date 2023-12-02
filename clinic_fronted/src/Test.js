@@ -16,6 +16,30 @@ function detectInput(e) {
     console.log(e.target.value);
 }
 
+
+class Test2_Child extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+        };
+        console.log("create test2 child")
+    }
+
+    UpdateData = () => { 
+        //console.log(this.props.name)
+        this.props.name("child")
+    }
+
+    render() {
+        console.log(this.props.father)
+        return (
+            <div>
+                <button onClick={this.UpdateData}>test2 child {this.props.father}</button>
+            </div>
+        );
+    }
+}
+
 class Test2 extends React.Component {
     constructor(props) {
         super(props);
@@ -23,24 +47,30 @@ class Test2 extends React.Component {
             num : 5,
             name : ['a', 'b', 'c']
         };
+        this.n = 5;
     }
     
-    insert_text = (e) => { //利用本身事件(e)找到自己
+    insert_text = (val) => { //利用本身事件(e)找到自己
         // console.log(e.target.value);
-        this.state.name.push(e.target.value); //把字串放到陣列
+        this.state.name.push(val); //把字串放到陣列
         this.setState({
-          name:this.state.name //更新State
+          name:this.state.name, //更新State
         })
-        console.log(this.state.name);//印出State.item狀態
-       
+        console.log(this.state.name);//印出State.item狀態  
     }
     
     insert_texts = (name) => {
         console.log(name + this.state.name);
     }
+
+    father_insert_text = (e) => {
+        this.insert_text("father " + e.target.value)
+    }
     
     render() {
         const each_name = MakeName(this.state.name);
+        //this.insert_text()
+        //const t = new Test2_Child();
         return (
             <div>
                 Test :
@@ -48,7 +78,9 @@ class Test2 extends React.Component {
                 <TestFunc name = {this.state.name} pig = {this.state.num}/>
                 {each_name}
                 {this.insert_texts('a')}
-                <input type = 'text' onChange = {this.insert_text}/>
+                n is {this.n}
+                <input type = 'text' onChange = {this.father_insert_text}/>
+                <Test2_Child father="Test2" name={this.insert_text} />
             </div>
         )
     }
